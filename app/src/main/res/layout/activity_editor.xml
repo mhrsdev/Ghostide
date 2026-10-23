@@ -141,10 +141,11 @@
         android:layout_marginBottom="16dp"
         android:src="@drawable/play_arrow"
         android:elevation="6dp"
-        android:layout_marginRight="16dp"
+        android:layout_marginEnd="16dp"
         android:outlineProvider="none"
+        app:fabSize="mini"
         android:id="@+id/fabineditor"
-        android:layout_gravity="right|bottom" />
+        android:layout_gravity="end|bottom" />
 
     <ir.hanzodev1375.ghostide.customui.LayoutSymbolbar
         android:layout_height="wrap_content"
@@ -172,8 +173,8 @@
         android:layout_height="wrap_content"
         android:layout_width="match_parent"
         android:elevation="4dp"
-        android:layout_marginLeft="16dp"
-        android:layout_marginRight="16dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
         android:id="@+id/editorSearch"
         android:layout_gravity="bottom" />
 

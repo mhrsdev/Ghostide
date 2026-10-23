@@ -46,10 +46,11 @@
       </LinearLayout>
 
       <ImageView
-        android:layout_height="24dp"
-        android:layout_width="24dp"
+        android:layout_height="40dp"
+        android:layout_width="40dp"
         android:src="@drawable/icon_more_vert_round"
-        android:padding="4dp"
+        android:padding="8dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
         android:id="@+id/ivMore" />
 
     </LinearLayout>

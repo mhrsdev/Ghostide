@@ -108,6 +108,7 @@ public class EditorStatusBar extends FrameLayout {
   private StatusIndicator currentStatusIndicator = StatusIndicator.IDLE;
   @ColorInt private int dirtyColor;
   private boolean dirtyShowing;
+  private boolean indentationEnabled = true;
 
   public EditorStatusBar(@NonNull Context context) {
     this(context, null);
@@ -188,7 +189,7 @@ public class EditorStatusBar extends FrameLayout {
     applyIconSizeToAll();
     applyIconTextSpacingToAll();
     applyDividerColor();
-    updateDividerVisibility();
+    syncIndentationSection();
     ensureStatusDotDrawable();
     ensureDirtyDotDrawable();
   }
@@ -227,7 +228,7 @@ public class EditorStatusBar extends FrameLayout {
       binding.sectionEncoding.setVisibility(GONE);
     }
     if (!a.getBoolean(R.styleable.EditorStatusBar_esb_indentationVisible, true)) {
-      binding.sectionIndentation.setVisibility(GONE);
+      indentationEnabled = false;
     }
     if (!a.getBoolean(R.styleable.EditorStatusBar_esb_linesVisible, true)) {
       binding.sectionLines.setVisibility(GONE);
@@ -462,6 +463,7 @@ public class EditorStatusBar extends FrameLayout {
 
   public void setIndentationText(String text) {
     binding.textIndentation.setText(text);
+    syncIndentationSection();
   }
 
   public String getIndentationText() {
@@ -754,12 +756,22 @@ public class EditorStatusBar extends FrameLayout {
   }
 
   public void setIndentationVisible(boolean visible) {
-    binding.sectionIndentation.setVisibility(visible ? VISIBLE : GONE);
-    updateDividerVisibility();
+    indentationEnabled = visible;
+    syncIndentationSection();
   }
 
   public boolean isIndentationVisible() {
     return binding.sectionIndentation.getVisibility() == VISIBLE;
+  }
+
+  /**
+   * The indentation section is shown only while it is enabled and has text, so an unused section
+   * never leaves an empty cell between two dividers.
+   */
+  private void syncIndentationSection() {
+    boolean show = indentationEnabled && binding.textIndentation.length() > 0;
+    binding.sectionIndentation.setVisibility(show ? VISIBLE : GONE);
+    updateDividerVisibility();
   }
 
   public void setLinesVisible(boolean visible) {

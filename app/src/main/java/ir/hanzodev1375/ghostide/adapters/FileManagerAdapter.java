@@ -235,6 +235,10 @@ public class FileManagerAdapter extends RecyclerView.Adapter<FileManagerAdapter.
 
           @Override
           public int getPosition(@NonNull Long key) {
+            Integer cached = idToPosition.get(key);
+            if (cached != null && cached < items.size() && getItemId(cached) == key) {
+              return cached;
+            }
             for (int i = 0; i < getItemCount(); i++) {
               if (getItemId(i) == key) return i;
             }
@@ -506,6 +510,7 @@ public class FileManagerAdapter extends RecyclerView.Adapter<FileManagerAdapter.
     if (position < 0 || position >= items.size()) return;
     items.remove(position);
     itemsFull = new ArrayList<>(items);
+    rebuildIdMap();
     notifyItemRemoved(position);
   }
 

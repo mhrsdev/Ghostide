@@ -1,6 +1,8 @@
 package ir.hanzodev1375.ghostide.utils;
 
 import android.content.Context;
+import androidx.core.text.BidiFormatter;
+import androidx.core.text.TextDirectionHeuristicsCompat;
 import ir.hanzodev1375.ghostide.R;
 import java.io.BufferedReader;
 import java.io.File;
@@ -22,7 +24,10 @@ public final class EditorFileStats {
     return ext.substring(0, 1).toUpperCase(Locale.ROOT) + ext.substring(1);
   }
 
-  /** تعداد خط و حجم فایل رو می‌خونه. برای فایل‌های خیلی بزرگ از شمردن خط صرف‌نظر می‌کنیم. */
+  /**
+   * Reads the line count and size of a file; very large files skip line counting. The size is
+   * isolated as left-to-right text so it keeps its order inside right-to-left sentences.
+   */
   public static String formatFileStats(Context context, String filePath) {
     File file = new File(filePath);
     if (!file.isFile()) return "";
@@ -34,7 +39,9 @@ public final class EditorFileStats {
     } catch (IOException e) {
       return size;
     }
-    return context.getString(R.string.editor_status_lines, lines, size);
+    String isolatedSize =
+        BidiFormatter.getInstance().unicodeWrap(size, TextDirectionHeuristicsCompat.LTR);
+    return context.getString(R.string.editor_status_lines, lines, isolatedSize);
   }
 
   public static String formatFileSize(long bytes) {
