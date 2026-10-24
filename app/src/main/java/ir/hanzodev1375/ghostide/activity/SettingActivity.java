@@ -3,6 +3,7 @@ package ir.hanzodev1375.ghostide.activity;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.MessageQueue;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -19,6 +20,7 @@ import com.google.android.material.appbar.MaterialToolbar;
 import ir.hanzodev1375.components.SearchLayout;
 import ir.hanzodev1375.components.childern.ViewChilder;
 import ir.hanzodev1375.ghostide.R;
+import ir.hanzodev1375.ghostide.adapters.SettingsAdapter;
 import ir.hanzodev1375.ghostide.ai.utils.AiPreferencesUtils;
 import ir.hanzodev1375.ghostide.codeeditors.setting.PreferencesUtils;
 import ir.hanzodev1375.ghostide.customui.ExpandableLayout;
@@ -41,6 +43,10 @@ import ir.theme.ThemeUtils;
  */
 public class SettingActivity extends BaseCompat {
 
+  private static final int MIN_POOLED_ROWS = 30;
+  private static final int WARM_UP_ROWS = 48;
+  private static final int WARM_UP_BATCH = 3;
+
   private PreferencesUtils prefs;
   private AiPreferencesUtils aiPrefs;
   private EditorSettingSection editorSection;
@@ -57,6 +63,7 @@ public class SettingActivity extends BaseCompat {
       rvPlugins;
   private SearchLayout ser;
   private Runnable filterRunnable;
+  private MessageQueue.IdleHandler rowPoolWarmUp;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -117,7 +124,7 @@ public class SettingActivity extends BaseCompat {
 
     // Shared recycled view pool for all setting sections to reuse row views
     RecyclerView.RecycledViewPool sharedPool = new RecyclerView.RecycledViewPool();
-    sharedPool.setMaxRecycledViews(0, 30);
+    sharedPool.setMaxRecycledViews(0, MIN_POOLED_ROWS);
     rvEditor.setRecycledViewPool(sharedPool);
     rvApp.setRecycledViewPool(sharedPool);
     rvAi.setRecycledViewPool(sharedPool);
@@ -144,6 +151,8 @@ public class SettingActivity extends BaseCompat {
     rvIconPack.setAdapter(iconPackSection.createAdapter());
     rvBackgroundPlugin.setAdapter(backgroundPluginSection.createAdapter());
     rvPlugins.setAdapter(pluginSection.createAdapter());
+    sharedPool.setMaxRecycledViews(0, Math.max(MIN_POOLED_ROWS, totalRowCount()));
+    warmUpRowPool(sharedPool);
     hideSectionIfEmpty(expandEditor, editorSection);
     hideSectionIfEmpty(expandApp, appSection);
     hideSectionIfEmpty(expandAi, aiSection);
@@ -223,19 +232,68 @@ public class SettingActivity extends BaseCompat {
   }
 
   private void resetAll() {
-    for (SettingSection section :
-        new SettingSection[] {
-          editorSection,
-          appSection,
-          lspSection,
-          aiSection,
-          runnerSection,
-          iconPackSection,
-          backgroundPluginSection,
-          pluginSection
-        }) {
+    for (SettingSection section : settingSections()) {
       section.resetToFull();
     }
+  }
+
+  private SettingSection[] settingSections() {
+    return new SettingSection[] {
+      editorSection,
+      appSection,
+      lspSection,
+      aiSection,
+      runnerSection,
+      iconPackSection,
+      backgroundPluginSection,
+      pluginSection
+    };
+  }
+
+  private int totalRowCount() {
+    int total = 0;
+    for (SettingSection section : settingSections()) {
+      SettingsAdapter adapter = section.getAdapter();
+      if (adapter != null) total += adapter.getItemCount();
+    }
+    return total;
+  }
+
+  /**
+   * Builds row views while the main thread is idle and parks them in the shared pool.
+   *
+   * <p>Section lists are sized to their whole content inside the page scroller, so expanding a
+   * section or matching a search query binds every row at once. Rows taken from the pool only need
+   * binding, which keeps that frame short. The queue drains in small batches and stops as soon as
+   * the pool holds {@link #WARM_UP_ROWS} views or the activity goes away.
+   */
+  private void warmUpRowPool(RecyclerView.RecycledViewPool pool) {
+    SettingsAdapter adapter = editorSection.getAdapter();
+    if (adapter == null) return;
+    int target = Math.min(WARM_UP_ROWS, totalRowCount());
+    rowPoolWarmUp =
+        () -> {
+          if (isFinishing() || isDestroyed()) {
+            rowPoolWarmUp = null;
+            return false;
+          }
+          for (int i = 0; i < WARM_UP_BATCH && pool.getRecycledViewCount(0) < target; i++) {
+            pool.putRecycledView(adapter.createViewHolder(rvEditor, 0));
+          }
+          boolean hasMore = pool.getRecycledViewCount(0) < target;
+          if (!hasMore) rowPoolWarmUp = null;
+          return hasMore;
+        };
+    Looper.myQueue().addIdleHandler(rowPoolWarmUp);
+  }
+
+  @Override
+  protected void onDestroy() {
+    if (rowPoolWarmUp != null) {
+      Looper.myQueue().removeIdleHandler(rowPoolWarmUp);
+      rowPoolWarmUp = null;
+    }
+    super.onDestroy();
   }
 
   private void expandMatching() {

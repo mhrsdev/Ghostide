@@ -169,21 +169,29 @@ public class SettingsAdapter extends RecyclerView.Adapter<SettingsAdapter.ViewHo
   }
 
   public void filter(String query) {
-    String newQuery = query != null ? query.toLowerCase(Locale.getDefault()).trim() : "";
+    Locale locale = Locale.getDefault();
+    String newQuery = query != null ? query.toLowerCase(locale).trim() : "";
+    boolean sameQuery = newQuery.equals(currentQuery);
     currentQuery = newQuery;
 
-    items.clear();
-    if (currentQuery.isEmpty()) {
-      items.addAll(backupList);
+    List<SettingItem> next;
+    if (newQuery.isEmpty()) {
+      next = backupList;
     } else {
+      next = new ArrayList<>();
       for (SettingItem item : backupList) {
-        if (item.getTitle().toLowerCase(Locale.getDefault()).contains(currentQuery)
+        if (item.getTitle().toLowerCase(locale).contains(newQuery)
             || (item.getDescription() != null
-                && item.getDescription().toLowerCase(Locale.getDefault()).contains(currentQuery))) {
-          items.add(item);
+                && item.getDescription().toLowerCase(locale).contains(newQuery))) {
+          next.add(item);
         }
       }
     }
+    if (items.equals(next) && (sameQuery || next.isEmpty())) {
+      return;
+    }
+    items.clear();
+    items.addAll(next);
     notifyDataSetChanged();
   }
 
