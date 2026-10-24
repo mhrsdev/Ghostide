@@ -1081,7 +1081,7 @@ public final class M3Theme {
             },
             new int[] {
               onPrimary(), // checked + enabled
-              surfaceVariant(), // unchecked + enabled
+              orElse(outline(), surfaceVariant()), // unchecked + enabled
               surfaceContainerHighest() // disabled
             });
     sw.setThumbTintList(stateThumb);
@@ -1095,7 +1095,7 @@ public final class M3Theme {
             },
             new int[] {
               onPrimary(), // checked + enabled
-              onSurfaceVariant(), // unchecked + enabled
+              surfaceContainerHighest(), // unchecked + enabled
               onSurface() // disabled
             });
     sw.setThumbIconTintList(stateIcon);
@@ -1125,10 +1125,14 @@ public final class M3Theme {
             },
             new int[] {
               onPrimary(), // checked + enabled
-              surfaceVariant(), // unchecked + enabled
+              orElse(outline(), surfaceVariant()), // unchecked + enabled
               surfaceVariant() // disabled
             });
     sw.setTrackDecorationTintList(stateTrackIcon);
+  }
+
+  private static int orElse(@Nullable Integer value, int alternative) {
+    return value != null ? value : alternative;
   }
 
   public static void checkboxView(CheckBox cb) {

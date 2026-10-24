@@ -287,8 +287,8 @@
   <string name="ftp_connect">FTP/SFTP</string>
   <string name="ftp_download_success">下载到当前文件夹</string>
   <string name="ftp_download_error">下载失败</string>
-  <string name="grid_title">网格模组</string>
-  <string name="grid_subtitle">为文件管理器启用 Grid Mod</string>
+  <string name="grid_title">网格视图</string>
+  <string name="grid_subtitle">在文件管理器中以网格显示文件</string>
   <string name="sd_card_menu_item">SD卡</string>
   <string name="sd_card_label">SD卡</string>
   <string name="internal_storage_label">内部存储</string>
@@ -302,8 +302,8 @@
   <string name="pref_animation_battery_threshold_desc">动画电池阈值</string>
   <string name="pref_animation_battery_threshold">动画电池</string>
   <string name="pref_grid">网格数 %s</string>
-  <string name="pref_grid_title">选择网格数</string>
-  <string name="pref_grid_subtitle">在文件管理器中设置网格连接</string>
+  <string name="pref_grid_title">网格列数</string>
+  <string name="pref_grid_subtitle">选择文件管理器网格视图的列数</string>
   <string name="pref_show_hidden_files">显示隐藏文件</string>
   <string name="pref_show_hidden_files_desc">显示以点 (.) 开头的文件和文件夹</string>
   <string name="pref_show_background">显示背景</string>
@@ -402,8 +402,8 @@
   <string name="rename_class_confirm_title">确认类重命名</string>
   <string name="rename_class_confirm_message">将 %3$d 个文件中的 %1$s 重命名为 %2$s 吗？</string>
   <string name="rename_class_success">类重命名成功</string>
-  <string name="terfrtitle">终端碎片模组</string>
-  <string name="terfrsubtitle">启用终端片段模组！</string>
+  <string name="terfrtitle">内嵌终端</string>
+  <string name="terfrsubtitle">在编辑器内的终端面板中运行代码</string>
   <string name="title_history">历史</string>
   <string name="title_collections">收藏</string>
   <string name="title_collection_detail">收藏</string>
@@ -577,4 +577,5 @@
   <string name="runner_java_version_message">使用哪个 JDK 运行此 Java 文件？如果已安装 Java 将直接使用，否则会安装所选版本（Temurin）。</string>
   <string name="runner_java_version_17">Java 17</string>
   <string name="runner_java_version_25">Java 25</string>
+  <string name="language_system_default">跟随系统</string>
 </resources>

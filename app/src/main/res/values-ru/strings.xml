@@ -287,8 +287,8 @@
   <string name="ftp_connect">FTP/SFTP</string>
   <string name="ftp_download_success">Загружено в текущую папку</string>
   <string name="ftp_download_error">Загрузка не удалась</string>
-  <string name="grid_title">Сетка Мод</string>
-  <string name="grid_subtitle">Enabel Grid Mod для файлового менеджера</string>
+  <string name="grid_title">Вид сеткой</string>
+  <string name="grid_subtitle">Показывать файлы сеткой в файловом менеджере</string>
   <string name="sd_card_menu_item">SD-карта</string>
   <string name="sd_card_label">SD-карта</string>
   <string name="internal_storage_label">Внутреннее хранилище</string>
@@ -302,8 +302,8 @@
   <string name="pref_animation_battery_threshold_desc">Анимация: порог заряда батареи</string>
   <string name="pref_animation_battery_threshold">Анимационная батарея</string>
   <string name="pref_grid">Количество сетки %s</string>
-  <string name="pref_grid_title">Выберите количество сеток</string>
-  <string name="pref_grid_subtitle">Установите Grid Connt For в диспетчере файлов</string>
+  <string name="pref_grid_title">Столбцы сетки</string>
+  <string name="pref_grid_subtitle">Выберите число столбцов в сетке файлового менеджера</string>
   <string name="pref_show_hidden_files">Показать скрытые файлы</string>
   <string name="pref_show_hidden_files_desc">Отображать файлы и папки, начинающиеся с точки (.)</string>
   <string name="pref_show_background">Показать фон</string>
@@ -402,8 +402,8 @@
   <string name="rename_class_confirm_title">Подтвердить переименование класса</string>
   <string name="rename_class_confirm_message">Переименовать %1$s в %2$s в %3$d файлах?</string>
   <string name="rename_class_success">Класс успешно переименован</string>
-  <string name="terfrtitle">Мод «Фрагмент терминала»</string>
-  <string name="terfrsubtitle">Мод Enabel Terminal Fragment!</string>
+  <string name="terfrtitle">Встроенный терминал</string>
+  <string name="terfrsubtitle">Запускать код в панели терминала внутри редактора</string>
   <string name="title_history">История</string>
   <string name="title_collections">Коллекции</string>
   <string name="title_collection_detail">Коллекция</string>
@@ -577,4 +577,5 @@
   <string name="runner_java_version_message">Какой JDK использовать для запуска этого файла Java? Если Java уже установлена, будет использована она; иначе установится выбранная версия (Temurin).</string>
   <string name="runner_java_version_17">Java 17</string>
   <string name="runner_java_version_25">Java 25</string>
+  <string name="language_system_default">Системный</string>
 </resources>

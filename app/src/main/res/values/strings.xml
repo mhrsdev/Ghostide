@@ -341,8 +341,8 @@
     <string name="ftp_connect">FTP/SFTP</string>
     <string name="ftp_download_success">Downloaded to current folder</string>
     <string name="ftp_download_error">Download failed</string>
-    <string name="grid_title">Grid Mod</string>
-    <string name="grid_subtitle">Enabel Grid Mod to File Manager</string>
+    <string name="grid_title">Grid view</string>
+    <string name="grid_subtitle">Show files as a grid in the file manager</string>
     <string name="sd_card_menu_item">SD Card</string>
     <string name="sd_card_label">SD Card</string>
     <string name="internal_storage_label">Internal Storage</string>
@@ -376,8 +376,8 @@
     <string name="pref_animation_battery_threshold_desc">Animation Battery Threshold</string>
     <string name="pref_animation_battery_threshold">Animation Battery</string>
     <string name="pref_grid">Grid Count %s</string>
-    <string name="pref_grid_title">Select Grid Count</string>
-    <string name="pref_grid_subtitle">Set Grid Connt For in File manager</string>
+    <string name="pref_grid_title">Grid columns</string>
+    <string name="pref_grid_subtitle">Choose how many columns the grid view of the file manager uses</string>
     <string name="pref_show_hidden_files">Show Hidden Files</string>
     <string name="pref_show_hidden_files_desc">Display files and folders starting with a dot (.)</string>
     <string name="pref_show_background">Show Background</string>
@@ -478,8 +478,8 @@
     <string name="rename_class_confirm_title">Confirm class rename</string>
     <string name="rename_class_confirm_message">Rename %1$s to %2$s across %3$d file(s)?</string>
     <string name="rename_class_success">Class renamed successfully</string>
-    <string name="terfrtitle">Terminal Fragment mod</string>
-    <string name="terfrsubtitle">Enabel Terminal Fragment mod!</string>
+    <string name="terfrtitle">Embedded terminal</string>
+    <string name="terfrsubtitle">Run code in a terminal panel inside the editor</string>
     <string name="title_history">History</string>
     <string name="title_collections">Collections</string>
     <string name="title_collection_detail">Collection</string>
@@ -812,4 +812,5 @@
     <string name="about_collapsed">Collapsed</string>
     <string name="about_free_summary">%1$s GB free</string>
     <string name="onboarding_terminal_header">Linux terminal</string>
+    <string name="language_system_default">System default</string>
 </resources>

@@ -287,8 +287,8 @@
   <string name="ftp_connect">FTP/SFTP</string>
   <string name="ftp_download_success">Baixado para a pasta atual</string>
   <string name="ftp_download_error">Falha no download</string>
-  <string name="grid_title">Mod de grade</string>
-  <string name="grid_subtitle">Habilita Grid Mod para Gerenciador de Arquivos</string>
+  <string name="grid_title">Visualização em grade</string>
+  <string name="grid_subtitle">Mostrar arquivos em grade no gerenciador de arquivos</string>
   <string name="sd_card_menu_item">Cartão SD</string>
   <string name="sd_card_label">Cartão SD</string>
   <string name="internal_storage_label">Armazenamento Interno</string>
@@ -302,8 +302,8 @@
   <string name="pref_animation_battery_threshold_desc">Limite de bateria de animação</string>
   <string name="pref_animation_battery_threshold">Bateria de animação</string>
   <string name="pref_grid">Contagem de grade %s</string>
-  <string name="pref_grid_title">Selecione Contagem de Grade</string>
-  <string name="pref_grid_subtitle">Definir Grid Connt For no gerenciador de arquivos</string>
+  <string name="pref_grid_title">Colunas da grade</string>
+  <string name="pref_grid_subtitle">Escolha quantas colunas a grade do gerenciador de arquivos usa</string>
   <string name="pref_show_hidden_files">Mostrar arquivos ocultos</string>
   <string name="pref_show_hidden_files_desc">Exibir arquivos e pastas começando com um ponto (.)</string>
   <string name="pref_show_background">Mostrar plano de fundo</string>
@@ -404,8 +404,8 @@
   <string name="rename_class_confirm_title">Confirme a renomeação da classe</string>
   <string name="rename_class_confirm_message">Renomear %1$s para %2$s em %3$d arquivo(s)?</string>
   <string name="rename_class_success">Classe renomeada com sucesso</string>
-  <string name="terfrtitle">Mod de fragmento de terminal</string>
-  <string name="terfrsubtitle">Mod do fragmento do terminal Enabel!</string>
+  <string name="terfrtitle">Terminal integrado</string>
+  <string name="terfrsubtitle">Executar o código em um painel de terminal dentro do editor</string>
   <string name="title_history">História</string>
   <string name="title_collections">Coleções</string>
   <string name="title_collection_detail">Coleção</string>
@@ -598,4 +598,5 @@
   <string name="runner_java_version_message">Qual JDK usar para executar este arquivo Java? Se o Java já estiver instalado, ele será usado; caso contrário, a versão escolhida (Temurin) será instalada.</string>
   <string name="runner_java_version_17">Java 17</string>
   <string name="runner_java_version_25">Java 25</string>
+  <string name="language_system_default">Padrão do sistema</string>
 </resources>

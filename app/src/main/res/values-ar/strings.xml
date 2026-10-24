@@ -287,8 +287,8 @@
   <string name="ftp_connect">بروتوكول نقل الملفات/سفتب</string>
   <string name="ftp_download_success">تم التنزيل إلى المجلد الحالي</string>
   <string name="ftp_download_error">فشل التنزيل</string>
-  <string name="grid_title">وزارة الدفاع الشبكة</string>
-  <string name="grid_subtitle">تمكين الشبكة وزارة الدفاع إلى مدير الملفات</string>
+  <string name="grid_title">عرض شبكي</string>
+  <string name="grid_subtitle">عرض الملفات كشبكة في مدير الملفات</string>
   <string name="sd_card_menu_item">بطاقة SD</string>
   <string name="sd_card_label">بطاقة SD</string>
   <string name="internal_storage_label">التخزين الداخلي</string>
@@ -302,8 +302,8 @@
   <string name="pref_animation_battery_threshold_desc">عتبة بطارية الرسوم المتحركة</string>
   <string name="pref_animation_battery_threshold">بطارية الرسوم المتحركة</string>
   <string name="pref_grid">عدد الشبكة %s</string>
-  <string name="pref_grid_title">حدد عدد الشبكة</string>
-  <string name="pref_grid_subtitle">قم بتعيين Grid Connt For في مدير الملفات</string>
+  <string name="pref_grid_title">عدد أعمدة الشبكة</string>
+  <string name="pref_grid_subtitle">اختر عدد الأعمدة في عرض الشبكة لمدير الملفات</string>
   <string name="pref_show_hidden_files">إظهار الملفات المخفية</string>
   <string name="pref_show_hidden_files_desc">عرض الملفات والمجلدات التي تبدأ بالنقطة (.)</string>
   <string name="pref_show_background">إظهار الخلفية</string>
@@ -402,8 +402,8 @@
   <string name="rename_class_confirm_title">تأكيد إعادة تسمية الفصل</string>
   <string name="rename_class_confirm_message">هل تريد إعادة تسمية %1$s إلى %2$s عبر %3$d ملف (ملفات)؟</string>
   <string name="rename_class_success">تمت إعادة تسمية الفصل بنجاح</string>
-  <string name="terfrtitle">تعديل الجزء الطرفي</string>
-  <string name="terfrsubtitle">تمكين تعديل جزء المحطة الطرفية!</string>
+  <string name="terfrtitle">الطرفية المدمجة</string>
+  <string name="terfrsubtitle">تشغيل الكود في لوحة طرفية داخل المحرر</string>
   <string name="title_history">تاريخ</string>
   <string name="title_collections">المجموعات</string>
   <string name="title_collection_detail">مجموعة</string>
@@ -577,4 +577,5 @@
   <string name="runner_java_version_message">أي JDK يُستخدم لتشغيل ملف Java هذا؟ إذا كان Java مثبتًا فسيُستخدم كما هو، وإلا سيُثبَّت الإصدار المحدد (Temurin).</string>
   <string name="runner_java_version_17">Java 17</string>
   <string name="runner_java_version_25">Java 25</string>
+  <string name="language_system_default">افتراضي النظام</string>
 </resources>

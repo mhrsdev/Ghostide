@@ -13,6 +13,7 @@ import android.widget.TextView;
 import com.bumptech.glide.Glide;
 import com.google.android.material.materialswitch.MaterialSwitch;
 import ir.hanzodev1375.ghostide.databinding.LayoutSwitchPerfenceBinding;
+import ir.hanzodev1375.ghostide.utils.LocaleDirection;
 import ir.hanzodev1375.ghostide.utils.ShapeUtil;
 import ir.theme.M3Theme;
 
@@ -48,6 +49,7 @@ public class PreferenceSwitchGroup extends RelativeLayout implements View.OnClic
     setOnClickListener(this);
     showIcon(false);
     M3Theme.listCard(binding.getRoot());
+    LocaleDirection.mirrorRow(binding.getRoot());
   }
 
   @Override

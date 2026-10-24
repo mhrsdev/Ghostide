@@ -87,7 +87,8 @@ public class AppSettingSection extends SettingSection {
             prefs.isGitHubLoggedIn()
                 ? getString(R.string.github_account_logged_in, prefs.getGitHubUsername())
                 : getString(R.string.github_account_not_logged_in)));
-    String currentLang = LocaleHelper.LANGUAGE_NAMES[LocaleHelper.getSavedLanguageIndex(activity)];
+    String currentLang =
+        LocaleHelper.languageNames(activity)[LocaleHelper.getSavedLanguageIndex(activity)];
     items.add(
         textItem(
             R.string.pref_language, getString(R.string.pref_language_desc) + "\n" + currentLang));
@@ -255,7 +256,7 @@ public class AppSettingSection extends SettingSection {
     int checkedIndex = LocaleHelper.getSavedLanguageIndex(activity);
     showSingleChoiceDialog(
         R.string.pref_language,
-        LocaleHelper.LANGUAGE_NAMES,
+        LocaleHelper.languageNames(activity),
         checkedIndex,
         which -> {
           String selectedCode = LocaleHelper.LANGUAGE_CODES[which];

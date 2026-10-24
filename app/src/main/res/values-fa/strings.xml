@@ -114,10 +114,10 @@
     <string name="restart_now">راه اندازی مجدد</string>
     <string name="later">بعداً</string>
     <string name="theme_load_title">بارگیری تم از فایل</string>
-    <string name="theme_load_message">مسیر کامل فایل .gth را وارد کنید</string>
+    <string name="theme_load_message">مسیر کامل فایل ‎.gth‎ را وارد کنید</string>
     <string name="theme_files_title">تم ها در /sdcard/ghostide/themes/</string>
-    <string name="theme_load_hint">مسیر فایل .gth</string>
-    <string name="theme_load_invalid_extension">فایل باید با .gth پایان یابد</string>
+    <string name="theme_load_hint">مسیر فایل ‎.gth‎</string>
+    <string name="theme_load_invalid_extension">فایل باید با ‎.gth‎ پایان یابد</string>
     <string name="theme_load_file_not_found">فایل یافت نشد: %s</string>
     <string name="theme_load_success">تم با موفقیت بارگیری شد. برنامه مجدداً راه اندازی می شود.</string>
     <string name="theme_load_error">بارگیری تم انجام نشد: %s</string>
@@ -126,7 +126,7 @@
     <string name="theme_delete_success">فایل تم حذف شد</string>
     <string name="theme_delete_failed">حذف فایل تم ممکن نشد</string>
     <string name="pref_load_theme_file">بارگیری تم از فایل</string>
-    <string name="pref_load_theme_file_desc">وارد کردن فایل تم .gth از حافظه</string>
+    <string name="pref_load_theme_file_desc">وارد کردن فایل تم ‎.gth‎ از حافظه</string>
     <string name="saveitemthis">ذخیره این</string>
     <string name="saveitemall">ذخیره همه</string>
     <string name="removed">حذف شد</string>
@@ -339,8 +339,8 @@
     <string name="ftp_connect">FTP/SFTP</string>
     <string name="ftp_download_success">در پوشه فعلی دانلود شد</string>
     <string name="ftp_download_error">دانلود انجام نشد</string>
-    <string name="grid_title">Grid Mod</string>
-    <string name="grid_subtitle">Enabel Grid Mod به File Manager</string>
+    <string name="grid_title">نمای شبکه‌ای</string>
+    <string name="grid_subtitle">نمایش فایل‌ها به‌صورت شبکه در فایل‌منیجر</string>
     <string name="sd_card_menu_item">کارت SD</string>
     <string name="sd_card_label">کارت SD</string>
     <string name="internal_storage_label">ذخیره سازی داخلی</string>
@@ -374,8 +374,8 @@
     <string name="pref_animation_battery_threshold_desc">آستانه باتری انیمیشن</string>
     <string name="pref_animation_battery_threshold">باتری انیمیشن</string>
     <string name="pref_grid">تعداد شبکه %s</string>
-    <string name="pref_grid_title">Grid Count را انتخاب کنید</string>
-    <string name="pref_grid_subtitle">Grid Connt For را در مدیریت فایل تنظیم کنید</string>
+    <string name="pref_grid_title">تعداد ستون‌های شبکه</string>
+    <string name="pref_grid_subtitle">تعداد ستون‌های نمای شبکه‌ای فایل‌منیجر را انتخاب کنید</string>
     <string name="pref_show_hidden_files">نمایش فایل های مخفی</string>
     <string name="pref_show_hidden_files_desc">نمایش فایل ها و پوشه ها که با نقطه شروع می شوند (.)</string>
     <string name="pref_show_background">نمایش پس زمینه</string>
@@ -476,8 +476,8 @@
     <string name="rename_class_confirm_title">تغییر نام کلاس را تأیید کنید</string>
     <string name="rename_class_confirm_message">تغییر نام %1$s به %2$s در %3$d فایل(ها)؟</string>
     <string name="rename_class_success">کلاس با موفقیت تغییر نام داد</string>
-    <string name="terfrtitle">حالت ترمینال فرگمنت</string>
-    <string name="terfrsubtitle">مد Enabel Terminal Fragment!</string>
+    <string name="terfrtitle">ترمینال داخلی</string>
+    <string name="terfrsubtitle">اجرای کد در پنل ترمینال داخل ادیتور</string>
     <string name="title_history">تاریخچه</string>
     <string name="title_collections">مجموعه ها</string>
     <string name="title_collection_detail">مجموعه</string>
@@ -632,7 +632,7 @@
     <string name="runner_java_title">جاوا</string>
     <string name="runner_kotlin_title">کاتلین</string>
     <string name="runner_sass_title">ساس</string>
-    <string name="lsp_extra_gth_title">سرور زبان: تم (.gth)</string>
+    <string name="lsp_extra_gth_title">سرور زبان: تم (‎.gth‎)</string>
     <string name="lsp_extra_python_title">سرور زبان: پایتون (pylsp)</string>
     <string name="lsp_extra_cpp_title">سرور زبان: C/C++ (clangd)</string>
     <string name="lsp_extra_go_title">سرور زبان: Go (gopls)</string>
@@ -808,4 +808,5 @@
     <string name="about_collapsed">بسته</string>
     <string name="about_free_summary">%1$s GB آزاد</string>
     <string name="onboarding_terminal_header">ترمینال لینوکس</string>
+    <string name="language_system_default">پیش‌فرض سیستم</string>
 </resources>

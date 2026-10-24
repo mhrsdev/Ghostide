@@ -287,8 +287,8 @@
   <string name="ftp_connect">एफ़टीपी/एसएफटीपी</string>
   <string name="ftp_download_success">वर्तमान फ़ोल्डर में डाउनलोड किया गया</string>
   <string name="ftp_download_error">डाउनलोड विफल रहा</string>
-  <string name="grid_title">ग्रिड मॉड</string>
-  <string name="grid_subtitle">ग्रिड मॉड को फाइल मैनेजर में इनेबल करें</string>
+  <string name="grid_title">ग्रिड व्यू</string>
+  <string name="grid_subtitle">फ़ाइल मैनेजर में फ़ाइलें ग्रिड के रूप में दिखाएँ</string>
   <string name="sd_card_menu_item">एसडी कार्ड</string>
   <string name="sd_card_label">एसडी कार्ड</string>
   <string name="internal_storage_label">आंतरिक स्टोरेज</string>
@@ -302,8 +302,8 @@
   <string name="pref_animation_battery_threshold_desc">एनिमेशन बैटरी थ्रेशोल्ड</string>
   <string name="pref_animation_battery_threshold">एनीमेशन बैटरी</string>
   <string name="pref_grid">ग्रिड गिनती %s</string>
-  <string name="pref_grid_title">ग्रिड गणना चुनें</string>
-  <string name="pref_grid_subtitle">फ़ाइल मैनेजर में ग्रिड कॉन्टेंट सेट करें</string>
+  <string name="pref_grid_title">ग्रिड कॉलम</string>
+  <string name="pref_grid_subtitle">फ़ाइल मैनेजर के ग्रिड व्यू में कॉलम की संख्या चुनें</string>
   <string name="pref_show_hidden_files">छुपी हुई फ़ाइलें दिखाएँ</string>
   <string name="pref_show_hidden_files_desc">बिंदु (.) से शुरू होने वाली फ़ाइलें और फ़ोल्डर प्रदर्शित करें</string>
   <string name="pref_show_background">पृष्ठभूमि दिखाएँ</string>
@@ -402,8 +402,8 @@
   <string name="rename_class_confirm_title">कक्षा का नाम बदलने की पुष्टि करें</string>
   <string name="rename_class_confirm_message">%3$d फ़ाइल(फ़ाइलों) में %1$s का नाम बदलकर %2$s कर दें?</string>
   <string name="rename_class_success">कक्षा का नाम सफलतापूर्वक बदला गया</string>
-  <string name="terfrtitle">टर्मिनल फ़्रैगमेंट मॉड</string>
-  <string name="terfrsubtitle">एनाबेल टर्मिनल फ्रैगमेंट मॉड!</string>
+  <string name="terfrtitle">एम्बेडेड टर्मिनल</string>
+  <string name="terfrsubtitle">कोड को एडिटर के अंदर टर्मिनल पैनल में चलाएँ</string>
   <string name="title_history">इतिहास</string>
   <string name="title_collections">संग्रह</string>
   <string name="title_collection_detail">संग्रह</string>
@@ -577,4 +577,5 @@
   <string name="runner_java_version_message">इस Java फ़ाइल को चलाने के लिए कौन-सा JDK इस्तेमाल हो? अगर Java पहले से इंस्टॉल है तो वही चलेगा, वरना चुना गया संस्करण (Temurin) इंस्टॉल होगा।</string>
   <string name="runner_java_version_17">Java 17</string>
   <string name="runner_java_version_25">Java 25</string>
+  <string name="language_system_default">सिस्टम डिफ़ॉल्ट</string>
 </resources>
