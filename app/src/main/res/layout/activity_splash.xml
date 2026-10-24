@@ -1,37 +1,62 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout
-     xmlns:android="http://schemas.android.com/apk/res/android"
-     xmlns:app="http://schemas.android.com/apk/res-auto"
-     xmlns:tools="http://schemas.android.com/tools"
-     android:layout_height="match_parent"
-     android:layout_width="match_parent"
-     tools:context=".SplashActivity">
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/splashRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".SplashActivity">
 
     <ir.hanzodev1375.components.glsl.GLSLShaderView
-         android:id="@+id/splash_shader"
-         android:layout_height="match_parent"
-         android:layout_width="match_parent" />
+        android:id="@+id/splash_shader"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <ImageView
+        android:id="@+id/logo"
+        android:layout_width="176dp"
+        android:layout_height="176dp"
+        android:layout_gravity="center"
+        android:contentDescription="@string/product_name"
+        android:scaleType="fitCenter"
+        android:src="@drawable/ic_lego_app"
+        android:transitionName="ghost_transition_logo" />
 
     <LinearLayout
-         android:layout_height="match_parent"
-         android:layout_width="match_parent"
-         android:gravity="center"
-         android:orientation="vertical">
-
-        <ImageView
-             android:layout_height="250dp"
-             android:layout_width="250dp"
-             android:scaleType="centerInside"
-             android:transitionName="ghost_transition_logo"
-             android:src="@drawable/ic_lego_app"
-             android:layout_marginTop="5dp"
-             android:id="@+id/logo" />
+        android:id="@+id/splashBrand"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp"
+        android:paddingBottom="40dp">
 
         <TextView
-             android:layout_height="wrap_content"
-             android:layout_width="wrap_content"
-             android:textSize="16sp"
-             android:text="welcom to Ghost ide!" />
+            android:id="@+id/splashName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/product_name"
+            android:textAppearance="?attr/textAppearanceTitleLarge" />
+
+        <TextView
+            android:id="@+id/splashTagline"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:alpha="0.7"
+            android:gravity="center"
+            android:text="@string/splash_tagline"
+            android:textAppearance="?attr/textAppearanceBodyMedium" />
+
+        <TextView
+            android:id="@+id/splashVersion"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:alpha="0.5"
+            android:fontFamily="monospace"
+            android:textAppearance="?attr/textAppearanceBodySmall" />
 
     </LinearLayout>
 

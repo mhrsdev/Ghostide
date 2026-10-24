@@ -1,10 +1,15 @@
 package ir.hanzodev1375.ghostide;
 
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.view.View;
 import android.widget.ImageView;
+import android.widget.TextView;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import ir.hanzodev1375.components.glsl.GLSLShaderView;
 import ir.hanzodev1375.components.glsl.GlslPalette;
 import ir.hanzodev1375.ghostide.activity.BaseCompat;
@@ -18,6 +23,7 @@ public class SplashActivity extends BaseCompat {
 
   private static final long LOGO_FADE_MS = 800L;
   private static final long SPLASH_HOLD_MS = 3000L;
+  private static final long BRAND_DELAY_MS = 300L;
 
   private final Handler handler = new Handler(Looper.getMainLooper());
   private final Runnable proceedRunnable = this::startFileManager;
@@ -36,9 +42,32 @@ public class SplashActivity extends BaseCompat {
     logo.setAlpha(0f);
     logo.animate().alpha(1f).setDuration(LOGO_FADE_MS).start();
 
+    TextView version = findViewById(R.id.splashVersion);
+    version.setText(versionName());
+    View brand = findViewById(R.id.splashBrand);
+    int brandBottom = brand.getPaddingBottom();
+    ViewCompat.setOnApplyWindowInsetsListener(
+        brand,
+        (v, insets) -> {
+          int nav = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom;
+          v.setPadding(v.getPaddingLeft(), v.getPaddingTop(), v.getPaddingRight(), brandBottom + nav);
+          return insets;
+        });
+    brand.setAlpha(0f);
+    brand.animate().alpha(1f).setStartDelay(BRAND_DELAY_MS).setDuration(LOGO_FADE_MS).start();
+
     handler.postDelayed(proceedRunnable, LOGO_FADE_MS + SPLASH_HOLD_MS);
 
     M3Theme.apply(findViewById(android.R.id.content));
+  }
+
+  private String versionName() {
+    try {
+      String name = getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
+      return name != null ? name : "";
+    } catch (PackageManager.NameNotFoundException e) {
+      return "";
+    }
   }
 
   private void startFileManager() {
