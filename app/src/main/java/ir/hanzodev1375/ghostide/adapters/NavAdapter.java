@@ -1,6 +1,7 @@
 package ir.hanzodev1375.ghostide.adapters;
 
 import android.content.res.ColorStateList;
+import android.graphics.Typeface;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,6 +20,7 @@ import java.util.List;
 import io.github.rosemoe.sora.widget.schemes.EditorColorScheme;
 
 public class NavAdapter extends RecyclerView.Adapter<NavAdapter.ViewHolder> {
+  private static final float ANCESTOR_ALPHA = 0.66f;
 
   public final DiffUtil.ItemCallback<NavModel> DIFF_CALLBACK =
       new DiffUtil.ItemCallback<NavModel>() {
@@ -74,7 +76,13 @@ public class NavAdapter extends RecyclerView.Adapter<NavAdapter.ViewHolder> {
     }
     M3Theme.listCard(holder.itemView);
     M3Theme.textView(holder.nav_text);
-    holder.nav_icon.setImageTintList(ColorStateList.valueOf(M3Theme.tertiary()));
+    boolean current = position == getItemCount() - 1;
+    holder.nav_text.setAlpha(current ? 1f : ANCESTOR_ALPHA);
+    holder.nav_text.setTypeface(Typeface.MONOSPACE, current ? Typeface.BOLD : Typeface.NORMAL);
+    Integer onSurface = M3Theme.onSurface();
+    if (onSurface != null) {
+      holder.nav_icon.setImageTintList(ColorStateList.valueOf(onSurface));
+    }
   }
 
   @Override

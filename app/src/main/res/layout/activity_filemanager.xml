@@ -18,115 +18,126 @@
             android:visibility="visible"
             android:id="@+id/backgroundiconfilemanager" />
 
-        <FrameLayout
+        <LinearLayout
             android:layout_height="match_parent"
             android:layout_width="match_parent"
+            android:orientation="vertical"
             android:id="@+id/contentContainer">
 
-            <!-- شروع هدر اصلاح شده -->
             <LinearLayout
-                android:layout_height="150dp"
+                android:layout_height="wrap_content"
                 android:layout_width="match_parent"
-                android:background="?colorSurfaceContainer"
-                android:gravity="center"
-                android:paddingVertical="20dp"
                 android:orientation="vertical"
-                android:paddingHorizontal="8dp"
                 android:id="@+id/headtop">
 
-                <androidx.constraintlayout.widget.ConstraintLayout
+                <LinearLayout
                     android:layout_height="56dp"
                     android:layout_width="match_parent"
-                    android:paddingHorizontal="8dp">
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="4dp">
 
                     <ir.hanzodev1375.components.views.SegmentedAvatarView
-                        android:layout_height="40dp"
-                        android:layout_width="40dp"
+                        android:layout_height="36dp"
+                        android:layout_width="36dp"
                         android:src="@drawable/user"
                         app:segmentCount="8"
-                        app:ringPadding="3dp"
-                        app:ringWidth="2dp"
+                        app:ringPadding="2dp"
+                        app:ringWidth="1.5dp"
                         app:gapAngle="14"
                         android:transitionName="ghost_transition_logo"
-                        app:layout_constraintTop_toTopOf="parent"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintStart_toStartOf="parent"
                         android:id="@+id/userAvatar" />
 
-                    <TextView
-                        android:id="@+id/userNameText"
+                    <Space
+                        android:layout_height="1dp"
                         android:layout_width="0dp"
-                        android:layout_height="0dp"
-                        android:layout_marginStart="12dp"
-                        android:ellipsize="end"
-                        android:gravity="center_vertical"
-                        android:maxLines="1"
-                        android:textSize="18sp"
-                        android:textStyle="bold"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintEnd_toStartOf="@id/rvtoolbar"
-                        app:layout_constraintStart_toEndOf="@id/userAvatar"
-                        app:layout_constraintTop_toTopOf="parent"
-                        app:layout_constraintWidth_percent="0.24" />
+                        android:layout_weight="1" />
 
                     <androidx.recyclerview.widget.RecyclerView
                         android:id="@+id/rvtoolbar"
-                        android:layout_width="0dp"
-                        android:layout_height="0dp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="48dp"
                         android:layout_marginStart="8dp"
-                        android:layout_marginEnd="6dp"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintStart_toEndOf="@id/userNameText"
-                        app:layout_constraintTop_toTopOf="parent" />
+                        android:overScrollMode="never" />
 
-                </androidx.constraintlayout.widget.ConstraintLayout>
+                </LinearLayout>
 
-            </LinearLayout>
-            <!-- پایان هدر اصلاح شده -->
-
-            <LinearLayout
-                android:layout_height="match_parent"
-                android:layout_width="match_parent"
-                android:padding="8dp"
-                android:orientation="vertical"
-                android:clipToOutline="true"
-                android:animateLayoutChanges="true"
-                android:layout_marginTop="125dp"
-                android:id="@+id/headline">
-
-                <LinearLayout
+                <TextView
                     android:layout_height="wrap_content"
                     android:layout_width="match_parent"
+                    android:layout_marginStart="20dp"
+                    android:layout_marginEnd="20dp"
+                    android:layout_marginTop="6dp"
+                    android:ellipsize="middle"
+                    android:singleLine="true"
+                    android:gravity="left"
+                    android:textSize="26sp"
+                    android:textStyle="bold"
+                    android:id="@+id/tvDirTitle" />
+
+                <TextView
+                    android:layout_height="wrap_content"
+                    android:layout_width="match_parent"
+                    android:layout_marginStart="20dp"
+                    android:layout_marginEnd="20dp"
+                    android:layout_marginTop="2dp"
+                    android:alpha="0.62"
+                    android:ellipsize="end"
+                    android:singleLine="true"
+                    android:gravity="left"
+                    android:textSize="13sp"
+                    android:id="@+id/tvDirSummary" />
+
+                <LinearLayout
+                    android:layout_height="48dp"
+                    android:layout_width="match_parent"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginEnd="12dp"
+                    android:layout_marginTop="14dp"
+                    android:layout_marginBottom="12dp"
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
                     android:id="@+id/navRow">
 
                     <ir.hanzodev1375.ghostide.customui.NavModelPanel
-                        android:layout_height="wrap_content"
+                        android:layout_height="match_parent"
                         android:layout_width="0dp"
-                        android:layout_marginStart="5dp"
                         android:layout_weight="1"
+                        android:clipToPadding="false"
+                        android:paddingStart="8dp"
+                        android:overScrollMode="never"
+                        android:requiresFadingEdge="horizontal"
+                        android:fadingEdgeLength="28dp"
                         android:id="@+id/navmodel" />
 
                     <ImageButton
                         android:layout_height="48dp"
                         android:layout_width="48dp"
                         android:contentDescription="@string/goto_dir"
-                        android:src="@drawable/ic_edit"
-                        android:padding="12dp"
+                        android:src="@drawable/outline_storage"
+                        android:padding="14dp"
                         android:scaleType="fitCenter"
-                        android:layout_marginEnd="4dp"
                         android:background="?attr/selectableItemBackgroundBorderless"
                         android:tint="?colorOnSurface"
                         android:id="@+id/btnGoToDir" />
 
                 </LinearLayout>
 
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_height="0dp"
+                android:layout_width="match_parent"
+                android:layout_weight="1"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:orientation="vertical"
+                android:id="@+id/headline">
+
                 <FrameLayout
                     android:layout_height="match_parent"
-                    android:layout_width="match_parent"
-                    android:layout_marginTop="5dp">
+                    android:layout_width="match_parent">
 
                     <ir.hanzodev1375.ghostide.customui.ScrollPreserveRecyclerView
                         android:layout_height="match_parent"
@@ -152,7 +163,7 @@
 
             </LinearLayout>
 
-        </FrameLayout>
+        </LinearLayout>
 
     </FrameLayout>
 

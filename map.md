@@ -570,6 +570,7 @@ Directory structure:
     │           │       │           ├── FastBlur.java
     │           │       │           ├── FileExtensionUtils.java
     │           │       │           ├── FileUtil.java
+    │           │       │           ├── GroupedRowDecoration.java
     │           │       │           ├── Icon.java
     │           │       │           ├── InfoRows.java
     │           │       │           ├── LocaleDirection.java
@@ -606,6 +607,7 @@ Directory structure:
     │               │   ├── bg_chip_rounded.xml
     │               │   ├── bg_code_input.xml
     │               │   ├── bg_drag_handle.xml
+    │               │   ├── bg_git_marker.xml
     │               │   ├── bg_icon_check_badge.xml
     │               │   ├── bg_input_dock.xml
     │               │   ├── bg_input_row.xml
@@ -826,6 +828,7 @@ Directory structure:
     │               │   ├── colorsgreen.xml
     │               │   ├── colorslemon.xml
     │               │   ├── defaults.xml
+    │               │   ├── filemanager_styles.xml
     │               │   ├── popup_anim_styles.xml
     │               │   ├── strings.xml
     │               │   ├── themes.xml

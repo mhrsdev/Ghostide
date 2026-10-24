@@ -1,59 +1,125 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.google.android.material.listitem.ListItemLayout xmlns:android="http://schemas.android.com/apk/res/android"
   xmlns:app="http://schemas.android.com/apk/res-auto"
-  xmlns:tools="http://schemas.android.com/tools"
-  android:layout_height="wrap_content"
   android:id="@+id/rootadapter"
-  android:layout_width="match_parent">
+  android:layout_width="match_parent"
+  android:layout_height="wrap_content"
+  android:theme="@style/ThemeOverlay.Ghost.FileRow">
+
   <com.google.android.material.listitem.ListItemCardView
+    android:id="@+id/listcard"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:id="@+id/listcard">
-    <LinearLayout
-      android:layout_height="wrap_content"
+    app:contentPaddingBottom="0dp"
+    app:contentPaddingLeft="0dp"
+    app:contentPaddingRight="0dp"
+    app:contentPaddingTop="0dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
       android:layout_width="match_parent"
-      android:gravity="center_vertical"
-      android:padding="6dp"
-      android:orientation="horizontal">
+      android:layout_height="wrap_content"
+      android:minHeight="56dp"
+      android:paddingStart="16dp"
+      android:paddingTop="7dp"
+      android:paddingEnd="2dp"
+      android:paddingBottom="7dp">
 
       <ImageView
-        android:layout_height="40dp"
-        android:layout_width="40dp"
-        android:id="@+id/ivIcon" />
+        android:id="@+id/ivIcon"
+        android:layout_width="@dimen/fm_row_icon_size"
+        android:layout_height="@dimen/fm_row_icon_size"
+        android:importantForAccessibility="no"
+        android:scaleType="fitCenter"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
-      <LinearLayout
+      <TextView
+        android:id="@+id/tvName"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_width="0dp"
-        android:orientation="vertical"
+        android:layout_marginStart="16dp"
+        android:ellipsize="middle"
+        android:singleLine="true"
+        android:textSize="15sp"
+        app:layout_constrainedWidth="true"
+        app:layout_constraintBottom_toTopOf="@id/tvDate"
+        app:layout_constraintEnd_toStartOf="@id/gitMarker"
+        app:layout_constraintHorizontal_bias="0"
+        app:layout_constraintHorizontal_chainStyle="packed"
+        app:layout_constraintStart_toEndOf="@id/ivIcon"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_chainStyle="packed" />
+
+      <View
+        android:id="@+id/gitMarker"
+        android:layout_width="7dp"
+        android:layout_height="7dp"
+        android:layout_marginStart="7dp"
+        android:background="@drawable/bg_git_marker"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@id/tvName"
+        app:layout_constraintEnd_toStartOf="@id/tvSize"
+        app:layout_constraintStart_toEndOf="@id/tvName"
+        app:layout_constraintTop_toTopOf="@id/tvName" />
+
+      <TextView
+        android:id="@+id/tvTag"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:fontFamily="monospace"
+        android:singleLine="true"
+        android:textSize="11sp"
+        android:visibility="gone"
+        app:layout_constraintBaseline_toBaselineOf="@id/tvDate"
+        app:layout_constraintStart_toEndOf="@id/ivIcon" />
+
+      <TextView
+        android:id="@+id/tvDate"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="1dp"
+        android:alpha="0.6"
+        android:ellipsize="end"
+        android:singleLine="true"
+        android:textSize="12sp"
+        app:layout_constrainedWidth="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/tvSize"
+        app:layout_constraintHorizontal_bias="0"
+        app:layout_constraintStart_toEndOf="@id/tvTag"
+        app:layout_constraintTop_toBottomOf="@id/tvName"
+        app:layout_goneMarginStart="16dp" />
+
+      <TextView
+        android:id="@+id/tvSize"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_marginStart="12dp"
-        android:layout_weight="1">
-
-        <TextView
-          android:layout_height="wrap_content"
-          android:layout_width="wrap_content"
-          android:ellipsize="end"
-          android:textSize="16sp"
-          android:maxLines="1"
-          android:id="@+id/tvName" />
-
-        <TextView
-          android:layout_height="wrap_content"
-          android:layout_width="wrap_content"
-          android:textSize="12sp"
-          android:alpha="0.7"
-          android:layout_marginTop="2dp"
-          android:id="@+id/tvDate" />
-
-      </LinearLayout>
+        android:alpha="0.72"
+        android:fontFeatureSettings="tnum"
+        android:gravity="end"
+        android:singleLine="true"
+        android:textSize="12sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/ivMore"
+        app:layout_constraintTop_toTopOf="parent" />
 
       <ImageView
-        android:layout_height="40dp"
-        android:layout_width="40dp"
-        android:src="@drawable/icon_more_vert_round"
-        android:padding="8dp"
+        android:id="@+id/ivMore"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:alpha="0.6"
         android:background="?attr/selectableItemBackgroundBorderless"
-        android:id="@+id/ivMore" />
+        android:contentDescription="@string/fm_item_actions"
+        android:padding="14dp"
+        android:src="@drawable/icon_more_vert_round"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
-    </LinearLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
   </com.google.android.material.listitem.ListItemCardView>
 </com.google.android.material.listitem.ListItemLayout>

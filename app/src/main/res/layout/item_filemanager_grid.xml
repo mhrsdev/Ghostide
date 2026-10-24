@@ -3,71 +3,118 @@
   xmlns:app="http://schemas.android.com/apk/res-auto"
   android:layout_width="match_parent"
   android:layout_height="wrap_content"
-  android:layout_margin="4dp">
+  android:layout_margin="3dp"
+  android:theme="@style/ThemeOverlay.Ghost.FileTile">
 
   <com.google.android.material.listitem.ListItemCardView
     android:id="@+id/listcard"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content">
+    android:layout_height="wrap_content"
+    app:contentPaddingBottom="0dp"
+    app:contentPaddingLeft="0dp"
+    app:contentPaddingRight="0dp"
+    app:contentPaddingTop="0dp">
 
     <androidx.constraintlayout.widget.ConstraintLayout
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
-      android:padding="8dp">
-      <ImageView
-        android:id="@+id/ivMore"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:padding="10dp"
-        android:background="?attr/selectableItemBackgroundBorderless"
-        android:src="@drawable/icon_more_vert_round"
-        android:rotation="90"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+      android:paddingStart="12dp"
+      android:paddingBottom="12dp">
 
       <ImageView
         android:id="@+id/ivIcon"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        app:layout_constraintTop_toBottomOf="@id/ivMore"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:layout_marginTop="12dp"
+        android:importantForAccessibility="no"
+        android:scaleType="fitCenter"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintTop_toTopOf="parent" />
+
+      <View
+        android:id="@+id/gitMarker"
+        android:layout_width="7dp"
+        android:layout_height="7dp"
+        android:layout_marginStart="8dp"
+        android:background="@drawable/bg_git_marker"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@id/ivIcon"
+        app:layout_constraintStart_toEndOf="@id/ivIcon"
+        app:layout_constraintTop_toTopOf="@id/ivIcon" />
+
+      <ImageView
+        android:id="@+id/ivMore"
+        android:layout_width="44dp"
+        android:layout_height="48dp"
+        android:alpha="0.6"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/fm_item_actions"
+        android:paddingStart="12dp"
+        android:paddingTop="14dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="14dp"
+        android:src="@drawable/icon_more_vert_round"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
       <TextView
         android:id="@+id/tvName"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
-        android:ellipsize="end"
+        android:layout_marginTop="10dp"
+        android:layout_marginEnd="12dp"
+        android:ellipsize="middle"
         android:singleLine="true"
-        android:marqueeRepeatLimit="-1"
-        android:gravity="center"
-        android:textSize="12sp"
-        android:textAppearance="?attr/textAppearanceBodySmall"
-        app:layout_constraintTop_toBottomOf="@id/ivIcon"
+        android:gravity="left"
+        android:textSize="13sp"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintTop_toBottomOf="@id/ivIcon" />
+
+      <TextView
+        android:id="@+id/tvTag"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="monospace"
+        android:singleLine="true"
+        android:textSize="10sp"
+        android:visibility="gone"
+        app:layout_constraintBaseline_toBaselineOf="@id/tvSize"
+        app:layout_constraintStart_toStartOf="parent" />
+
+      <TextView
+        android:id="@+id/tvSize"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="6dp"
+        android:layout_marginTop="2dp"
+        android:layout_marginEnd="12dp"
+        android:alpha="0.72"
+        android:ellipsize="end"
+        android:fontFeatureSettings="tnum"
+        android:singleLine="true"
+        android:gravity="left"
+        android:textSize="11sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/tvTag"
+        app:layout_constraintTop_toBottomOf="@id/tvName"
+        app:layout_goneMarginStart="0dp" />
 
       <TextView
         android:id="@+id/tvDate"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
-        android:layout_marginBottom="4dp"
+        android:layout_marginTop="1dp"
+        android:layout_marginEnd="12dp"
+        android:alpha="0.55"
         android:ellipsize="end"
         android:singleLine="true"
-        android:marqueeRepeatLimit="-1"
-        android:gravity="center"
-        android:textSize="10sp"
-        android:alpha="0.7"
-        android:textAppearance="?attr/textAppearanceLabelSmall"
-        app:layout_constraintTop_toBottomOf="@id/tvName"
-        app:layout_constraintStart_toStartOf="parent"
+        android:gravity="left"
+        android:textSize="11sp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvSize" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
-
   </com.google.android.material.listitem.ListItemCardView>
-
 </com.google.android.material.listitem.ListItemLayout>

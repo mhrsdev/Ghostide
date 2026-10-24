@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <dimen name="fm_group_corner">16dp</dimen>
+    <dimen name="fm_row_state_corner">8dp</dimen>
+    <dimen name="fm_tile_corner">14dp</dimen>
+    <dimen name="fm_row_icon_size">30dp</dimen>
+    <dimen name="fm_row_divider_inset">62dp</dimen>
+    <dimen name="fm_path_bar_corner">14dp</dimen>
+
+    <style name="ThemeOverlay.Ghost.FileRow" parent="">
+        <item name="listItemShapeAppearanceSingle">@style/ShapeAppearance.Ghost.FileRow.Single</item>
+        <item name="listItemShapeAppearanceFirst">@style/ShapeAppearance.Ghost.FileRow.First</item>
+        <item name="listItemShapeAppearanceMiddle">@style/ShapeAppearance.Ghost.FileRow.Flat</item>
+        <item name="listItemShapeAppearanceLast">@style/ShapeAppearance.Ghost.FileRow.Last</item>
+        <item name="listItemShapeAppearancePressed">@style/ShapeAppearance.Ghost.FileRow.State</item>
+        <item name="listItemShapeAppearanceFocused">@style/ShapeAppearance.Ghost.FileRow.State</item>
+        <item name="listItemShapeAppearanceHovered">@style/ShapeAppearance.Ghost.FileRow.State</item>
+        <item name="listItemShapeAppearanceChecked">@style/ShapeAppearance.Ghost.FileRow.State</item>
+    </style>
+
+    <style name="ThemeOverlay.Ghost.FileTile" parent="">
+        <item name="listItemShapeAppearanceSingle">@style/ShapeAppearance.Ghost.FileTile</item>
+        <item name="listItemShapeAppearanceFirst">@style/ShapeAppearance.Ghost.FileTile</item>
+        <item name="listItemShapeAppearanceMiddle">@style/ShapeAppearance.Ghost.FileTile</item>
+        <item name="listItemShapeAppearanceLast">@style/ShapeAppearance.Ghost.FileTile</item>
+        <item name="listItemShapeAppearancePressed">@style/ShapeAppearance.Ghost.FileTile</item>
+        <item name="listItemShapeAppearanceFocused">@style/ShapeAppearance.Ghost.FileTile</item>
+        <item name="listItemShapeAppearanceHovered">@style/ShapeAppearance.Ghost.FileTile</item>
+        <item name="listItemShapeAppearanceChecked">@style/ShapeAppearance.Ghost.FileTile</item>
+    </style>
+
+    <style name="ShapeAppearance.Ghost.FileRow.Flat" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">0dp</item>
+    </style>
+
+    <style name="ShapeAppearance.Ghost.FileRow.Single" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">@dimen/fm_group_corner</item>
+    </style>
+
+    <style name="ShapeAppearance.Ghost.FileRow.First" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSizeTopLeft">@dimen/fm_group_corner</item>
+        <item name="cornerSizeTopRight">@dimen/fm_group_corner</item>
+        <item name="cornerSizeBottomLeft">0dp</item>
+        <item name="cornerSizeBottomRight">0dp</item>
+    </style>
+
+    <style name="ShapeAppearance.Ghost.FileRow.Last" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSizeTopLeft">0dp</item>
+        <item name="cornerSizeTopRight">0dp</item>
+        <item name="cornerSizeBottomLeft">@dimen/fm_group_corner</item>
+        <item name="cornerSizeBottomRight">@dimen/fm_group_corner</item>
+    </style>
+
+    <style name="ShapeAppearance.Ghost.FileRow.State" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">@dimen/fm_row_state_corner</item>
+    </style>
+
+    <style name="ShapeAppearance.Ghost.FileTile" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">@dimen/fm_tile_corner</item>
+    </style>
+
+</resources>

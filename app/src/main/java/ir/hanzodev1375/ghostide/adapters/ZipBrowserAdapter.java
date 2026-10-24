@@ -4,7 +4,6 @@ import android.content.Context;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import androidx.core.graphics.ColorUtils;
-import android.graphics.drawable.GradientDrawable;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.Spannable;
@@ -344,6 +343,7 @@ public class ZipBrowserAdapter extends RecyclerView.Adapter<ZipBrowserAdapter.Vi
     ImageView ivIcon;
     TextView tvName;
     TextView tvDate;
+    TextView tvSize;
     ImageView ivMore;
     ListItemCardView card;
 
@@ -352,6 +352,7 @@ public class ZipBrowserAdapter extends RecyclerView.Adapter<ZipBrowserAdapter.Vi
       ivIcon = itemView.findViewById(R.id.ivIcon);
       tvName = itemView.findViewById(R.id.tvName);
       tvDate = itemView.findViewById(R.id.tvDate);
+      tvSize = itemView.findViewById(R.id.tvSize);
       ivMore = itemView.findViewById(R.id.ivMore);
       card = itemView.findViewById(R.id.listcard);
 
@@ -405,13 +406,6 @@ public class ZipBrowserAdapter extends RecyclerView.Adapter<ZipBrowserAdapter.Vi
         iconHelper.bindIcon(ivIcon);
       }
 
-      GradientDrawable gd = new GradientDrawable();
-      gd.setColor(M3Theme.surface());
-      gd.setStroke(1, M3Theme.outline());
-      gd.setCornerRadius(8);
-      ivIcon.setPadding(5, 5, 5, 5);
-      ivIcon.setBackground(gd);
-
       if (searchQuery.isEmpty()) {
         tvName.setText(item.getName());
       } else {
@@ -419,7 +413,8 @@ public class ZipBrowserAdapter extends RecyclerView.Adapter<ZipBrowserAdapter.Vi
       }
       tvName.setTextColor(M3Theme.onSurface());
 
-      tvDate.setText(item.getSubtitle());
+      tvDate.setText(item.getLastModifiedFormatted());
+      tvSize.setText(item.getFormattedSize());
     }
 
     private SpannableString highlight(String text, String query) {

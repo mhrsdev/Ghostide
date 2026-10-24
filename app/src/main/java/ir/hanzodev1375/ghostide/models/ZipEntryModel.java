@@ -96,13 +96,4 @@ public class ZipEntryModel {
     SimpleDateFormat sdf = new SimpleDateFormat("yy-MM-dd HH:mm", Locale.getDefault());
     return sdf.format(new Date(lastModifiedTime));
   }
-
-  public String getSubtitle() {
-    String date = getLastModifiedFormatted();
-    String size = getFormattedSize();
-    if (isDirectory) return date;
-    if (date.isEmpty()) return size;
-    if (size.isEmpty()) return date;
-    return date + "  " + size;
-  }
 }

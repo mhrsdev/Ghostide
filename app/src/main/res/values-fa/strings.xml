@@ -347,6 +347,26 @@
     <string name="sd_card_not_found">کارت SD شناسایی نشد</string>
     <string name="sd_card_space_info">کارت SD: %1$s رایگان از %2$s</string>
     <string name="goto_dir">برو به مسیر</string>
+    <string name="fm_item_actions">عملیات بیشتر</string>
+    <string name="fm_empty_title">این پوشه خالی است</string>
+    <string name="fm_empty_hint">برای ساختن فایل، پوشه یا پروژه در اینجا، + را بزنید</string>
+    <string name="fm_action_copy">کپی</string>
+    <string name="fm_action_cut">برش</string>
+    <string name="fm_action_paste">جای‌گذاری</string>
+    <string name="fm_action_select_all">انتخاب همه</string>
+    <string name="fm_action_clear_selection">لغو انتخاب</string>
+    <plurals name="fm_entry_count">
+        <item quantity="one">%d مورد</item>
+        <item quantity="other">%d مورد</item>
+    </plurals>
+    <plurals name="fm_folder_count">
+        <item quantity="one">%d پوشه</item>
+        <item quantity="other">%d پوشه</item>
+    </plurals>
+    <plurals name="fm_file_count">
+        <item quantity="one">%d فایل</item>
+        <item quantity="other">%d فایل</item>
+    </plurals>
     <string name="goto_dir_hint">یک مسیر پوشه را وارد کنید</string>
     <string name="goto_root">ریشه</string>
     <string name="goto_dir_not_found">مسیر پیدا نشد: %1$s</string>

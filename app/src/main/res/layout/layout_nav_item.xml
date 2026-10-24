@@ -1,29 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
+<LinearLayout
      xmlns:android="http://schemas.android.com/apk/res/android"
-     xmlns:tools="http://schemas.android.com/tools"
-     android:layout_height="wrap_content"
+     android:layout_height="match_parent"
      android:layout_width="wrap_content"
-     android:padding="2dp">
+     android:minHeight="48dp"
+     android:background="?attr/selectableItemBackground"
+     android:gravity="center_vertical"
+     android:orientation="horizontal">
 
     <TextView
          android:layout_height="wrap_content"
          android:layout_width="wrap_content"
-         android:gravity="center"
-         android:layout_centerVertical="true"
-         android:padding="2dp"
+         android:paddingStart="6dp"
+         android:paddingEnd="4dp"
+         android:fontFamily="monospace"
+         android:singleLine="true"
          android:textSize="13sp"
          android:id="@+id/nav_text" />
 
     <ImageView
-         android:layout_height="12dp"
-         android:layout_width="12dp"
-         android:layout_toEndOf="@id/nav_text"
+         android:layout_height="14dp"
+         android:layout_width="14dp"
+         android:alpha="0.45"
          android:scaleType="centerInside"
-         android:tint="?colorOnPrimaryContainer"
+         android:importantForAccessibility="no"
          android:src="@drawable/ic_round_bread_crumb_arrow"
-         android:layout_centerVertical="true"
-         android:layout_marginStart="1dp"
          android:id="@+id/nav_icon" />
 
-</RelativeLayout>
+</LinearLayout>

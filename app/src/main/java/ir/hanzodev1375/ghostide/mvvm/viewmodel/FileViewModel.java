@@ -36,6 +36,11 @@ import ir.hanzodev1375.ghostide.codeeditors.setting.PreferencesUtils;
 public class FileViewModel extends AndroidViewModel {
 
   private static final int BUFFER_SIZE = 256 * 1024;
+  private static final String PROJECT_TAG_GRADLE = "gradle";
+  private static final String PROJECT_TAG_MAVEN = "maven";
+  private static final String PROJECT_TAG_NPM = "npm";
+  private static final String PROJECT_TAG_CARGO = "cargo";
+  private static final String PROJECT_TAG_GIT = "git";
 
   private MutableLiveData<List<FileManagerModel>> filesLiveData = new MutableLiveData<>();
   private MutableLiveData<Boolean> isLoading = new MutableLiveData<>(false);
@@ -175,22 +180,69 @@ public class FileViewModel extends AndroidViewModel {
             SortType sortType = SortType.fromKey(prefs.getFileSortType(dirPath));
             boolean reverse = prefs.isFileSortReverse(dirPath);
             Arrays.sort(files, buildSortComparator(sortType, reverse));
+            boolean showHidden = prefs.isShowHiddenFiles();
             for (File file : files) {
               String name = file.getName();
-              if (prefs.isShowHiddenFiles() || !name.startsWith(".")) {
+              if (showHidden || !name.startsWith(".")) {
                 FileEventCheck event = eventFor(activeFileEvents, file.getAbsolutePath());
+                boolean isDir = file.isDirectory();
+                String[] children = isDir ? file.list() : null;
                 list.add(
                     new FileManagerModel(
                         file.getAbsolutePath(),
                         name,
                         event != null ? event.getState() : fileState,
-                        file.lastModified()));
+                        file.lastModified(),
+                        isDir,
+                        isDir ? FileManagerModel.UNKNOWN : file.length(),
+                        isDir ? countVisible(children, showHidden) : FileManagerModel.UNKNOWN,
+                        isDir ? projectTagOf(children) : null));
               }
             }
           }
           filesLiveData.postValue(list);
           isLoading.postValue(false);
         });
+  }
+
+  private static int countVisible(String[] names, boolean showHidden) {
+    if (names == null) return FileManagerModel.UNKNOWN;
+    if (showHidden) return names.length;
+    int count = 0;
+    for (String name : names) {
+      if (!name.startsWith(".")) count++;
+    }
+    return count;
+  }
+
+  /**
+   * Derives a short build-system label for a folder from the names it directly contains, so a
+   * project root can be told apart from a plain folder without any extra disk access.
+   *
+   * @return "gradle", "maven", "npm", "cargo" or "git", or {@code null} for a plain folder
+   */
+  public static String projectTagOf(String[] names) {
+    if (names == null) return null;
+    String tag = null;
+    for (String name : names) {
+      switch (name) {
+        case "settings.gradle", "settings.gradle.kts", "build.gradle", "build.gradle.kts" -> {
+          return PROJECT_TAG_GRADLE;
+        }
+        case "pom.xml" -> tag = PROJECT_TAG_MAVEN;
+        case "package.json" -> {
+          if (tag == null || PROJECT_TAG_GIT.equals(tag)) tag = PROJECT_TAG_NPM;
+        }
+        case "Cargo.toml" -> {
+          if (tag == null || PROJECT_TAG_GIT.equals(tag)) tag = PROJECT_TAG_CARGO;
+        }
+        case ".git" -> {
+          if (tag == null) tag = PROJECT_TAG_GIT;
+        }
+        default -> {}
+      }
+    }
+    return tag;
   }
 
   private static Comparator<File> buildSortComparator(SortType sortType, boolean reverse) {

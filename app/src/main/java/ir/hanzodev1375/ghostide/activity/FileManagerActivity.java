@@ -6,6 +6,14 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
+import android.text.SpannableStringBuilder;
+import android.text.Spanned;
+import android.text.style.ForegroundColorSpan;
+import androidx.appcompat.widget.TooltipCompat;
+import androidx.core.graphics.ColorUtils;
+import androidx.core.text.BidiFormatter;
+import ir.hanzodev1375.ghostide.customui.NavModelPanel;
 import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.os.Build;
@@ -98,11 +106,10 @@ import ir.hanzodev1375.ghostide.plugin.api.Disposable;
 import ir.hanzodev1375.ghostide.plugin.api.GlobalRegistry;
 import ir.hanzodev1375.ghostide.shizuku.ShizukuManager;
 import ir.hanzodev1375.ghostide.terminal.activity.TerminalActivity;
-import ir.hanzodev1375.ghostide.utils.MarginItemDecoration;
+import ir.hanzodev1375.ghostide.utils.GroupedRowDecoration;
 import ir.hanzodev1375.ghostide.utils.NetworkChangeReceiver;
 import ir.hanzodev1375.ghostide.utils.FileExtensionUtils;
 import ir.hanzodev1375.ghostide.utils.ObjectUtil;
-import ir.hanzodev1375.ghostide.utils.ShapeUtil;
 import ir.hanzodev1375.ghostide.utils.ShortcutHelper;
 import ir.hanzodev1375.ghostide.utils.StorageUtils;
 import ir.hanzodev1375.ghostide.utils.ZipUtil;
@@ -133,6 +140,10 @@ import ir.hanzodev1375.ghostide.models.TabModel;
 
 public class FileManagerActivity extends BaseCompat
     implements NetworkChangeReceiver.CallBackNetWork {
+
+  private static final String SUMMARY_SEPARATOR = "  ·  ";
+  private static final int SHOW_BACKGROUND_ALPHA = 128;
+  private static final char RIGHT_TO_LEFT_MARK = '\u200F';
 
   private ActivityFilemanagerBinding bind;
   private FileViewModel viewModel;
@@ -196,26 +207,12 @@ public class FileManagerActivity extends BaseCompat
       EventBus.getDefault().register(this);
     }
     bind.fab.bindOfAcivity(this);
-    Integer headtopColor = M3Theme.surfaceContainerHigh();
-    Integer headlineColor = M3Theme.surfaceContainer();
     M3Theme.imageB(
         bind.btnGoToDir,
         bind.btnGoToDir);
-    M3Theme.textView(bind.userNameText);
+    TooltipCompat.setTooltipText(bind.btnGoToDir, getString(R.string.goto_dir));
     setupOpenFilesIndicator();
-    if (appsetting.isShowBackground()) {
-      bind.headtop.setBackgroundColor(0);
-      bind.headline.setBackgroundColor(0);
-      setupBackgroundBlur(bind.backgroundiconfilemanager, bind.contentContainer);
-    } else {
-      bind.headtop.setBackgroundColor(
-          headtopColor != null ? headtopColor : fallback(M3Theme.surfaceContainer(), 0));
-      bind.headline.setBackground(
-          ShapeUtil.shape(
-              40f,
-              this,
-              headlineColor != null ? headlineColor : fallback(M3Theme.surfaceContainer(), 0)));
-    }
+    applyScreenSurfaces();
     networkChangeReceiver = new NetworkChangeReceiver(this);
     IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -265,7 +262,7 @@ public class FileManagerActivity extends BaseCompat
             ? new GridLayoutManager(this, appsetting.getGridSpanCount())
             : new LinearLayoutManager(this));
     bind.rvfiles.setAdapter(adapter);
-    bind.rvfiles.addItemDecoration(new MarginItemDecoration(this));
+    bind.rvfiles.addItemDecoration(new GroupedRowDecoration(this));
     setupThanosEffect();
     app = new UpadteAppView(this, bind.downloader, () -> {});
     installPermissionLauncher =
@@ -338,6 +335,7 @@ public class FileManagerActivity extends BaseCompat
               if (!wasArmed) {
                 thanosItemAnimator.setSnapDeletionPending(false);
               }
+              updateDirectorySummary(files);
               if (files == null || files.isEmpty()) {
                 bind.emptystates.setVisibility(View.VISIBLE);
                 bind.rvfiles.setVisibility(View.GONE);
@@ -363,7 +361,10 @@ public class FileManagerActivity extends BaseCompat
         .observe(
             this,
             path -> {
-              if (path != null) bind.navmodel.setFile(new File(path));
+              if (path != null) {
+                bind.navmodel.setFile(new File(path));
+                bind.tvDirTitle.setText(directoryTitle(path));
+              }
             });
 
     copyProgressDialog = new CopyProgressDialog(this);
@@ -1249,6 +1250,7 @@ public class FileManagerActivity extends BaseCompat
     super.onThemeReapplied();
     if (bind != null) {
       applyToolbarIconTint();
+      applyScreenSurfaces();
     }
     if (adapter != null) {
       adapter.notifyDataSetChanged();
@@ -1555,11 +1557,98 @@ public class FileManagerActivity extends BaseCompat
     WaterRipple.ripple(decor, decor.getWidth() * 3f / 4f, decor.getHeight() / 3f, 0.4f);
   }
 
+  /**
+   * Paints the page, the header text and the path bar from the active {@link M3Theme}. With the
+   * theme background image enabled the page stays transparent so the image shows through, and the
+   * path bar is drawn half transparent like the rows.
+   */
+  private void applyScreenSurfaces() {
+    M3Theme.textView(bind.tvDirTitle);
+    M3Theme.textView(bind.tvDirSummary);
+    boolean showBackground = appsetting.isShowBackground();
+    int pathBarColor =
+        fallback(M3Theme.surfaceContainerHigh(), fallback(M3Theme.surfaceContainer(), 0));
+    if (showBackground) {
+      bind.headtop.setBackgroundColor(Color.TRANSPARENT);
+      bind.headline.setBackgroundColor(Color.TRANSPARENT);
+      pathBarColor = ColorUtils.setAlphaComponent(pathBarColor, SHOW_BACKGROUND_ALPHA);
+      setupBackgroundBlur(bind.backgroundiconfilemanager, bind.contentContainer);
+    } else {
+      int pageColor = fallback(M3Theme.surface(), fallback(M3Theme.surfaceContainer(), 0));
+      bind.headtop.setBackgroundColor(pageColor);
+      bind.headline.setBackgroundColor(pageColor);
+    }
+    GradientDrawable pathBar = new GradientDrawable();
+    pathBar.setColor(pathBarColor);
+    pathBar.setCornerRadius(getResources().getDimension(R.dimen.fm_path_bar_corner));
+    bind.navRow.setBackground(pathBar);
+  }
+
+  /** @return the header title for {@code path}: the storage label for the internal-storage root. */
+  private String directoryTitle(String path) {
+    if (NavModelPanel.STORAGE_EMULATED_0.equals(path)) {
+      return getString(R.string.internal_storage_label);
+    }
+    String name = new File(path).getName();
+    return name.isEmpty() ? File.separator : name;
+  }
+
+  /**
+   * Writes the one-line summary under the folder title: the build-system tag of the current folder
+   * (if it is a project root) followed by its folder and file counts. Each part is bidi-isolated
+   * and, in a right-to-left locale, the line starts with a right-to-left mark, so a Latin tag next
+   * to Persian counts keeps the reading order of the user's language even though the app does not
+   * resolve RTL text direction (supportsRtl is off).
+   */
+  private void updateDirectorySummary(List<FileManagerModel> files) {
+    if (files == null || files.isEmpty()) {
+      bind.tvDirSummary.setText("");
+      return;
+    }
+    int folders = 0;
+    String[] names = new String[files.size()];
+    for (int i = 0; i < files.size(); i++) {
+      FileManagerModel model = files.get(i);
+      names[i] = model.getName();
+      if (model.isDirectory()) folders++;
+    }
+    int regularFiles = files.size() - folders;
+    BidiFormatter bidi = BidiFormatter.getInstance();
+    SpannableStringBuilder summary = new SpannableStringBuilder();
+    if (bidi.isRtlContext()) summary.append(RIGHT_TO_LEFT_MARK);
+    String tag = FileViewModel.projectTagOf(names);
+    if (tag != null) {
+      int tagStart = summary.length();
+      summary.append(bidi.unicodeWrap(tag));
+      Integer primary = M3Theme.primary();
+      if (primary != null) {
+        summary.setSpan(
+            new ForegroundColorSpan(primary),
+            tagStart,
+            summary.length(),
+            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+      }
+      summary.append(SUMMARY_SEPARATOR);
+    }
+    summary.append(
+        bidi.unicodeWrap(
+            getResources().getQuantityString(R.plurals.fm_folder_count, folders, folders)));
+    summary.append(SUMMARY_SEPARATOR);
+    summary.append(
+        bidi.unicodeWrap(
+            getResources()
+                .getQuantityString(R.plurals.fm_file_count, regularFiles, regularFiles)));
+    bind.tvDirSummary.setText(summary);
+  }
+
   private void setupHeader() {
     GitHubClient gitHub = new GitHubClient(this);
     bind.userAvatar.setLoggedIn(gitHub.isLoggedIn());
+    String accountLabel =
+        gitHub.isLoggedIn() ? gitHub.getName() : getString(R.string.github_account_not_logged_in);
+    bind.userAvatar.setContentDescription(accountLabel);
+    TooltipCompat.setTooltipText(bind.userAvatar, accountLabel);
     if (gitHub.isLoggedIn()) {
-      bind.userNameText.setText(gitHub.getName());
       profileview = new ProfileView(this);
       profileview.bindImageView(bind.userAvatar, gitHub.getAvatarUrl(), R.drawable.user);
       Glide.with(this)
@@ -1568,7 +1657,6 @@ public class FileManagerActivity extends BaseCompat
           .placeholder(R.drawable.user)
           .into(bind.userAvatar);
     } else {
-      bind.userNameText.setText(getString(R.string.github_account_not_logged_in));
       bind.userAvatar.setImageResource(R.drawable.user);
     }
     bind.userAvatar.setOnClickListener(
@@ -1696,14 +1784,7 @@ public class FileManagerActivity extends BaseCompat
     if (IconPackManager.shouldRefresh(this)) {
       refreshFileList();
     }
-    if (appsetting.isShowBackground()) {
-      bind.headtop.setBackgroundColor(0);
-      bind.headline.setBackgroundColor(0);
-      setupBackgroundBlur(bind.backgroundiconfilemanager, bind.contentContainer);
-    } else {
-      bind.headtop.setBackgroundColor(fallback(M3Theme.surfaceContainer(), 0));
-      bind.headline.setBackground(ShapeUtil.shape(40f, this));
-    }
+    applyScreenSurfaces();
 
     boolean currentGrid = appsetting.getGridMod();
     int currentSpan = appsetting.getGridSpanCount();

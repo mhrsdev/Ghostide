@@ -5,11 +5,12 @@ import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
-import android.graphics.drawable.GradientDrawable;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.Spannable;
 import android.text.SpannableString;
+import android.text.format.DateUtils;
+import android.text.format.Formatter;
 import android.text.style.BackgroundColorSpan;
 import android.text.style.ForegroundColorSpan;
 import android.view.LayoutInflater;
@@ -55,6 +56,15 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.prefs.Preferences;
 
+/**
+ * Lists the entries of one folder as dense rows (list mode) or tiles (grid mode) and drives the
+ * multi-select {@link SelectionTracker}.
+ *
+ * <p>Row text uses the facts captured by {@code FileViewModel} when the folder was read (size,
+ * entry count, project tag), so binding performs no disk access. The grid tile texts use an
+ * explicit {@code gravity="left"} because the app is always laid out left to right; this keeps
+ * Persian and Latin names in one aligned column instead of letting each paragraph pick a side.
+ */
 public class FileManagerAdapter extends RecyclerView.Adapter<FileManagerAdapter.ViewHolder> {
 
   private List<FileManagerModel> items = new ArrayList<>();
@@ -72,6 +82,7 @@ public class FileManagerAdapter extends RecyclerView.Adapter<FileManagerAdapter.
   private List<FileEventCheck> fileEvents = Collections.emptyList();
   private final Map<Long, Integer> idToPosition = new HashMap<>();
   private PreferencesUtils setting;
+  private final ColorStateList gitMarkerTint;
   private boolean isGrid = false;
   private boolean isAnimating = false;
   private int animationStartOffset = 0;
@@ -111,6 +122,8 @@ public class FileManagerAdapter extends RecyclerView.Adapter<FileManagerAdapter.
     setHasStableIds(true);
     setting = new PreferencesUtils(context);
     isGrid = setting.getGridMod();
+    gitMarkerTint =
+        ColorStateList.valueOf(ContextCompat.getColor(context, R.color.tab_git_modified));
   }
 
   public void setOnItemClickListener(OnItemClickListener listener) {
@@ -518,6 +531,9 @@ public class FileManagerAdapter extends RecyclerView.Adapter<FileManagerAdapter.
     ImageView ivIcon;
     TextView tvName;
     TextView tvDate;
+    TextView tvSize;
+    TextView tvTag;
+    View gitMarker;
     ImageView ivMore;
     ListItemCardView card;
 
@@ -526,6 +542,10 @@ public class FileManagerAdapter extends RecyclerView.Adapter<FileManagerAdapter.
       ivIcon = itemView.findViewById(R.id.ivIcon);
       tvName = itemView.findViewById(R.id.tvName);
       tvDate = itemView.findViewById(R.id.tvDate);
+      tvSize = itemView.findViewById(R.id.tvSize);
+      tvTag = itemView.findViewById(R.id.tvTag);
+      gitMarker = itemView.findViewById(R.id.gitMarker);
+      gitMarker.setBackgroundTintList(gitMarkerTint);
       ivMore = itemView.findViewById(R.id.ivMore);
       card = itemView.findViewById(R.id.listcard);
       itemView.setOnClickListener(
@@ -599,23 +619,56 @@ public class FileManagerAdapter extends RecyclerView.Adapter<FileManagerAdapter.
       } else {
         tvName.setText(getHighlightedText(item.getName(), searchQuery));
       }
-      tvDate.setText(item.getLastModifiedFormatted());
-      var gd = new GradientDrawable();
-      gd.setColor(fallback(M3Theme.surface(), 0));
-      gd.setStroke(1, fallback(M3Theme.outline(), 0));
-      gd.setCornerRadius(8);
-      ivIcon.setPadding(5, 5, 5, 5);
-      ivIcon.setBackground(gd);
+      bindListingFacts(item);
+      boolean gitChanged = isGitChanged(item);
+      gitMarker.setVisibility(gitChanged ? View.VISIBLE : View.GONE);
       int color;
       FileEventCheck event = eventFor(item.getPath());
       if (event != null) {
         color = event.getTextColor();
-      } else if (isGitChanged(item)) {
-        color = ContextCompat.getColor(tvName.getContext(), R.color.tab_git_modified);
+      } else if (gitChanged) {
+        color = gitMarkerTint.getDefaultColor();
       } else {
         color = fallback(M3Theme.onSurface(), 0);
       }
       tvName.setTextColor(color);
+    }
+
+    /**
+     * Fills the secondary data of a row from facts captured when the folder was listed: the
+     * modified time relative to now, the size of a file or the entry count of a folder, and the
+     * build-system tag of a project folder. Performs no disk access.
+     */
+    private void bindListingFacts(FileManagerModel item) {
+      long modified = item.getLastModified();
+      tvDate.setText(
+          modified > 0
+              ? DateUtils.getRelativeTimeSpanString(
+                  modified,
+                  System.currentTimeMillis(),
+                  DateUtils.MINUTE_IN_MILLIS,
+                  DateUtils.FORMAT_ABBREV_RELATIVE)
+              : "");
+      if (item.isDirectory()) {
+        int children = item.getChildCount();
+        tvSize.setText(
+            children >= 0
+                ? context
+                    .getResources()
+                    .getQuantityString(R.plurals.fm_entry_count, children, children)
+                : "");
+      } else {
+        long size = item.getSize();
+        tvSize.setText(size >= 0 ? Formatter.formatShortFileSize(context, size) : "");
+      }
+      String tag = item.getProjectTag();
+      if (tag != null) {
+        tvTag.setText(tag);
+        tvTag.setTextColor(fallback(M3Theme.primary(), tvTag.getCurrentTextColor()));
+        tvTag.setVisibility(View.VISIBLE);
+      } else {
+        tvTag.setVisibility(View.GONE);
+      }
     }
 
     private SpannableString getHighlightedText(String text, String query) {
@@ -671,7 +724,8 @@ public class FileManagerAdapter extends RecyclerView.Adapter<FileManagerAdapter.
       FileManagerModel newItem = newList.get(newItemPosition);
       return oldItem.getName().equals(newItem.getName())
           && oldItem.getLastModified() == newItem.getLastModified()
-          && oldItem.getState() == newItem.getState();
+          && oldItem.getState() == newItem.getState()
+          && oldItem.hasSameListingFacts(newItem);
     }
   }
 

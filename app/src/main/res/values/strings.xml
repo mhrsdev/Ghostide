@@ -349,6 +349,26 @@
     <string name="sd_card_not_found">No SD card detected</string>
     <string name="sd_card_space_info">SD Card: %1$s free of %2$s</string>
     <string name="goto_dir">Go to path</string>
+    <string name="fm_item_actions">More actions</string>
+    <string name="fm_empty_title">This folder is empty</string>
+    <string name="fm_empty_hint">Tap + to create a file, a folder or a project here</string>
+    <string name="fm_action_copy">Copy</string>
+    <string name="fm_action_cut">Cut</string>
+    <string name="fm_action_paste">Paste</string>
+    <string name="fm_action_select_all">Select all</string>
+    <string name="fm_action_clear_selection">Clear selection</string>
+    <plurals name="fm_entry_count">
+        <item quantity="one">%d item</item>
+        <item quantity="other">%d items</item>
+    </plurals>
+    <plurals name="fm_folder_count">
+        <item quantity="one">%d folder</item>
+        <item quantity="other">%d folders</item>
+    </plurals>
+    <plurals name="fm_file_count">
+        <item quantity="one">%d file</item>
+        <item quantity="other">%d files</item>
+    </plurals>
     <string name="goto_dir_hint">Enter a folder path</string>
     <string name="goto_root">Root</string>
     <string name="goto_dir_not_found">Path not found: %1$s</string>
