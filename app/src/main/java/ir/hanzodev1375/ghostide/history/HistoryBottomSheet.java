@@ -10,7 +10,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import ir.hanzodev1375.components.sheet.BaseBlurBottomSheet;
 import ir.hanzodev1375.ghostide.R;
-import ir.hanzodev1375.ghostide.utils.MarginItemDecoration;
+import ir.hanzodev1375.components.views.ItemGapDecoration;
 
 public class HistoryBottomSheet extends BaseBlurBottomSheet {
 
@@ -51,7 +51,7 @@ public class HistoryBottomSheet extends BaseBlurBottomSheet {
 
     rvHistory.setLayoutManager(new LinearLayoutManager(requireContext()));
     rvHistory.setAdapter(adapter);
-    rvHistory.addItemDecoration(new MarginItemDecoration(requireContext()));
+    rvHistory.addItemDecoration(ItemGapDecoration.fromDimen(requireContext(), R.dimen.list_item_margin));
 
     historyViewModel
         .getHistory()

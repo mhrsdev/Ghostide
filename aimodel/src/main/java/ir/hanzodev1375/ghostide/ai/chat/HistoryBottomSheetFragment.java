@@ -1,7 +1,6 @@
 package ir.hanzodev1375.ghostide.ai.chat;
 
 import android.content.res.ColorStateList;
-import android.graphics.Rect;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -32,6 +31,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import ir.hanzodev1375.components.views.ItemGapDecoration;
 
 public class HistoryBottomSheetFragment extends BaseBlurBottomSheet {
 
@@ -79,7 +79,7 @@ public class HistoryBottomSheetFragment extends BaseBlurBottomSheet {
     btnCancel = view.findViewById(R.id.btncancel);
     if (rvHistory != null) {
       rvHistory.setLayoutManager(new LinearLayoutManager(getContext()));
-      rvHistory.addItemDecoration(new MarginItemDecoration());
+      rvHistory.addItemDecoration(new ItemGapDecoration());
       adapter = new HistoryAdapter();
       rvHistory.setAdapter(adapter);
     }
@@ -221,19 +221,4 @@ public class HistoryBottomSheetFragment extends BaseBlurBottomSheet {
     executor.shutdownNow();
   }
 
-  class MarginItemDecoration extends RecyclerView.ItemDecoration {
-    private final int itemMargin = 2;
-
-    @Override
-    public void getItemOffsets(
-        @NonNull Rect outRect,
-        @NonNull View view,
-        @NonNull RecyclerView parent,
-        @NonNull RecyclerView.State state) {
-      int position = parent.getChildAdapterPosition(view);
-      if (position != state.getItemCount() - 1) {
-        outRect.bottom = itemMargin;
-      }
-    }
-  }
 }

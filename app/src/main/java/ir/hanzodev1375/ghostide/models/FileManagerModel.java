@@ -5,6 +5,7 @@ import java.io.File;
 import java.util.Objects;
 
 import ir.hanzodev1375.ghostide.enums.FileState;
+import ir.hanzodev1375.ghostide.enums.ProjectType;
 
 public class FileManagerModel {
   /** Marker for a size or child count that was not read from disk. */
@@ -14,10 +15,11 @@ public class FileManagerModel {
   private String name;
   private FileState state;
   private long lastModified;
+  /** Three states on purpose: {@code null} means "not read yet", resolved lazily from disk. */
   @Nullable private final Boolean directory;
   private final long size;
   private final int childCount;
-  @Nullable private final String projectTag;
+  @Nullable private final ProjectType projectType;
 
   public FileManagerModel(String path, String name, FileState state, long lastModified) {
     this(path, name, state, lastModified, null, UNKNOWN, UNKNOWN, null);
@@ -30,7 +32,7 @@ public class FileManagerModel {
    * @param directory whether the entry is a directory, or {@code null} to resolve it lazily
    * @param size length in bytes for a file, {@link #UNKNOWN} for a directory
    * @param childCount number of visible entries for a directory, {@link #UNKNOWN} if unreadable
-   * @param projectTag short build-system label (for example "gradle"), or {@code null}
+   * @param projectType detected project root type, or {@code null} for a plain folder
    */
   public FileManagerModel(
       String path,
@@ -40,7 +42,7 @@ public class FileManagerModel {
       @Nullable Boolean directory,
       long size,
       int childCount,
-      @Nullable String projectTag) {
+      @Nullable ProjectType projectType) {
     this.path = path;
     this.name = name;
     this.state = state;
@@ -48,7 +50,7 @@ public class FileManagerModel {
     this.directory = directory;
     this.size = size;
     this.childCount = childCount;
-    this.projectTag = projectTag;
+    this.projectType = projectType;
   }
 
   public String getPath() {
@@ -90,15 +92,15 @@ public class FileManagerModel {
   }
 
   @Nullable
-  public String getProjectTag() {
-    return projectTag;
+  public ProjectType getProjectType() {
+    return projectType;
   }
 
-  /** @return true when the listing facts shown in a row (size, children, tag) are equal. */
+  /** @return true when the listing facts shown in a row (size, children, type) are equal. */
   public boolean hasSameListingFacts(FileManagerModel other) {
     return size == other.size
         && childCount == other.childCount
         && Objects.equals(directory, other.directory)
-        && Objects.equals(projectTag, other.projectTag);
+        && projectType == other.projectType;
   }
 }

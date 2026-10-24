@@ -78,6 +78,7 @@ import ir.hanzodev1375.ghostide.fragments.FilePropertiesSheet;
 import ir.hanzodev1375.ghostide.jgit.GitHubClient;
 import ir.hanzodev1375.ghostide.jgit.GitHubProfileSheet;
 import ir.hanzodev1375.ghostide.jgit.jgitandroid.datamanager.GitViewModel;
+import ir.hanzodev1375.ghostide.enums.ProjectType;
 import ir.hanzodev1375.ghostide.models.FileManagerModel;
 import ir.hanzodev1375.ghostide.models.ToolbarModel;
 import ir.hanzodev1375.ghostide.postman.PostManActivity;
@@ -1616,10 +1617,10 @@ public class FileManagerActivity extends BaseCompat
     BidiFormatter bidi = BidiFormatter.getInstance();
     SpannableStringBuilder summary = new SpannableStringBuilder();
     if (bidi.isRtlContext()) summary.append(RIGHT_TO_LEFT_MARK);
-    String tag = FileViewModel.projectTagOf(names);
-    if (tag != null) {
+    ProjectType projectType = ProjectType.detect(names);
+    if (projectType != null) {
       int tagStart = summary.length();
-      summary.append(bidi.unicodeWrap(tag));
+      summary.append(bidi.unicodeWrap(projectType.label()));
       Integer primary = M3Theme.primary();
       if (primary != null) {
         summary.setSpan(

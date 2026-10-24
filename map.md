@@ -268,6 +268,7 @@ Directory structure:
     │           │       │       │   └── LanguageManager.java
     │           │       │       ├── enums/
     │           │       │       │   ├── FileState.java
+    │           │       │       │   ├── ProjectType.java
     │           │       │       │   └── SortType.java
     │           │       │       ├── fileevents/
     │           │       │       │   ├── BaseFileEventCheck.java
@@ -575,7 +576,6 @@ Directory structure:
     │           │       │           ├── InfoRows.java
     │           │       │           ├── LocaleDirection.java
     │           │       │           ├── LocaleHelper.java
-    │           │       │           ├── MarginItemDecoration.java
     │           │       │           ├── NetworkChangeReceiver.java
     │           │       │           ├── ObjectUtil.java
     │           │       │           ├── PathManager.java
@@ -1059,6 +1059,7 @@ Directory structure:
     │           │   │               ├── GhostToast.java
     │           │   │               ├── GradientFrameLayout.java
     │           │   │               ├── ImageViewAnimator.java
+    │           │   │               ├── ItemGapDecoration.java
     │           │   │               ├── PluginInstallButton.java
     │           │   │               ├── RoundedProgressFill.java
     │           │   │               ├── SegmentedAvatarView.java

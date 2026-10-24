@@ -1,14 +1,11 @@
 package ir.ghostide.logcat;
 
 import android.content.Context;
-import android.graphics.Rect;
 import android.os.Handler;
 import android.os.Looper;
-import androidx.annotation.NonNull;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.AttributeSet;
-import android.view.View;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import ir.hanzodev1375.components.views.GhostToast;
@@ -23,6 +20,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import ir.hanzodev1375.components.views.ItemGapDecoration;
 
 public class MaterialLogCatView extends LinearLayout {
 
@@ -61,7 +59,7 @@ public class MaterialLogCatView extends LinearLayout {
 
     adapter = new LogAdapter(new java.util.ArrayList<>());
     recyclerView.setAdapter(adapter);
-    recyclerView.addItemDecoration(new MarginItemDecoration());
+    recyclerView.addItemDecoration(new ItemGapDecoration());
 
     searchBox.addTextChangedListener(
         new TextWatcher() {
@@ -138,23 +136,4 @@ public class MaterialLogCatView extends LinearLayout {
         });
   }
 
-  public class MarginItemDecoration extends RecyclerView.ItemDecoration {
-    private final int itemMargin;
-
-    public MarginItemDecoration() {
-      itemMargin = 2;
-    }
-
-    @Override
-    public void getItemOffsets(
-        @NonNull Rect outRect,
-        @NonNull View view,
-        @NonNull RecyclerView parent,
-        @NonNull RecyclerView.State state) {
-      int position = parent.getChildAdapterPosition(view);
-      if (position != state.getItemCount() - 1) {
-        outRect.bottom = itemMargin;
-      }
-    }
-  }
 }

@@ -39,6 +39,7 @@ import com.google.android.material.listitem.ListItemViewHolder;
 import ir.hanzodev1375.ghostide.R;
 import ir.hanzodev1375.ghostide.codeeditors.setting.PreferencesUtils;
 import ir.hanzodev1375.ghostide.fileevents.FileEventCheck;
+import ir.hanzodev1375.ghostide.enums.ProjectType;
 import ir.hanzodev1375.ghostide.models.FileManagerModel;
 import ir.hanzodev1375.ghostide.plugin.gpl.GplManifestReader;
 import ir.hanzodev1375.ghostide.themeengine.GthCanvasDrawable;
@@ -661,9 +662,9 @@ public class FileManagerAdapter extends RecyclerView.Adapter<FileManagerAdapter.
         long size = item.getSize();
         tvSize.setText(size >= 0 ? Formatter.formatShortFileSize(context, size) : "");
       }
-      String tag = item.getProjectTag();
-      if (tag != null) {
-        tvTag.setText(tag);
+      ProjectType projectType = item.getProjectType();
+      if (projectType != null) {
+        tvTag.setText(projectType.label());
         tvTag.setTextColor(fallback(M3Theme.primary(), tvTag.getCurrentTextColor()));
         tvTag.setVisibility(View.VISIBLE);
       } else {

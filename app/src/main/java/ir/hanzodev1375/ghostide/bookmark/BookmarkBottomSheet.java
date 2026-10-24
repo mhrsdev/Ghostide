@@ -7,7 +7,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import ir.hanzodev1375.components.sheet.BaseBlurBottomSheet;
 import ir.hanzodev1375.ghostide.R;
-import ir.hanzodev1375.ghostide.utils.MarginItemDecoration;
+import ir.hanzodev1375.components.views.ItemGapDecoration;
 
 public class BookmarkBottomSheet extends BaseBlurBottomSheet {
 
@@ -50,7 +50,7 @@ public class BookmarkBottomSheet extends BaseBlurBottomSheet {
 
     rvBookmarks.setLayoutManager(new LinearLayoutManager(requireContext()));
     rvBookmarks.setAdapter(adapter);
-    rvBookmarks.addItemDecoration(new MarginItemDecoration(requireContext()));
+    rvBookmarks.addItemDecoration(ItemGapDecoration.fromDimen(requireContext(), R.dimen.list_item_margin));
 
     bookmarkViewModel
         .getBookmarks()
