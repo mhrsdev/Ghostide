@@ -36,6 +36,10 @@ jobs:
       - name: Build Release APK
         if: github.event_name == 'release'
         run: ./gradlew assembleRelease
+        env:
+          GHOST_STORE_PASSWORD: ${{ secrets.GHOST_STORE_PASSWORD }}
+          GHOST_KEY_ALIAS: ${{ secrets.GHOST_KEY_ALIAS }}
+          GHOST_KEY_PASSWORD: ${{ secrets.GHOST_KEY_PASSWORD }}
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
