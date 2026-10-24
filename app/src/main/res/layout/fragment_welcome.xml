@@ -1,100 +1,75 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="24dp">
+    android:clipToPadding="false"
+    android:fillViewport="true"
+    android:paddingStart="24dp"
+    android:paddingTop="32dp"
+    android:paddingEnd="24dp"
+    android:paddingBottom="24dp"
+    android:scrollbars="none">
 
-    <ScrollView
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:fillViewport="true"
-        android:scrollbars="none">
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
 
-        <LinearLayout
+        <ImageView
+            android:id="@+id/ivLogo"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:importantForAccessibility="no"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_lego_app" />
+
+        <TextView
+            android:id="@+id/tvHeader"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center_horizontal"
-            android:orientation="vertical">
+            android:layout_marginTop="20dp"
+            android:text="@string/onboarding_welcome_header"
+            android:textAppearance="?attr/textAppearanceHeadlineMedium" />
 
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardIcon"
-                android:layout_width="128dp"
-                android:layout_height="128dp"
-                android:layout_marginTop="16dp"
-                app:cardCornerRadius="64dp"
-                app:elevation="0dp">
+        <TextView
+            android:id="@+id/tvDesc"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:alpha="0.7"
+            android:lineSpacingMultiplier="1.2"
+            android:text="@string/onboarding_welcome_desc"
+            android:textAppearance="?attr/textAppearanceBodyLarge" />
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:gravity="center">
+        <View
+            android:id="@+id/divider0"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="28dp" />
 
-                    <androidx.appcompat.widget.AppCompatImageView
-                        android:id="@+id/ivIcon"
-                        android:layout_width="56dp"
-                        android:layout_height="56dp"
-                        android:importantForAccessibility="no"
-                        android:src="@drawable/ic_onboarding_perm_files" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
+        <include
+            android:id="@+id/rowFiles"
+            layout="@layout/item_onboarding_permission" />
 
-            <TextView
-                android:id="@+id/tvHeader"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                android:fontFamily="sans-serif-medium"
-                android:text="@string/onboarding_welcome_header"
-                android:textSize="24sp" />
+        <View
+            android:id="@+id/divider1"
+            android:layout_width="match_parent"
+            android:layout_height="1dp" />
 
-            <TextView
-                android:id="@+id/tvDesc"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:gravity="center"
-                android:text="@string/onboarding_welcome_desc"
-                android:textSize="14sp" />
+        <include
+            android:id="@+id/rowNotifications"
+            layout="@layout/item_onboarding_permission" />
 
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardPermissions"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="28dp"
-                app:cardCornerRadius="20dp"
-                app:strokeWidth="1dp">
+        <View
+            android:id="@+id/divider2"
+            android:layout_width="match_parent"
+            android:layout_height="1dp" />
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="12dp">
+        <include
+            android:id="@+id/rowInstall"
+            layout="@layout/item_onboarding_permission" />
 
-                    <include
-                        android:id="@+id/rowFiles"
-                        layout="@layout/item_onboarding_permission" />
+    </LinearLayout>
 
-                    <View
-                        android:id="@+id/divider1"
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp" />
-
-                    <include
-                        android:id="@+id/rowNotifications"
-                        layout="@layout/item_onboarding_permission" />
-
-                    <View
-                        android:id="@+id/divider2"
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp" />
-
-                    <include
-                        android:id="@+id/rowInstall"
-                        layout="@layout/item_onboarding_permission" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-        </LinearLayout>
-    </ScrollView>
-</FrameLayout>
+</ScrollView>

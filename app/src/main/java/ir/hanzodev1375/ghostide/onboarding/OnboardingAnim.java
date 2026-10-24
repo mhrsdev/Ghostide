@@ -63,34 +63,6 @@ final class OnboardingAnim {
     set.start();
   }
 
-  static void scaleIn(View view, long delay) {
-    view.setAlpha(0f);
-    view.setScaleX(0.3f);
-    view.setScaleY(0.3f);
-    AnimatorSet set = new AnimatorSet();
-    set.playTogether(
-        ObjectAnimator.ofFloat(view, "alpha", 0f, 1f),
-        ObjectAnimator.ofFloat(view, "scaleX", 0.3f, 1f),
-        ObjectAnimator.ofFloat(view, "scaleY", 0.3f, 1f));
-    set.setDuration(600);
-    set.setInterpolator(OVERSHOOT);
-    set.setStartDelay(delay);
-    set.start();
-  }
-
-  static void slideRightFade(View view, long delay) {
-    view.setAlpha(0f);
-    view.setTranslationX(-120f);
-    AnimatorSet set = new AnimatorSet();
-    set.playTogether(
-        ObjectAnimator.ofFloat(view, "alpha", 0f, 1f),
-        ObjectAnimator.ofFloat(view, "translationX", -120f, 0f));
-    set.setDuration(400);
-    set.setInterpolator(DECEL);
-    set.setStartDelay(delay);
-    set.start();
-  }
-
   static void pop(View view, long delay) {
     view.setAlpha(0f);
     view.setScaleX(0f);
@@ -102,19 +74,6 @@ final class OnboardingAnim {
         ObjectAnimator.ofFloat(view, "scaleY", 0f, 1f));
     set.setDuration(450);
     set.setInterpolator(OVERSHOOT);
-    set.setStartDelay(delay);
-    set.start();
-  }
-
-  static void dividerExpand(View view, long delay) {
-    view.setAlpha(0f);
-    view.setScaleX(0f);
-    AnimatorSet set = new AnimatorSet();
-    set.playTogether(
-        ObjectAnimator.ofFloat(view, "alpha", 0f, 1f),
-        ObjectAnimator.ofFloat(view, "scaleX", 0f, 1f));
-    set.setDuration(400);
-    set.setInterpolator(DECEL);
     set.setStartDelay(delay);
     set.start();
   }

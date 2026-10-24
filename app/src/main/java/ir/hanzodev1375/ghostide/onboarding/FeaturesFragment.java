@@ -8,9 +8,11 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import ir.hanzodev1375.ghostide.R;
 import ir.hanzodev1375.ghostide.databinding.FragmentFeaturesBinding;
+import ir.hanzodev1375.ghostide.utils.LocaleDirection;
 import ir.theme.M3Theme;
 
 public class FeaturesFragment extends Fragment {
@@ -31,43 +33,38 @@ public class FeaturesFragment extends Fragment {
   public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
     super.onViewCreated(view, savedInstanceState);
     int fallback = 0xFF202020;
+    int text = fallback(M3Theme.onSurface(), fallback);
+    int iconTint = fallback(M3Theme.onSurfaceVariant(), fallback);
+    binding.tvHeader.setTextColor(text);
+    binding.tvDesc.setTextColor(text);
 
-    binding.cardIcon.setCardBackgroundColor(fallback(M3Theme.surfaceContainerHigh(), fallback));
-    binding.ivIcon.setColorFilter(fallback(M3Theme.primary(), fallback));
-    binding.tvHeader.setTextColor(fallback(M3Theme.onSurface(), fallback));
-    binding.tvDesc.setTextColor(fallback(M3Theme.onSurfaceVariant(), fallback));
-    binding.cardList.setCardBackgroundColor(fallback(M3Theme.surfaceContainerLow(), fallback));
-
-    TextView[] features = {
-      binding.tvFeatureLsp,
-      binding.tvFeatureTerminal,
-      binding.tvFeatureGit,
-      binding.tvFeaturePlugins,
-      binding.tvFeatureThemes,
-      binding.tvFeatureRemote
-    };
-    int accent = fallback(M3Theme.primary(), fallback);
-    for (TextView feature : features) {
-      feature.setTextColor(fallback(M3Theme.onSurface(), fallback));
-      Drawable indicator = feature.getCompoundDrawablesRelative()[0];
-      if (indicator == null) indicator = feature.getCompoundDrawables()[0];
-      if (indicator != null) indicator.setTint(accent);
-    }
+    boolean rtl = LocaleDirection.isRtl(requireContext());
+    bindFeature(binding.tvFeatureLsp, R.drawable.ic_plugin_lsp, text, iconTint, rtl);
+    bindFeature(binding.tvFeatureTerminal, R.drawable.ic_onboarding_terminal, text, iconTint, rtl);
+    bindFeature(binding.tvFeatureGit, R.drawable.ic_git, text, iconTint, rtl);
+    bindFeature(binding.tvFeaturePlugins, R.drawable.ic_outline_extension, text, iconTint, rtl);
+    bindFeature(binding.tvFeatureThemes, R.drawable.ic_outline_palette, text, iconTint, rtl);
+    bindFeature(binding.tvFeatureRemote, R.drawable.ic_sync, text, iconTint, rtl);
 
     animateIn();
   }
 
+  /**
+   * Gives a feature row its own icon on the reading side. The app runs with RTL support off, so a
+   * relative (start) drawable would stay on the left in Persian; the side is chosen explicitly.
+   */
+  private void bindFeature(TextView row, int iconRes, int textColor, int iconTint, boolean rtl) {
+    row.setTextColor(textColor);
+    Drawable icon = ContextCompat.getDrawable(requireContext(), iconRes);
+    if (icon != null) {
+      icon = icon.mutate();
+      icon.setTint(iconTint);
+    }
+    row.setCompoundDrawablesWithIntrinsicBounds(rtl ? null : icon, null, rtl ? icon : null, null);
+  }
+
   private void animateIn() {
-    OnboardingAnim.scaleIn(binding.cardIcon, 0);
-    OnboardingAnim.slideUpFade(binding.tvHeader, 150);
-    OnboardingAnim.slideUpFade(binding.tvDesc, 250);
-    OnboardingAnim.revealCard(binding.cardList, 350);
-    OnboardingAnim.slideRightFade(binding.tvFeatureLsp, 450);
-    OnboardingAnim.slideRightFade(binding.tvFeatureTerminal, 540);
-    OnboardingAnim.slideRightFade(binding.tvFeatureGit, 630);
-    OnboardingAnim.slideRightFade(binding.tvFeaturePlugins, 720);
-    OnboardingAnim.slideRightFade(binding.tvFeatureThemes, 810);
-    OnboardingAnim.slideRightFade(binding.tvFeatureRemote, 900);
+    OnboardingAnim.slideUpFade(binding.featuresColumn, 0);
   }
 
   private static int fallback(Integer value, int def) {

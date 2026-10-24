@@ -14,6 +14,7 @@ import ir.hanzodev1375.ghostide.R;
 import ir.hanzodev1375.ghostide.databinding.FragmentTerminalBinding;
 import ir.hanzodev1375.ghostide.terminal.GhostTerminalViewClient;
 import ir.hanzodev1375.ghostide.terminal.TerminalColorsUtil;
+import ir.hanzodev1375.ghostide.utils.LocaleDirection;
 import ir.theme.M3Theme;
 
 public class TerminalFragment extends Fragment implements GhostTerminalViewClient.KeyModifierState {
@@ -40,6 +41,7 @@ public class TerminalFragment extends Fragment implements GhostTerminalViewClien
     super.onViewCreated(view, savedInstanceState);
     viewModel = new ViewModelProvider(requireActivity()).get(OnboardingViewModel.class);
     styleColors();
+    LocaleDirection.mirrorRow(binding.warningRow);
     setupTerminalView();
     viewModel.setInvalidator(
         () -> {
@@ -74,9 +76,9 @@ public class TerminalFragment extends Fragment implements GhostTerminalViewClien
   }
 
   private void animateIn() {
-    OnboardingAnim.slideUpFade(binding.cardWarning, 0);
-    OnboardingAnim.revealCard(binding.cardTerminal, 120);
-    OnboardingAnim.slideUpFade(binding.tvDescription, 240);
+    OnboardingAnim.slideUpFade(binding.tvTitle, 0);
+    OnboardingAnim.slideUpFade(binding.cardWarning, 120);
+    OnboardingAnim.revealCard(binding.cardTerminal, 200);
     OnboardingAnim.slideUpFadeBounce(binding.btnInstall, 340);
     OnboardingAnim.pop(binding.btnSkip, 430);
   }
@@ -104,7 +106,8 @@ public class TerminalFragment extends Fragment implements GhostTerminalViewClien
     binding.cardTerminal.setCardBackgroundColor(fallback(M3Theme.surfaceContainerHigh(), 0xFF16151B));
     binding.cardTerminal.setStrokeColor(
         ColorStateList.valueOf(fallback(M3Theme.outlineVariant(), 0xFF38343C)));
-    binding.tvDescription.setTextColor(fallback(M3Theme.onSurfaceVariant(), fallback));
+    binding.tvTitle.setTextColor(fallback(M3Theme.onSurface(), fallback));
+    binding.tvDescription.setTextColor(fallback(M3Theme.onSurface(), fallback));
     binding.tvInstallStatus.setTextColor(fallback(M3Theme.onSurfaceVariant(), fallback));
     binding.btnInstall.setBackgroundTintList(
         ColorStateList.valueOf(fallback(M3Theme.primary(), fallback)));
