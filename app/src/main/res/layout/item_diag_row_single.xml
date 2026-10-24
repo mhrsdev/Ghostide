@@ -1,41 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
-
-<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
-  xmlns:app="http://schemas.android.com/apk/res-auto"
-  android:layout_width="match_parent"
-  android:layout_height="wrap_content"
-  android:layout_marginBottom="6dp"
-  android:clickable="true"
-  android:focusable="true"
-  app:cardCornerRadius="12dp"
-  app:cardBackgroundColor="@android:color/transparent"
-  app:cardElevation="0dp"
-  app:rippleColor="?attr/colorPrimary">
-
-  <LinearLayout
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:baselineAligned="true"
+    android:minHeight="40dp"
     android:orientation="horizontal"
-    android:gravity="center_vertical"
-    android:paddingHorizontal="14dp"
-    android:paddingVertical="12dp">
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp">
 
     <TextView
-      android:id="@+id/tv_value"
-      android:layout_width="0dp"
-      android:layout_height="wrap_content"
-      android:layout_weight="1"
-      android:textAppearance="?attr/textAppearanceBodyMedium"
-      android:textColor="?attr/colorOnSurface"
-      android:text="—" />
+        android:id="@+id/tv_label"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="4"
+        android:alpha="0.7"
+        android:textAppearance="?attr/textAppearanceBodyMedium" />
 
     <TextView
-      android:id="@+id/tv_label"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content"
-      android:textAppearance="?attr/textAppearanceBodySmall"
-      android:textColor="?attr/colorOnSurfaceVariant"
-      android:text="Label" />
+        android:id="@+id/tv_value"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_weight="6"
+        android:fontFamily="monospace"
+        android:gravity="end"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textIsSelectable="true" />
 
-  </LinearLayout>
-</com.google.android.material.card.MaterialCardView>
+</LinearLayout>
