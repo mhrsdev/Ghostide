@@ -589,7 +589,7 @@ public class EditorFragment extends Fragment {
       return;
     }
     boolean connected = lspEditor.isConnected();
-    binding.dlch.setVisibility(connected ? View.VISIBLE : View.INVISIBLE);
+    binding.dlch.setVisibility(connected ? View.VISIBLE : View.GONE);
     if (!connected) {
       notifyTabError(false);
       return;

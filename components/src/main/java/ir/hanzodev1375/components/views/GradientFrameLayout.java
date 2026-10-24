@@ -3,6 +3,7 @@ package ir.hanzodev1375.components.views;
 import android.animation.ArgbEvaluator;
 import android.animation.ValueAnimator;
 import android.content.Context;
+import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.LinearGradient;
@@ -15,10 +16,11 @@ import android.util.AttributeSet;
 import android.view.View;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.FrameLayout;
+import ir.hanzodev1375.components.R;
 
 /**
- * Draws a soft accent wash that fades out along the reading direction, clipped to a pill on the
- * leading edge.
+ * Draws a soft accent wash that fades out along the reading direction. The corners are square
+ * unless {@code gradientCornerRadius} is set, which suits a wash that runs edge to edge.
  *
  * <p>The fade is a fixed white-to-transparent mask built once per size change; the accent colour is
  * applied through a colour filter, so animating the colour no longer rebuilds a shader (and its
@@ -34,27 +36,37 @@ public class GradientFrameLayout extends FrameLayout {
   private final RectF bounds = new RectF();
   private final ArgbEvaluator argbEvaluator = new ArgbEvaluator();
   private int startColor = Color.TRANSPARENT;
+  private float cornerRadius;
   private boolean rtl;
   private ValueAnimator colorAnimator;
 
   public GradientFrameLayout(Context context) {
     super(context);
-    init();
+    init(context, null);
   }
 
   public GradientFrameLayout(Context context, AttributeSet attrs) {
     super(context, attrs);
-    init();
+    init(context, attrs);
   }
 
   public GradientFrameLayout(Context context, AttributeSet attrs, int defStyleAttr) {
     super(context, attrs, defStyleAttr);
-    init();
+    init(context, attrs);
   }
 
-  private void init() {
+  private void init(Context context, AttributeSet attrs) {
     paint.setDither(true);
     setWillNotDraw(false);
+    if (attrs == null) {
+      return;
+    }
+    TypedArray array = context.obtainStyledAttributes(attrs, R.styleable.GradientFrameLayout);
+    try {
+      cornerRadius = array.getDimension(R.styleable.GradientFrameLayout_gradientCornerRadius, 0f);
+    } finally {
+      array.recycle();
+    }
   }
 
   public int getStartColor() {
@@ -142,7 +154,7 @@ public class GradientFrameLayout extends FrameLayout {
   @Override
   protected void dispatchDraw(Canvas canvas) {
     if (startColor != Color.TRANSPARENT && paint.getShader() != null) {
-      float radius = bounds.height() / 2f;
+      float radius = Math.min(cornerRadius, bounds.height() / 2f);
       canvas.drawRoundRect(bounds, radius, radius, paint);
     }
     super.dispatchDraw(canvas);

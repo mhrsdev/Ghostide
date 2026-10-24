@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <declare-styleable name="GradientFrameLayout">
+        <attr name="gradientCornerRadius" format="dimension" />
+    </declare-styleable>
+
     <declare-styleable name="SegmentedAvatarView">
         <!-- Stroke width of the ring, e.g. 6dp -->
         <attr name="ringWidth" format="dimension" />
