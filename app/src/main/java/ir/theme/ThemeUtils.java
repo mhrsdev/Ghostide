@@ -10,6 +10,7 @@ import android.view.Window;
 import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.graphics.ColorUtils;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.sidesheet.SideSheetDialog;
 import com.google.android.material.tabs.TabLayout;
@@ -27,6 +28,8 @@ import ir.hanzodev1375.ghostide.customui.LayoutSymbolbar;
 import ir.hanzodev1375.ghostide.materialfileicon.core.langcolor.LanguageColors;
 
 public class ThemeUtils {
+
+  private static final int TAB_INDICATOR_ALPHA = 0x52;
 
   private final ThemeManager manager;
 
@@ -98,11 +101,43 @@ public class ThemeUtils {
     if (wiget == null) {
       return;
     }
-    GradientDrawable gd = (GradientDrawable) rootview.getBackground().mutate();
-    gd.setColor(Color.parseColor(wiget.getMenubackground()));
+    applyPillSurface(rootview, wiget);
     v.setColorFilter(Color.parseColor(wiget.getMenutextcolor()));
     v2.setColorFilter(Color.parseColor(wiget.getMenutextcolor()));
     tv.setTextColor(Color.parseColor(wiget.getMenutextcolor()));
+  }
+
+  /**
+   * Styles the floating cursor-position pill of the editor with the widget menu surface, a hairline
+   * outline and the menu text color. Leaves the drawable's theme-attribute defaults untouched when
+   * no widget theme is available.
+   *
+   * @param pill the cursor-position label whose background is a {@link GradientDrawable}
+   */
+  public void applyCursorPositionPill(TextView pill) {
+    GhostTheme theme = getTheme();
+    if (theme == null || theme.getWidget() == null) {
+      return;
+    }
+    WidgetTheme widget = theme.getWidget();
+    applyPillSurface(pill, widget);
+    if (widget.getMenutextcolor() != null) {
+      pill.setTextColor(parseColor(widget.getMenutextcolor()));
+    }
+  }
+
+  private void applyPillSurface(View pill, WidgetTheme widget) {
+    if (!(pill.getBackground() instanceof GradientDrawable)) {
+      return;
+    }
+    GradientDrawable surface = (GradientDrawable) pill.getBackground().mutate();
+    if (widget.getMenubackground() != null) {
+      surface.setColor(parseColor(widget.getMenubackground()));
+    }
+    if (widget.getStroke() != null) {
+      int strokeWidth = Math.max(1, Math.round(pill.getResources().getDisplayMetrics().density));
+      surface.setStroke(strokeWidth, parseColor(widget.getStroke()));
+    }
   }
 
   public void setFileManagerBack(View headTop, View headBottom, ViewChilder ic) {
@@ -437,13 +472,13 @@ public class ThemeUtils {
       }
       String langColor = LanguageColors.getColorForExtension(ext);
       if (langColor != null) {
-        layout.setSelectedTabIndicatorColor(parseColor(langColor));
+        layout.setSelectedTabIndicatorColor(toTabIndicatorTone(parseColor(langColor)));
       } else if (widget.getAccent() != null) {
-        layout.setSelectedTabIndicatorColor(parseColor(widget.getAccent()));
+        layout.setSelectedTabIndicatorColor(toTabIndicatorTone(parseColor(widget.getAccent())));
       }
     } else {
       if (widget.getAccent() != null) {
-        layout.setSelectedTabIndicatorColor(parseColor(widget.getAccent()));
+        layout.setSelectedTabIndicatorColor(toTabIndicatorTone(parseColor(widget.getAccent())));
       }
     }
 
@@ -508,6 +543,10 @@ public class ThemeUtils {
           .setBackgroundTintList(
               ColorStateList.valueOf(parseColor(editor.getCompletionWndBackground())));
     }
+  }
+
+  private static int toTabIndicatorTone(int color) {
+    return ColorUtils.setAlphaComponent(color, TAB_INDICATOR_ALPHA);
   }
 
   private int parseColor(String color) {

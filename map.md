@@ -607,6 +607,7 @@ Directory structure:
     │               │   ├── bg_input_dock.xml
     │               │   ├── bg_input_row.xml
     │               │   ├── bg_position_indicator.xml
+    │               │   ├── bg_tab_indicator.xml
     │               │   ├── bg_url_bar.xml
     │               │   ├── check_24px.xml
     │               │   ├── folder.xml

@@ -12,7 +12,10 @@
         app:tabMode="scrollable"
         app:tabGravity="start"
         app:tabTextAppearance="@android:style/TextAppearance.Widget.TabWidget"
-        app:tabIndicatorHeight="3dp" />
+        app:tabIndicator="@drawable/bg_tab_indicator"
+        app:tabIndicatorGravity="stretch"
+        app:tabIndicatorFullWidth="true"
+        app:tabIndicatorAnimationMode="elastic" />
 
     <androidx.viewpager2.widget.ViewPager2
         android:id="@+id/paneViewPager"

@@ -3,7 +3,6 @@ package ir.hanzodev1375.ghostide.fragments;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
-import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -228,8 +227,7 @@ public class EditorFragment extends Fragment {
               });
     }
 
-    GradientDrawable color = (GradientDrawable) binding.tvCursorPosition.getBackground().mutate();
-    color.setColor(theme.getMenuColor());
+    theme.applyCursorPositionPill(binding.tvCursorPosition);
     editor.subscribeEvent(
         SelectionChangeEvent.class,
         (event, unevent) -> {
