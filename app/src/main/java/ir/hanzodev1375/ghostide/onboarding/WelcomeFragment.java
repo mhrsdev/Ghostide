@@ -9,10 +9,13 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.text.TextUtils;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
@@ -128,6 +131,21 @@ public class WelcomeFragment extends Fragment {
     row.tvPermDesc.setText(descRes);
     row.tvPermDesc.setTextColor(fallback(M3Theme.onSurfaceVariant(), fallback));
     row.btnGrant.setOnClickListener(v -> action.run());
+    alignGrantButton(row);
+  }
+
+  /**
+   * Puts the grant button on the same side as the row text. The app always lays out left-to-right,
+   * so a right-to-left language such as Persian needs the button pinned to the right explicitly.
+   */
+  private void alignGrantButton(ItemOnboardingPermissionBinding row) {
+    boolean rtl =
+        TextUtils.getLayoutDirectionFromLocale(
+                getResources().getConfiguration().getLocales().get(0))
+            == View.LAYOUT_DIRECTION_RTL;
+    LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) row.btnGrant.getLayoutParams();
+    params.gravity = rtl ? Gravity.RIGHT : Gravity.LEFT;
+    row.btnGrant.setLayoutParams(params);
   }
 
   private void refreshGranted() {
