@@ -1,538 +1,331 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout
-     xmlns:android="http://schemas.android.com/apk/res/android"
-     xmlns:app="http://schemas.android.com/apk/res-auto"
-     android:layout_height="match_parent"
-     android:layout_width="match_parent">
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
 
     <FrameLayout
-         android:id="@+id/contentAreaAbout"
-         android:layout_height="match_parent"
-         android:layout_width="match_parent">
+        android:id="@+id/contentAreaAbout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
 
         <ir.hanzodev1375.components.childern.ViewChilder
-             android:id="@+id/backgroundIconAbout"
-             android:layout_height="match_parent"
-             android:layout_width="match_parent"
-             android:importantForAccessibility="no"
-             android:visibility="gone" />
+            android:id="@+id/backgroundIconAbout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:importantForAccessibility="no"
+            android:visibility="gone" />
 
     </FrameLayout>
 
     <ScrollView
-     android:layout_height="match_parent"
-     android:layout_width="match_parent"
-     android:scrollbars="none"
-     android:background="?attr/colorSurface"
-     android:fillViewport="true"
-     android:clipToPadding="false"
-     android:id="@+id/root_scroll">
-
-    <LinearLayout
-         android:layout_height="wrap_content"
-         android:layout_width="match_parent"
-         android:orientation="vertical"
-         android:paddingBottom="24dp"
-         android:paddingHorizontal="16dp"
-         android:paddingTop="12dp">
+        android:id="@+id/root_scroll"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="?attr/colorSurface"
+        android:clipToPadding="false"
+        android:fillViewport="true"
+        android:scrollbars="none">
 
         <LinearLayout
-             android:layout_height="wrap_content"
-             android:layout_width="match_parent"
-             android:gravity="center"
-             android:orientation="vertical">
+            android:id="@+id/aboutColumn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="16dp"
+            android:paddingTop="24dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="32dp">
 
-            <ImageView
-                 android:layout_height="150dp"
-                 android:layout_width="150dp"
-                 android:src="@drawable/ic_lego_app"
-                 android:scaleType="centerInside"
-                 android:gravity="center" />
+            <LinearLayout
+                android:id="@+id/aboutHeader"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="4dp"
+                android:paddingEnd="4dp">
+
+                <ImageView
+                    android:id="@+id/ivAboutLogo"
+                    android:layout_width="72dp"
+                    android:layout_height="72dp"
+                    android:contentDescription="@null"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/ic_lego_app" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tvAboutName"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/product_name"
+                        android:textAppearance="?attr/textAppearanceHeadlineSmall" />
+
+                    <TextView
+                        android:id="@+id/tv_about_version"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:alpha="0.7"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textIsSelectable="true" />
+
+                </LinearLayout>
+
+            </LinearLayout>
 
             <TextView
-                 android:id="@+id/tv_about_version"
-                 android:layout_height="wrap_content"
-                 android:layout_width="match_parent"
-                 android:layout_marginBottom="20dp"
-                 android:gravity="center"
-                 android:textAppearance="?attr/textAppearanceHeadlineSmall"
-                 android:textColor="?attr/colorOnSurface" />
+                android:id="@+id/tvSectionProject"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="32dp"
+                android:layout_marginBottom="8dp"
+                android:paddingStart="4dp"
+                android:paddingEnd="4dp"
+                android:text="@string/about_section_project"
+                android:textAppearance="?attr/textAppearanceTitleSmall" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardProject"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <LinearLayout
+                        android:id="@+id/rowStars"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:minHeight="56dp"
+                        android:orientation="horizontal"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp">
+
+                        <ImageView
+                            android:id="@+id/ivStars"
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:contentDescription="@null"
+                            android:src="@drawable/ic_star" />
+
+                        <TextView
+                            android:id="@+id/tvStarsLabel"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="16dp"
+                            android:layout_weight="1"
+                            android:text="@string/about_stars"
+                            android:textAppearance="?attr/textAppearanceBodyLarge" />
+
+                        <TextView
+                            android:id="@+id/tv_stars_value"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                            android:text="@string/about_loading"
+                            android:textAppearance="?attr/textAppearanceBodyLarge" />
+
+                    </LinearLayout>
+
+                    <View
+                        android:id="@+id/dividerProject1"
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginEnd="16dp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:paddingTop="4dp"
+                        android:paddingBottom="4dp">
+
+                        <LinearLayout
+                            android:id="@+id/rowContributors"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:minHeight="52dp"
+                            android:orientation="horizontal"
+                            android:paddingStart="16dp"
+                            android:paddingEnd="16dp">
+
+                            <ImageView
+                                android:id="@+id/ivContributors"
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:contentDescription="@null"
+                                android:src="@drawable/outline_person" />
+
+                            <TextView
+                                android:id="@+id/tvContributorsLabel"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="16dp"
+                                android:layout_weight="1"
+                                android:text="@string/about_contributors"
+                                android:textAppearance="?attr/textAppearanceBodyLarge" />
+
+                            <TextView
+                                android:id="@+id/tv_contributors_status"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="12dp"
+                                android:alpha="0.7"
+                                android:text="@string/about_loading"
+                                android:textAppearance="?attr/textAppearanceBodyMedium" />
+
+                        </LinearLayout>
+
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/rv_contributors"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:clipToPadding="false"
+                            android:overScrollMode="never"
+                            android:paddingStart="12dp"
+                            android:paddingEnd="12dp"
+                            android:paddingBottom="8dp"
+                            android:visibility="gone" />
+
+                    </LinearLayout>
+
+                    <View
+                        android:id="@+id/dividerProject2"
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginEnd="16dp" />
+
+                    <LinearLayout
+                        android:id="@+id/rowSource"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="?attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:minHeight="56dp"
+                        android:orientation="horizontal"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp">
+
+                        <ImageView
+                            android:id="@+id/ivSource"
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:contentDescription="@null"
+                            android:src="@drawable/ic_git" />
+
+                        <TextView
+                            android:id="@+id/tvSourceLabel"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="16dp"
+                            android:text="@string/about_source"
+                            android:textAppearance="?attr/textAppearanceBodyLarge" />
+
+                        <TextView
+                            android:id="@+id/tvSourceValue"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                            android:layout_weight="1"
+                            android:ellipsize="middle"
+                            android:fontFamily="monospace"
+                            android:gravity="end"
+                            android:singleLine="true"
+                            android:textAppearance="?attr/textAppearanceBodyMedium" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <TextView
+                android:id="@+id/tvSectionDiagnostics"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="28dp"
+                android:layout_marginBottom="8dp"
+                android:paddingStart="4dp"
+                android:paddingEnd="4dp"
+                android:text="@string/diag_title"
+                android:textAppearance="?attr/textAppearanceTitleSmall" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardDiagnostics"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp">
+
+                <LinearLayout
+                    android:id="@+id/diagColumn"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <include
+                        android:id="@+id/section_device_info"
+                        layout="@layout/item_about_section" />
+
+                    <View
+                        android:id="@+id/dividerDiag1"
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginEnd="16dp" />
+
+                    <include
+                        android:id="@+id/section_display"
+                        layout="@layout/item_about_section" />
+
+                    <View
+                        android:id="@+id/dividerDiag2"
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginEnd="16dp" />
+
+                    <include
+                        android:id="@+id/section_memory"
+                        layout="@layout/item_about_section" />
+
+                    <View
+                        android:id="@+id/dividerDiag3"
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginEnd="16dp" />
+
+                    <include
+                        android:id="@+id/section_storage"
+                        layout="@layout/item_about_section" />
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
 
         </LinearLayout>
 
-        <ir.hanzodev1375.components.sheet.customitemsheet.ui.GlassCompat
-             android:id="@+id/card_contributors"
-             android:layout_height="wrap_content"
-             android:layout_width="match_parent"
-             android:layout_marginBottom="12dp"
-             app:cornerRadius="24dp"
-             app:aberrationIntensity="2"
-             app:saturation="140"
-             app:blurAmount="0.0625" >
-
-            <LinearLayout
-                 android:layout_height="wrap_content"
-                 android:layout_width="match_parent"
-                 android:padding="16dp"
-                 android:orientation="vertical">
-
-                <LinearLayout
-                     android:layout_height="wrap_content"
-                     android:layout_width="match_parent"
-                     android:gravity="center_vertical"
-                     android:orientation="horizontal">
-
-                    <ImageView
-                         android:layout_height="28dp"
-                         android:layout_width="28dp"
-                         android:src="@drawable/outline_person"
-                         android:scaleType="centerInside"
-                         android:contentDescription="@null" />
-
-                    <TextView
-                         android:layout_height="wrap_content"
-                         android:layout_width="0dp"
-                         android:layout_marginStart="10dp"
-                         android:layout_weight="1"
-                         android:text="@string/about_contributors"
-                         android:textAppearance="?attr/textAppearanceTitleMedium"
-                         android:textColor="?attr/colorOnSurfaceVariant" />
-
-                    <TextView
-                         android:id="@+id/tv_contributors_status"
-                         android:layout_height="wrap_content"
-                         android:layout_width="wrap_content"
-                         android:text="@string/about_loading"
-                         android:textAppearance="?attr/textAppearanceLabelMedium"
-                         android:textColor="?attr/colorOnSurfaceVariant" />
-
-                </LinearLayout>
-
-                <androidx.recyclerview.widget.RecyclerView
-                     android:id="@+id/rv_contributors"
-                     android:layout_height="wrap_content"
-                     android:layout_width="match_parent"
-                     android:layout_marginTop="12dp"
-                     android:clipToPadding="false"
-                     android:overScrollMode="never"
-                     android:visibility="gone" />
-
-            </LinearLayout>
-
-        </ir.hanzodev1375.components.sheet.customitemsheet.ui.GlassCompat>
-
-        <ir.hanzodev1375.components.sheet.customitemsheet.ui.GlassCompat
-             android:id="@+id/card_stars"
-             android:layout_height="wrap_content"
-             android:layout_width="match_parent"
-             android:layout_marginBottom="12dp"
-             app:cornerRadius="24dp"
-             app:aberrationIntensity="2"
-             app:saturation="140"
-             app:blurAmount="0.0625" >
-
-            <LinearLayout
-                 android:layout_height="wrap_content"
-                 android:layout_width="match_parent"
-                 android:padding="16dp"
-                 android:gravity="center_vertical"
-                 android:orientation="horizontal">
-
-                <ImageView
-                     android:layout_height="28dp"
-                     android:layout_width="28dp"
-                     android:src="@drawable/ic_star"
-                     android:scaleType="centerInside"
-                     android:contentDescription="@null" />
-
-                <TextView
-                     android:layout_height="wrap_content"
-                     android:layout_width="0dp"
-                     android:layout_marginStart="10dp"
-                     android:layout_weight="1"
-                     android:text="@string/about_stars"
-                     android:textAppearance="?attr/textAppearanceTitleMedium"
-                     android:textColor="?attr/colorOnSurfaceVariant" />
-
-                <TextView
-                     android:id="@+id/tv_stars_value"
-                     android:layout_height="wrap_content"
-                     android:layout_width="wrap_content"
-                     android:text="@string/about_loading"
-                     android:textAppearance="?attr/textAppearanceHeadlineSmall"
-                     android:textColor="?attr/colorOnSurface" />
-
-            </LinearLayout>
-
-        </ir.hanzodev1375.components.sheet.customitemsheet.ui.GlassCompat>
-
-        <ir.hanzodev1375.components.sheet.customitemsheet.ui.GlassCompat
-             android:layout_height="wrap_content"
-             android:layout_width="match_parent"
-             android:layout_marginBottom="12dp"
-             android:clickable="true"
-             android:focusable="true"
-             android:id="@+id/card_device_info"
-             app:cornerRadius="24dp"
-             app:aberrationIntensity="2"
-             app:saturation="140"
-             app:blurAmount="0.0625" >
-
-            <LinearLayout
-                 android:layout_height="wrap_content"
-                 android:layout_width="match_parent"
-                 android:padding="16dp"
-                 android:orientation="vertical">
-
-                <LinearLayout
-                     android:layout_height="wrap_content"
-                     android:layout_width="match_parent"
-                     android:layout_marginBottom="12dp"
-                     android:gravity="center_vertical"
-                     android:orientation="horizontal">
-
-                    <TextView
-                         android:layout_height="wrap_content"
-                         android:layout_width="0dp"
-                         android:textAppearance="?attr/textAppearanceTitleMedium"
-                         android:textColor="?attr/colorOnSurfaceVariant"
-                         android:layout_weight="1"
-                         android:text="@string/diag_device_info" />
-
-                    <ImageView
-                         android:layout_height="40dp"
-                         android:layout_width="40dp"
-                         android:src="@drawable/ic_expand"
-                         android:scaleType="centerInside"
-                         android:clickable="false"
-                         android:padding="0dp"
-                         android:rotation="-90"
-                         android:id="@+id/arrow_device_info" />
-
-                </LinearLayout>
-
-                <LinearLayout
-                     android:layout_height="wrap_content"
-                     android:layout_width="match_parent"
-                     android:orientation="vertical"
-                     android:visibility="gone"
-                     android:clipChildren="true"
-                     android:id="@+id/body_device_info">
-
-                    <include
-                         layout="@layout/item_diag_row_double"
-                         android:layout_width="match_parent"
-                         android:layout_height="wrap_content"
-                         android:id="@+id/row_model" />
-
-                    <include
-                         layout="@layout/item_diag_row_double"
-                         android:layout_width="match_parent"
-                         android:layout_height="wrap_content"
-                         android:id="@+id/row_manufacturer" />
-
-                    <include
-                         layout="@layout/item_diag_row_double"
-                         android:layout_width="match_parent"
-                         android:layout_height="wrap_content"
-                         android:id="@+id/row_device" />
-
-                    <include
-                         layout="@layout/item_diag_row_double"
-                         android:layout_width="match_parent"
-                         android:layout_height="wrap_content"
-                         android:id="@+id/row_brand" />
-
-                    <include
-                         layout="@layout/item_diag_row_double"
-                         android:layout_width="match_parent"
-                         android:layout_height="wrap_content"
-                         android:id="@+id/row_sdk" />
-
-                    <include
-                         layout="@layout/item_diag_row_double"
-                         android:layout_width="match_parent"
-                         android:layout_height="wrap_content"
-                         android:id="@+id/row_android" />
-
-                    <include
-                         layout="@layout/item_diag_row_double"
-                         android:layout_width="match_parent"
-                         android:layout_height="wrap_content"
-                         android:id="@+id/row_arch" />
-
-                    <include
-                         layout="@layout/item_diag_row_double"
-                         android:layout_width="match_parent"
-                         android:layout_height="wrap_content"
-                         android:id="@+id/row_hardware" />
-
-                    <include
-                         layout="@layout/item_diag_row_single"
-                         android:layout_width="match_parent"
-                         android:layout_height="wrap_content"
-                         android:id="@+id/row_abis" />
-
-                </LinearLayout>
-
-            </LinearLayout>
-
-        </ir.hanzodev1375.components.sheet.customitemsheet.ui.GlassCompat>
-
-        <ir.hanzodev1375.components.sheet.customitemsheet.ui.GlassCompat
-             android:layout_height="wrap_content"
-             android:layout_width="match_parent"
-             android:layout_marginBottom="12dp"
-             android:clickable="true"
-             android:focusable="true"
-             android:id="@+id/card_display"
-             app:cornerRadius="24dp"
-             app:aberrationIntensity="2"
-             app:saturation="140"
-             app:blurAmount="0.0625" >
-
-            <LinearLayout
-                 android:layout_height="wrap_content"
-                 android:layout_width="match_parent"
-                 android:padding="16dp"
-                 android:orientation="vertical">
-
-                <LinearLayout
-                     android:layout_height="wrap_content"
-                     android:layout_width="match_parent"
-                     android:layout_marginBottom="12dp"
-                     android:gravity="center_vertical"
-                     android:orientation="horizontal">
-
-                    <TextView
-                         android:layout_height="wrap_content"
-                         android:layout_width="0dp"
-                         android:textAppearance="?attr/textAppearanceTitleMedium"
-                         android:textColor="?attr/colorOnSurfaceVariant"
-                         android:layout_weight="1"
-                         android:text="@string/diag_display" />
-
-                    <ImageView
-                         android:layout_height="40dp"
-                         android:layout_width="40dp"
-                         android:src="@drawable/ic_expand"
-                         android:scaleType="centerInside"
-                         android:clickable="false"
-                         android:padding="0dp"
-                         android:rotation="-90"
-                         android:id="@+id/arrow_display" />
-
-                </LinearLayout>
-
-                <LinearLayout
-                     android:layout_height="wrap_content"
-                     android:layout_width="match_parent"
-                     android:orientation="vertical"
-                     android:visibility="gone"
-                     android:id="@+id/body_display">
-
-                    <include
-                         layout="@layout/item_diag_row_single"
-                         android:layout_width="match_parent"
-                         android:layout_height="wrap_content"
-                         android:id="@+id/row_refresh" />
-
-                    <include
-                         layout="@layout/item_diag_row_single"
-                         android:layout_width="match_parent"
-                         android:layout_height="wrap_content"
-                         android:id="@+id/row_opengl" />
-
-                    <include
-                         layout="@layout/item_diag_row_single"
-                         android:layout_width="match_parent"
-                         android:layout_height="wrap_content"
-                         android:id="@+id/row_vulkan" />
-
-                    <include
-                         layout="@layout/item_diag_row_single"
-                         android:layout_width="match_parent"
-                         android:layout_height="wrap_content"
-                         android:id="@+id/row_hdr" />
-
-                    <include
-                         layout="@layout/item_diag_row_single"
-                         android:layout_width="match_parent"
-                         android:layout_height="wrap_content"
-                         android:id="@+id/row_wide_color" />
-
-                </LinearLayout>
-
-            </LinearLayout>
-
-        </ir.hanzodev1375.components.sheet.customitemsheet.ui.GlassCompat>
-
-        <ir.hanzodev1375.components.sheet.customitemsheet.ui.GlassCompat
-             android:layout_height="wrap_content"
-             android:layout_width="match_parent"
-             android:layout_marginBottom="12dp"
-             android:clickable="true"
-             android:focusable="true"
-             android:id="@+id/card_memory"
-             app:cornerRadius="24dp"
-             app:aberrationIntensity="2"
-             app:saturation="140"
-             app:blurAmount="0.0625" >
-
-            <LinearLayout
-                 android:layout_height="wrap_content"
-                 android:layout_width="match_parent"
-                 android:padding="16dp"
-                 android:orientation="vertical">
-
-                <LinearLayout
-                     android:layout_height="wrap_content"
-                     android:layout_width="match_parent"
-                     android:layout_marginBottom="12dp"
-                     android:gravity="center_vertical"
-                     android:orientation="horizontal">
-
-                    <TextView
-                         android:layout_height="wrap_content"
-                         android:layout_width="0dp"
-                         android:textAppearance="?attr/textAppearanceTitleMedium"
-                         android:textColor="?attr/colorOnSurfaceVariant"
-                         android:layout_weight="1"
-                         android:text="@string/diag_memory" />
-
-                    <ImageView
-                         android:layout_height="40dp"
-                         android:layout_width="40dp"
-                         android:src="@drawable/ic_expand"
-                         android:scaleType="centerInside"
-                         android:clickable="false"
-                         android:padding="0dp"
-                         android:rotation="-90"
-                         android:id="@+id/arrow_memory" />
-
-                </LinearLayout>
-
-                <LinearLayout
-                     android:layout_height="wrap_content"
-                     android:layout_width="match_parent"
-                     android:orientation="vertical"
-                     android:visibility="gone"
-                     android:id="@+id/body_memory">
-
-                    <include
-                         layout="@layout/item_diag_row_single"
-                         android:layout_width="match_parent"
-                         android:layout_height="wrap_content"
-                         android:id="@+id/row_total_memory" />
-
-                    <include
-                         layout="@layout/item_diag_row_single"
-                         android:layout_width="match_parent"
-                         android:layout_height="wrap_content"
-                         android:id="@+id/row_low_ram" />
-
-                    <include
-                         layout="@layout/item_diag_row_single"
-                         android:layout_width="match_parent"
-                         android:layout_height="wrap_content"
-                         android:id="@+id/row_large_heap" />
-
-                    <include
-                         layout="@layout/item_diag_row_single"
-                         android:layout_width="match_parent"
-                         android:layout_height="wrap_content"
-                         android:id="@+id/row_runtime" />
-
-                </LinearLayout>
-
-            </LinearLayout>
-
-        </ir.hanzodev1375.components.sheet.customitemsheet.ui.GlassCompat>
-
-        <ir.hanzodev1375.components.sheet.customitemsheet.ui.GlassCompat
-             android:layout_height="wrap_content"
-             android:layout_width="match_parent"
-             android:layout_marginBottom="12dp"
-             android:clickable="true"
-             android:focusable="true"
-             android:id="@+id/card_storage"
-             app:cornerRadius="24dp"
-             app:aberrationIntensity="2"
-             app:saturation="140"
-             app:blurAmount="0.0625" >
-
-            <LinearLayout
-                 android:layout_height="wrap_content"
-                 android:layout_width="match_parent"
-                 android:padding="16dp"
-                 android:orientation="vertical">
-
-                <LinearLayout
-                     android:layout_height="wrap_content"
-                     android:layout_width="match_parent"
-                     android:layout_marginBottom="12dp"
-                     android:gravity="center_vertical"
-                     android:orientation="horizontal">
-
-                    <TextView
-                         android:layout_height="wrap_content"
-                         android:layout_width="0dp"
-                         android:textAppearance="?attr/textAppearanceTitleMedium"
-                         android:textColor="?attr/colorOnSurfaceVariant"
-                         android:layout_weight="1"
-                         android:text="@string/diag_storage" />
-
-                    <ImageView
-                         android:layout_height="40dp"
-                         android:layout_width="40dp"
-                         android:src="@drawable/ic_expand"
-                         android:scaleType="centerInside"
-                         android:clickable="false"
-                         android:padding="0dp"
-                         android:rotation="-90"
-                         android:id="@+id/arrow_storage" />
-
-                </LinearLayout>
-
-                <LinearLayout
-                     android:layout_height="wrap_content"
-                     android:layout_width="match_parent"
-                     android:orientation="vertical"
-                     android:visibility="gone"
-                     android:id="@+id/body_storage">
-
-                    <include
-                         layout="@layout/item_diag_row_single"
-                         android:layout_width="match_parent"
-                         android:layout_height="wrap_content"
-                         android:id="@+id/row_internal_total" />
-
-                    <include
-                         layout="@layout/item_diag_row_single"
-                         android:layout_width="match_parent"
-                         android:layout_height="wrap_content"
-                         android:id="@+id/row_internal_free" />
-
-                    <include
-                         layout="@layout/item_diag_row_single"
-                         android:layout_width="match_parent"
-                         android:layout_height="wrap_content"
-                         android:id="@+id/row_external_total" />
-
-                    <include
-                         layout="@layout/item_diag_row_single"
-                         android:layout_width="match_parent"
-                         android:layout_height="wrap_content"
-                         android:id="@+id/row_external_free" />
-
-                </LinearLayout>
-
-            </LinearLayout>
-
-        </ir.hanzodev1375.components.sheet.customitemsheet.ui.GlassCompat>
-
-    </LinearLayout>
-
-</ScrollView>
+    </ScrollView>
 
 </FrameLayout>

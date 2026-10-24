@@ -788,5 +788,4 @@
     <string name="about_collapsed">بسته</string>
     <string name="about_free_summary">%1$s GB آزاد</string>
     <string name="onboarding_terminal_header">ترمینال لینوکس</string>
-    <string name="about_version_title">Ghost IDE برای %1$s</string>
 </resources>

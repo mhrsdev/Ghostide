@@ -18,6 +18,9 @@ public class AboutViewModel extends AndroidViewModel {
   private static final String OWNER = "HanzoDev30";
   private static final String REPOSITORY = "Ghostide";
 
+  /** Public web address of the repository whose stars and contributors this model loads. */
+  public static final String REPOSITORY_URL = "https://github.com/" + OWNER + "/" + REPOSITORY;
+
   private final MutableLiveData<Integer> stars = new MutableLiveData<>();
   private final MutableLiveData<List<Contributor>> contributors = new MutableLiveData<>();
   private final GitHubClient gitHubClient;

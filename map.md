@@ -571,6 +571,8 @@ Directory structure:
     │           │       │           ├── FileExtensionUtils.java
     │           │       │           ├── FileUtil.java
     │           │       │           ├── Icon.java
+    │           │       │           ├── InfoRows.java
+    │           │       │           ├── LocaleDirection.java
     │           │       │           ├── LocaleHelper.java
     │           │       │           ├── MarginItemDecoration.java
     │           │       │           ├── NetworkChangeReceiver.java
@@ -580,6 +582,7 @@ Directory structure:
     │           │       │           ├── RSBlur.java
     │           │       │           ├── ShapeUtil.java
     │           │       │           ├── ShortcutHelper.java
+    │           │       │           ├── StackTraceInfo.java
     │           │       │           ├── StorageUtils.java
     │           │       │           ├── UriFileImporter.java
     │           │       │           ├── WebDownloadHelper.java
@@ -762,6 +765,7 @@ Directory structure:
     │               │   ├── glass_plugin_item.xml
     │               │   ├── init_loading_overlay.xml
     │               │   ├── item_app_icon.xml
+    │               │   ├── item_about_section.xml
     │               │   ├── item_bookmark.xml
     │               │   ├── item_breadcrumb.xml
     │               │   ├── item_collection.xml
@@ -770,7 +774,6 @@ Directory structure:
     │               │   ├── item_command.xml
     │               │   ├── item_diag.xml
     │               │   ├── item_contributor.xml
-    │               │   ├── item_diag_row_double.xml
     │               │   ├── item_diag_row_single.xml
     │               │   ├── item_file_manager.xml
     │               │   ├── item_filemanager_grid.xml

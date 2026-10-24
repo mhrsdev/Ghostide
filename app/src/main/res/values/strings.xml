@@ -792,5 +792,4 @@
     <string name="about_collapsed">Collapsed</string>
     <string name="about_free_summary">%1$s GB free</string>
     <string name="onboarding_terminal_header">Linux terminal</string>
-    <string name="about_version_title">Ghost IDE for %1$s</string>
 </resources>
