@@ -375,8 +375,8 @@ public class EditorStatusBar extends FrameLayout {
   }
 
   /**
-   * A divider is shown only when both the section before and after it are visible, so hiding a
-   * section never leaves a divider floating next to nothing.
+   * A divider is shown between two visible sections, skipping hidden ones, so hiding a section
+   * never leaves a divider floating next to nothing or two sections with no divider between them.
    */
   private void updateDividerVisibility() {
     boolean lang = isLanguageVisible();
@@ -386,9 +386,10 @@ public class EditorStatusBar extends FrameLayout {
     boolean stat = isStatusVisible();
 
     binding.dividerLanguageEncoding.setVisibility(lang && enc ? VISIBLE : GONE);
-    binding.dividerEncodingIndentation.setVisibility(enc && ind ? VISIBLE : GONE);
-    binding.dividerIndentationLines.setVisibility(ind && lines ? VISIBLE : GONE);
-    binding.dividerLinesStatus.setVisibility(lines && stat ? VISIBLE : GONE);
+    binding.dividerEncodingIndentation.setVisibility((lang || enc) && ind ? VISIBLE : GONE);
+    boolean beforeLines = lang || enc || ind;
+    binding.dividerIndentationLines.setVisibility(beforeLines && lines ? VISIBLE : GONE);
+    binding.dividerLinesStatus.setVisibility((beforeLines || lines) && stat ? VISIBLE : GONE);
   }
 
   /**
