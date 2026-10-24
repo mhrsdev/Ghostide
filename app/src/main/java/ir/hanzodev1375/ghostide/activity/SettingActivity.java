@@ -63,6 +63,7 @@ public class SettingActivity extends BaseCompat {
       rvPlugins;
   private SearchLayout ser;
   private Runnable filterRunnable;
+  private RecyclerView.RecycledViewPool rowPool;
   private MessageQueue.IdleHandler rowPoolWarmUp;
 
   @Override
@@ -152,7 +153,8 @@ public class SettingActivity extends BaseCompat {
     rvBackgroundPlugin.setAdapter(backgroundPluginSection.createAdapter());
     rvPlugins.setAdapter(pluginSection.createAdapter());
     sharedPool.setMaxRecycledViews(0, Math.max(MIN_POOLED_ROWS, totalRowCount()));
-    warmUpRowPool(sharedPool);
+    rowPool = sharedPool;
+    warmUpRowPool();
     hideSectionIfEmpty(expandEditor, editorSection);
     hideSectionIfEmpty(expandApp, appSection);
     hideSectionIfEmpty(expandAi, aiSection);
@@ -267,9 +269,11 @@ public class SettingActivity extends BaseCompat {
    * binding, which keeps that frame short. The queue drains in small batches and stops as soon as
    * the pool holds {@link #WARM_UP_ROWS} views or the activity goes away.
    */
-  private void warmUpRowPool(RecyclerView.RecycledViewPool pool) {
+  private void warmUpRowPool() {
     SettingsAdapter adapter = editorSection.getAdapter();
     if (adapter == null) return;
+    cancelRowPoolWarmUp();
+    RecyclerView.RecycledViewPool pool = rowPool;
     int target = Math.min(WARM_UP_ROWS, totalRowCount());
     rowPoolWarmUp =
         () -> {
@@ -287,12 +291,27 @@ public class SettingActivity extends BaseCompat {
     Looper.myQueue().addIdleHandler(rowPoolWarmUp);
   }
 
-  @Override
-  protected void onDestroy() {
+  private void cancelRowPoolWarmUp() {
     if (rowPoolWarmUp != null) {
       Looper.myQueue().removeIdleHandler(rowPoolWarmUp);
       rowPoolWarmUp = null;
     }
+  }
+
+  /**
+   * Pooled rows were themed when they were built, so a theme change would leave them with stale
+   * colours. Once the final theme is applied the pool is emptied and refilled with rows built under
+   * it; the per-frame calls of a theme transition are deliberately ignored.
+   */
+  private void rebuildRowPool() {
+    if (rowPool == null || editorSection == null) return;
+    rowPool.clear();
+    warmUpRowPool();
+  }
+
+  @Override
+  protected void onDestroy() {
+    cancelRowPoolWarmUp();
     super.onDestroy();
   }
 
@@ -412,6 +431,11 @@ public class SettingActivity extends BaseCompat {
       layout.refresh();
       layout.invalidate();
     }
+  }
+
+  @Override
+  protected void onThemeReapplied() {
+    rebuildRowPool();
   }
 
   @Override
