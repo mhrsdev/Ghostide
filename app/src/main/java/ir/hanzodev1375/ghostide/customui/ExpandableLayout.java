@@ -9,6 +9,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
+import com.example.liquidglass.GlassAccessibilityMode;
 import com.example.liquidglass.GlassMaterial;
 import ir.hanzodev1375.components.animators.AnimationManager;
 import ir.hanzodev1375.components.sheet.customitemsheet.ui.GlassCompat;
@@ -27,6 +28,12 @@ import ir.theme.M3Theme;
  * section shows every row and the surrounding {@code NestedScrollView} stays the only scrolling
  * container. Nested scrolling is disabled on purpose: an inner scroll viewport inside the glass
  * card caused gesture hand-off jank and hid part of the list behind an invisible scroll area.
+ *
+ * <p>Glass re-captures and re-processes the backdrop behind the whole card whenever anything inside
+ * it redraws, which is affordable for the header-only card but not for one that wraps dozens of
+ * rows. While expanded the card therefore draws the library's opaque material (a tinted, outlined
+ * surface that captures nothing) and goes back to full glass when collapsed. The system
+ * reduce-transparency behaviour is kept for the collapsed state.
  */
 public class ExpandableLayout extends GlassCompat {
 
@@ -99,6 +106,7 @@ public class ExpandableLayout extends GlassCompat {
     recyclerView.setAlpha(1f);
     recyclerView.setTranslationY(0f);
     recyclerView.setVisibility(View.VISIBLE);
+    updateGlassMaterial();
 
     if (!AnimationManager.getInstance(getContext()).areAnimationsEnabled()) {
       arrowIcon.setRotation(90f);
@@ -115,6 +123,7 @@ public class ExpandableLayout extends GlassCompat {
     recyclerView.setAlpha(1f);
     recyclerView.setTranslationY(0f);
     recyclerView.setVisibility(View.GONE);
+    updateGlassMaterial();
 
     if (!AnimationManager.getInstance(getContext()).areAnimationsEnabled()) {
       arrowIcon.setRotation(0f);
@@ -126,5 +135,10 @@ public class ExpandableLayout extends GlassCompat {
 
   public boolean isExpanded() {
     return isExpanded;
+  }
+
+  private void updateGlassMaterial() {
+    setAccessibilityMode(
+        isExpanded ? GlassAccessibilityMode.FORCE_OPAQUE : GlassAccessibilityMode.AUTO);
   }
 }
