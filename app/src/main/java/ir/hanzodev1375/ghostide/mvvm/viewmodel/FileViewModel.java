@@ -36,6 +36,12 @@ import ir.hanzodev1375.ghostide.codeeditors.setting.PreferencesUtils;
 public class FileViewModel extends AndroidViewModel {
 
   private static final int BUFFER_SIZE = 256 * 1024;
+
+  /**
+   * Folders with more entries than this skip the per-subfolder listing that feeds the item count
+   * and project tag, so opening a huge directory does not cost one extra directory read per row.
+   */
+  private static final int FOLDER_INSPECT_LIMIT = 400;
   private static final String PROJECT_TAG_GRADLE = "gradle";
   private static final String PROJECT_TAG_MAVEN = "maven";
   private static final String PROJECT_TAG_NPM = "npm";
@@ -181,12 +187,13 @@ public class FileViewModel extends AndroidViewModel {
             boolean reverse = prefs.isFileSortReverse(dirPath);
             Arrays.sort(files, buildSortComparator(sortType, reverse));
             boolean showHidden = prefs.isShowHiddenFiles();
+            boolean inspectFolders = files.length <= FOLDER_INSPECT_LIMIT;
             for (File file : files) {
               String name = file.getName();
               if (showHidden || !name.startsWith(".")) {
                 FileEventCheck event = eventFor(activeFileEvents, file.getAbsolutePath());
                 boolean isDir = file.isDirectory();
-                String[] children = isDir ? file.list() : null;
+                String[] children = isDir && inspectFolders ? file.list() : null;
                 list.add(
                     new FileManagerModel(
                         file.getAbsolutePath(),
