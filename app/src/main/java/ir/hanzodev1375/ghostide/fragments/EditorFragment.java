@@ -15,6 +15,7 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentActivity;
 import androidx.lifecycle.ViewModelProvider;
 import com.blankj.utilcode.util.ThreadUtils;
 import io.github.rosemoe.sora.event.ContentChangeEvent;
@@ -75,7 +76,7 @@ public class EditorFragment extends Fragment {
 
   private static final long PAGED_EDIT_THRESHOLD = 2L * 1024 * 1024;
   private static final int PAGED_EDIT_PAGE_SIZE = 1024 * 1024;
-  private final ExecutorService pagedExecutor = Executors.newSingleThreadExecutor();
+  private ExecutorService pagedExecutor;
   private EditorFragmentBinding binding;
   private EditorViewModel viewModel;
   private IdeEditor editor;
@@ -325,9 +326,22 @@ public class EditorFragment extends Fragment {
     }
   }
 
+  /**
+   * Splits a large file into pages on a background thread and loads the first page into the
+   * editor.
+   *
+   * <p>The session is published to the fragment only from the main thread, and only while the view
+   * still exists; a session that finishes after the view was destroyed is closed immediately so it
+   * cannot leak or be assigned after {@link #onDestroyView()} cleared the field. The executor is
+   * created on demand because the same fragment instance can get a new view after its old one was
+   * destroyed.
+   */
   private void openPagedSession(File file) {
     var context = requireContext();
     binding.prograssLoading.setVisibility(View.VISIBLE);
+    if (pagedExecutor == null || pagedExecutor.isShutdown()) {
+      pagedExecutor = Executors.newSingleThreadExecutor();
+    }
     pagedExecutor.execute(
         () -> {
           try {
@@ -337,41 +351,48 @@ public class EditorFragment extends Fragment {
             try (Reader reader = new FileReader(file)) {
               session = new PagedEditSession(reader, tmpDir, PAGED_EDIT_PAGE_SIZE);
             }
-            pagedSession = session;
-            pageIndex = 0;
-            if (!isAdded() || binding == null) return;
-            requireActivity()
-                .runOnUiThread(
-                    () -> {
-                      if (binding == null || pagedSession == null) return;
-                      pagedSession.loadPageToEditor(
-                          0,
-                          editor,
-                          new PagedEditSession.Callback() {
-                            @Override
-                            public void onSuccess() {
-                              if (binding == null) return;
-                              binding.prograssLoading.setVisibility(View.GONE);
-                              binding.llWrapIndicator.setVisibility(View.VISIBLE);
-                              updatePageIndicator();
-                              updateKnownModifiedTime();
-                            }
-
-                            @Override
-                            public void onError(IOException e) {
-                              Log.e("EditorFragment", "خطا در صفحه‌بندی فایل", e);
-                              if (binding != null) binding.prograssLoading.setVisibility(View.GONE);
-                            }
-                          });
-                    });
+            FragmentActivity host = getActivity();
+            if (host == null) {
+              session.close();
+              return;
+            }
+            host.runOnUiThread(() -> attachPagedSession(session));
           } catch (IOException e) {
             Log.e("EditorFragment", "خطا در باز کردن فایل بزرگ", e);
-            if (!isAdded()) return;
-            requireActivity()
-                .runOnUiThread(
-                    () -> {
-                      if (binding != null) binding.prograssLoading.setVisibility(View.GONE);
-                    });
+            FragmentActivity host = getActivity();
+            if (host == null) return;
+            host.runOnUiThread(
+                () -> {
+                  if (binding != null) binding.prograssLoading.setVisibility(View.GONE);
+                });
+          }
+        });
+  }
+
+  private void attachPagedSession(PagedEditSession session) {
+    if (binding == null) {
+      session.close();
+      return;
+    }
+    pagedSession = session;
+    pageIndex = 0;
+    session.loadPageToEditor(
+        0,
+        editor,
+        new PagedEditSession.Callback() {
+          @Override
+          public void onSuccess() {
+            if (binding == null) return;
+            binding.prograssLoading.setVisibility(View.GONE);
+            binding.llWrapIndicator.setVisibility(View.VISIBLE);
+            updatePageIndicator();
+            updateKnownModifiedTime();
+          }
+
+          @Override
+          public void onError(IOException e) {
+            Log.e("EditorFragment", "خطا در صفحه‌بندی فایل", e);
+            if (binding != null) binding.prograssLoading.setVisibility(View.GONE);
           }
         });
   }
@@ -508,7 +529,10 @@ public class EditorFragment extends Fragment {
     if (lspViewModel != null) {
       lspViewModel.disconnect();
     }
-    pagedExecutor.shutdownNow();
+    if (pagedExecutor != null) {
+      pagedExecutor.shutdownNow();
+      pagedExecutor = null;
+    }
     if (pagedSession != null) {
       pagedSession.close();
       pagedSession = null;
@@ -577,8 +601,9 @@ public class EditorFragment extends Fragment {
                   LspRouter.fetchBreadcrumbs(currentLspEditor, currentFilePath, line, column);
               ThreadUtils.runOnUiThread(
                   () -> {
-                    if (!isAdded() || !(getActivity() instanceof EditorActivity)) return;
-                    ((EditorActivity) getActivity()).showBreadcrumbs(this, items);
+                    if (isAdded() && getActivity() instanceof EditorActivity host) {
+                      host.showBreadcrumbs(this, items);
+                    }
                   });
             })
         .start();
