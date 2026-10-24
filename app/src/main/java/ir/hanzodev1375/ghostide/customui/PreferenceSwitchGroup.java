@@ -110,7 +110,9 @@ public class PreferenceSwitchGroup extends RelativeLayout implements View.OnClic
   }
 
   public void setDescription(CharSequence description) {
+    boolean hasDescription = description != null && description.length() > 0;
     binding.preferenceDescription.setText(description);
+    binding.preferenceDescription.setVisibility(hasDescription ? View.VISIBLE : View.GONE);
   }
 
   public void setIcon(int resId) {

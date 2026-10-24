@@ -59,6 +59,7 @@
         android:marqueeRepeatLimit="-1"
         android:gravity="center"
         android:textSize="10sp"
+        android:alpha="0.7"
         android:textAppearance="?attr/textAppearanceLabelSmall"
         app:layout_constraintTop_toBottomOf="@id/tvName"
         app:layout_constraintStart_toStartOf="parent"

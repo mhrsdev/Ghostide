@@ -40,6 +40,7 @@
           android:layout_height="wrap_content"
           android:layout_width="wrap_content"
           android:textSize="12sp"
+          android:alpha="0.7"
           android:layout_marginTop="2dp"
           android:id="@+id/tvDate" />
 
