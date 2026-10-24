@@ -34,3 +34,6 @@ local.properties
 
 /build_output/
 *.zip
+
+# Release signing credentials (never commit)
+keystore.properties

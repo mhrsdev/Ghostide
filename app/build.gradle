@@ -3,16 +3,38 @@ plugins {
     alias(libs.plugins.kotlin.android)
 }
 
+def releaseSigningProps = new Properties()
+def releaseSigningFile = rootProject.file("keystore.properties")
+if (releaseSigningFile.isFile()) {
+    releaseSigningFile.withInputStream { releaseSigningProps.load(it) }
+}
+
+// Looks a value up in the environment, then in Gradle properties, then in keystore.properties.
+def releaseSigningValue = { String name ->
+    System.getenv(name) ?: project.findProperty(name)?.toString() ?: releaseSigningProps.getProperty(name)
+}
+
+def hasReleaseSigning = ["GHOST_STORE_PASSWORD", "GHOST_KEY_ALIAS", "GHOST_KEY_PASSWORD"]
+        .every { releaseSigningValue(it)?.trim() }
+
 android {
     namespace 'ir.hanzodev1375.ghostide'
     compileSdk 36
 
     signingConfigs {
-        release {
-            storeFile file("my-release-key.jks")
-            storePassword "HanzoDev1375"
-            keyAlias "myalias"
-            keyPassword "HanzoDev1375"
+        debug {
+            storeFile file("debug.keystore")
+            storePassword "android"
+            keyAlias "androiddebugkey"
+            keyPassword "android"
+        }
+        if (hasReleaseSigning) {
+            release {
+                storeFile file(releaseSigningValue("GHOST_STORE_FILE") ?: "my-release-key.jks")
+                storePassword releaseSigningValue("GHOST_STORE_PASSWORD")
+                keyAlias releaseSigningValue("GHOST_KEY_ALIAS")
+                keyPassword releaseSigningValue("GHOST_KEY_PASSWORD")
+            }
         }
     }
 
@@ -20,15 +42,20 @@ android {
         applicationId 'ir.hanzodev1375.ghostide'
         minSdk 26
         targetSdk 36
-        versionCode 10
-        versionName '1.1.6beta2' 
+        versionCode 11
+        versionName '1.1.6beta3'
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }
 
     buildTypes {
         
+        debug {
+            signingConfig signingConfigs.debug
+        }
         release {
-            signingConfig signingConfigs.release
+            if (hasReleaseSigning) {
+                signingConfig signingConfigs.release
+            }
             minifyEnabled false
         }
     }
@@ -36,6 +63,7 @@ android {
     buildFeatures {
         viewBinding true
     }
+
     
    packagingOptions {
     jniLibs {
@@ -79,6 +107,19 @@ configurations.all {
                 details.because 'حل تداخل بین وابستگی‌های androidsvg'
             }
         }
+    }
+}
+
+gradle.taskGraph.whenReady { graph ->
+    def releaseRequested = graph.allTasks.any {
+        it.project == project && it.name in ["assembleRelease", "bundleRelease", "packageRelease"]
+    }
+    if (releaseRequested && !hasReleaseSigning) {
+        throw new GradleException(
+                "Release signing credentials are missing. Provide GHOST_STORE_PASSWORD, " +
+                "GHOST_KEY_ALIAS and GHOST_KEY_PASSWORD (and optionally GHOST_STORE_FILE) as " +
+                "environment variables, Gradle properties or keystore.properties. " +
+                "A release build is never signed with the debug key.")
     }
 }
 
