@@ -107,6 +107,14 @@ public class TerminalSessionService extends Service {
     this.uiListener = listener;
   }
 
+  /**
+   * Removes {@code listener} only if it is still the registered UI listener, so a client that
+   * unbinds cannot clear a listener another client registered after it.
+   */
+  public void clearUiListener(@Nullable SessionListener listener) {
+    if (uiListener == listener) uiListener = null;
+  }
+
   public List<TerminalTab> getSessions() {
     return sessions;
   }

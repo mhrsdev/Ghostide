@@ -5,10 +5,12 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.inputmethod.InputMethodManager;
 import android.util.Log;
+import androidx.annotation.Nullable;
 import com.blankj.utilcode.util.KeyboardUtils;
 import com.termux.terminal.TerminalSession;
 import com.termux.view.TerminalView;
 import com.termux.view.TerminalViewClient;
+import java.util.function.IntConsumer;
 
 /**
  * پیاده‌سازی {@link TerminalViewClient}. مسئول: باز کردن کیبورد با تپ، و خوندن وضعیت
@@ -46,11 +48,33 @@ public class GhostTerminalViewClient implements TerminalViewClient {
   private final TerminalView terminalView;
   private final KeyModifierState modifierState;
   private int currentFontSizeSp = DEFAULT_FONT_SIZE_SP;
+  @Nullable private IntConsumer fontSizeListener;
 
   public GhostTerminalViewClient(TerminalView terminalView, KeyModifierState modifierState) {
     this.terminalView = terminalView;
     this.modifierState = modifierState;
     applyFontSize();
+  }
+
+  /** Current terminal font size in sp. */
+  public int getFontSizeSp() {
+    return currentFontSizeSp;
+  }
+
+  /**
+   * Applies a font size (clamped to the supported range) without notifying the listener, so a
+   * host can restore the size the user chose before a configuration change.
+   */
+  public void setFontSizeSp(int fontSizeSp) {
+    int clamped = Math.max(MIN_FONT_SIZE_SP, Math.min(MAX_FONT_SIZE_SP, fontSizeSp));
+    if (clamped == currentFontSizeSp) return;
+    currentFontSizeSp = clamped;
+    applyFontSize();
+  }
+
+  /** Called with the new size in sp every time pinch-zoom changes it. */
+  public void setOnFontSizeChangedListener(@Nullable IntConsumer listener) {
+    this.fontSizeListener = listener;
   }
 
   private void applyFontSize() {
@@ -69,6 +93,7 @@ public class GhostTerminalViewClient implements TerminalViewClient {
               ? Math.min(MAX_FONT_SIZE_SP, currentFontSizeSp + FONT_SIZE_STEP_SP)
               : Math.max(MIN_FONT_SIZE_SP, currentFontSizeSp - FONT_SIZE_STEP_SP);
       applyFontSize();
+      if (fontSizeListener != null) fontSizeListener.accept(currentFontSizeSp);
       return 1.0f;
     }
     return scale;

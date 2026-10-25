@@ -22,56 +22,65 @@
         <com.google.android.material.appbar.MaterialToolbar
             android:layout_height="wrap_content"
             android:layout_width="match_parent"
-            android:background="@android:color/transparent"
-            android:minHeight="?attr/actionBarSize"
+            android:background="?attr/colorSurfaceContainer"
+            android:minHeight="56dp"
             android:title="@string/terminal_title"
-            app:elevation="2dp"
+            app:titleTextAppearance="?attr/textAppearanceTitleMedium"
+            app:subtitleTextAppearance="?attr/textAppearanceBodySmall"
+            app:contentInsetStartWithNavigation="0dp"
             android:id="@+id/toolbar">
 
             <ImageButton
-                android:layout_height="42dp"
-                android:layout_width="42dp"
+                android:layout_height="48dp"
+                android:layout_width="48dp"
                 android:contentDescription="@string/terminal_more_options"
                 android:src="@drawable/more_vert"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:layout_gravity="center_vertical|end"
-                android:layout_marginEnd="6dp"
+                android:layout_marginEnd="4dp"
                 app:tint="?attr/colorOnSurface"
                 android:id="@+id/btnMoreMenu" />
 
         </com.google.android.material.appbar.MaterialToolbar>
 
-        <FrameLayout
+        <LinearLayout
             android:id="@+id/tabsBar"
-            android:layout_height="wrap_content"
+            android:layout_height="48dp"
             android:layout_width="match_parent"
-            android:background="?attr/colorSurfaceContainerHigh">
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="?attr/colorSurfaceContainer">
 
             <com.google.android.material.tabs.TabLayout
                 android:id="@+id/tabLayout"
-                android:layout_height="wrap_content"
-                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_width="0dp"
+                android:layout_weight="1"
                 app:tabMode="scrollable"
                 app:tabGravity="start"
                 android:background="@android:color/transparent"
+                app:tabIndicator="@drawable/bg_terminal_tab_indicator"
                 app:tabIndicatorHeight="3dp"
-                app:tabMaxWidth="160dp"
-                app:tabMinWidth="80dp"
-                app:tabTextAppearance="@android:style/TextAppearance.Widget.TabWidget" />
+                app:tabIndicatorFullWidth="false"
+                app:tabPaddingStart="12dp"
+                app:tabPaddingEnd="12dp"
+                app:tabContentStart="4dp"
+                app:tabMaxWidth="200dp"
+                app:tabMinWidth="72dp" />
 
             <ImageButton
-                android:layout_height="42dp"
-                android:layout_width="42dp"
+                android:layout_height="48dp"
+                android:layout_width="48dp"
                 android:contentDescription="@string/terminal_new_session"
                 android:src="@drawable/ic_add"
-                android:background="?attr/selectableItemBackground"
-                android:padding="10dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:padding="12dp"
+                android:scaleType="fitCenter"
                 app:tint="?attr/colorOnSurface"
-                android:layout_gravity="center_vertical|end"
-                android:layout_marginEnd="8dp"
+                android:layout_marginEnd="4dp"
                 android:id="@+id/btnNewSession" />
 
-        </FrameLayout>
+        </LinearLayout>
 
         <View
             android:layout_height="1dp"
@@ -79,17 +88,106 @@
             android:background="?attr/colorOutlineVariant"
             android:id="@+id/dividerTop" />
 
+        <LinearLayout
+            android:id="@+id/installBanner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            android:background="?attr/colorSurfaceContainerHigh"
+            android:paddingStart="16dp"
+            android:paddingEnd="4dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="10dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:id="@+id/installBannerRow">
+
+                <ImageView
+                    android:id="@+id/installBannerIcon"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_download" />
+
+                <LinearLayout
+                    android:id="@+id/installBannerTexts"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginEnd="8dp"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/installBannerTitle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="?attr/textAppearanceTitleSmall"
+                        android:maxLines="1"
+                        android:ellipsize="end" />
+
+                    <TextView
+                        android:id="@+id/installBannerStatus"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:alpha="0.72"
+                        android:textAppearance="?attr/textAppearanceBodySmall"
+                        android:maxLines="3"
+                        android:ellipsize="end" />
+
+                </LinearLayout>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/installBannerAction"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:minWidth="48dp"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp" />
+
+                <ImageButton
+                    android:id="@+id/installBannerDismiss"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:padding="14dp"
+                    android:scaleType="fitCenter"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/terminal_action_dismiss"
+                    android:src="@drawable/ic_close"
+                    android:visibility="gone" />
+
+            </LinearLayout>
+
+            <com.google.android.material.progressindicator.LinearProgressIndicator
+                android:id="@+id/installBannerProgress"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:layout_marginEnd="12dp"
+                android:max="100"
+                app:trackThickness="4dp"
+                app:trackCornerRadius="2dp" />
+
+        </LinearLayout>
+
         <androidx.viewpager2.widget.ViewPager2
             android:layout_height="0dp"
             android:layout_width="match_parent"
             android:layout_weight="1"
+            android:layoutDirection="ltr"
             android:id="@+id/viewPager" />
 
         <FrameLayout
             android:layout_height="wrap_content"
             android:layout_width="match_parent"
             android:background="@drawable/bg_input_dock"
-            android:elevation="8dp"
             android:id="@+id/inputDock">
 
             <LinearLayout
@@ -98,11 +196,37 @@
                 android:orientation="vertical"
                 android:id="@+id/inputDockContent">
 
+                <LinearLayout
+                    android:layout_height="48dp"
+                    android:layout_width="match_parent"
+                    android:background="?attr/selectableItemBackground"
+                    android:contentDescription="@string/terminal_toggle_dock"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:id="@+id/dragHandle">
+
+                    <View
+                        android:layout_height="4dp"
+                        android:layout_width="32dp"
+                        android:background="@drawable/bg_drag_handle"
+                        android:id="@+id/dragHandlePill" />
+
+                    <ImageView
+                        android:layout_height="18dp"
+                        android:layout_width="18dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_expand"
+                        android:layout_marginStart="8dp"
+                        android:id="@+id/handleChevron" />
+
+                </LinearLayout>
+
                 <FrameLayout
                     android:layout_height="wrap_content"
                     android:layout_width="match_parent"
                     android:clipChildren="false"
                     android:clipToPadding="false"
+                    android:paddingBottom="4dp"
                     android:id="@+id/dockPages">
 
                     <HorizontalScrollView
@@ -110,155 +234,119 @@
                         android:layout_width="match_parent"
                         android:scrollbars="none"
                         android:background="@android:color/transparent"
+                        android:layoutDirection="ltr"
                         android:minHeight="48dp"
                         android:layout_gravity="center_vertical"
                         android:id="@+id/extraKeysScroll">
 
                         <LinearLayout
-                            android:layout_height="match_parent"
+                            android:layout_height="wrap_content"
                             android:layout_width="wrap_content"
-                            android:paddingEnd="6dp"
+                            android:paddingEnd="8dp"
                             android:gravity="center_vertical"
                             android:orientation="horizontal"
-                            android:paddingStart="6dp">
+                            android:paddingStart="8dp">
 
-                            <Button
-                                android:layout_height="34dp"
-                                android:layout_width="wrap_content"
-                                android:layout_marginEnd="4dp"
-                                android:paddingEnd="0dp"
-                                android:textSize="11sp"
-                                style="@style/Widget.Material3.Button.TonalButton"
-                                android:paddingStart="0dp"
-                                android:minWidth="50dp"
+                            <com.google.android.material.button.MaterialButton
+                                style="@style/Widget.GhostIDE.TerminalKey"
                                 android:id="@+id/keyEsc"
                                 android:text="ESC" />
 
-                            <Button
-                                android:layout_height="34dp"
-                                android:layout_width="wrap_content"
-                                android:paddingEnd="0dp"
-                                android:textSize="11sp"
-                                style="@style/Widget.Material3.Button.TonalButton"
-                                android:paddingStart="0dp"
-                                android:minWidth="50dp"
+                            <com.google.android.material.button.MaterialButton
+                                style="@style/Widget.GhostIDE.TerminalKey"
                                 android:id="@+id/keyTab"
                                 android:text="TAB" />
 
-                            <View
-                                android:layout_height="24dp"
-                                android:layout_width="1dp"
-                                android:layout_marginEnd="8dp"
-                                android:background="?attr/colorOutlineVariant"
-                                android:layout_marginStart="8dp"
-                                android:id="@+id/divExtra1" />
-
-                            <Button
-                                android:layout_height="34dp"
-                                android:layout_width="wrap_content"
-                                android:layout_marginEnd="4dp"
-                                android:paddingEnd="0dp"
-                                android:textSize="11sp"
-                                style="@style/Widget.Material3.Button.TonalButton"
-                                android:paddingStart="0dp"
-                                android:minWidth="50dp"
+                            <com.google.android.material.button.MaterialButton
+                                style="@style/Widget.GhostIDE.TerminalKey"
+                                android:checkable="true"
                                 android:id="@+id/keyCtrl"
                                 android:text="CTRL" />
 
-                            <Button
-                                android:layout_height="34dp"
-                                android:layout_width="wrap_content"
-                                android:paddingEnd="0dp"
-                                android:textSize="11sp"
-                                style="@style/Widget.Material3.Button.TonalButton"
-                                android:paddingStart="0dp"
-                                android:minWidth="50dp"
+                            <com.google.android.material.button.MaterialButton
+                                style="@style/Widget.GhostIDE.TerminalKey"
+                                android:checkable="true"
                                 android:id="@+id/keyAlt"
                                 android:text="ALT" />
 
-                            <View
-                                android:layout_height="24dp"
-                                android:layout_width="1dp"
-                                android:layout_marginEnd="8dp"
-                                android:background="?attr/colorOutlineVariant"
-                                android:layout_marginStart="8dp"
-                                android:id="@+id/divExtra2" />
+                            <Space
+                                android:layout_width="8dp"
+                                android:layout_height="1dp" />
 
-                            <Button
-                                android:layout_height="34dp"
-                                android:layout_width="42dp"
-                                android:layout_marginEnd="4dp"
-                                android:padding="0dp"
-                                style="@style/Widget.Material3.Button.TonalButton"
-                                android:minWidth="0dp"
+                            <com.google.android.material.button.MaterialButton
+                                style="@style/Widget.GhostIDE.TerminalKey"
+                                android:contentDescription="@string/terminal_key_up"
                                 android:id="@+id/keyUp"
                                 android:text="↑" />
 
-                            <Button
-                                android:layout_height="34dp"
-                                android:layout_width="42dp"
-                                android:layout_marginEnd="4dp"
-                                android:padding="0dp"
-                                style="@style/Widget.Material3.Button.TonalButton"
-                                android:minWidth="0dp"
+                            <com.google.android.material.button.MaterialButton
+                                style="@style/Widget.GhostIDE.TerminalKey"
+                                android:contentDescription="@string/terminal_key_down"
                                 android:id="@+id/keyDown"
                                 android:text="↓" />
 
-                            <Button
-                                android:layout_height="34dp"
-                                android:layout_width="42dp"
-                                android:layout_marginEnd="4dp"
-                                android:padding="0dp"
-                                style="@style/Widget.Material3.Button.TonalButton"
-                                android:minWidth="0dp"
+                            <com.google.android.material.button.MaterialButton
+                                style="@style/Widget.GhostIDE.TerminalKey"
+                                android:contentDescription="@string/terminal_key_left"
                                 android:id="@+id/keyLeft"
                                 android:text="←" />
 
-                            <Button
-                                android:layout_height="34dp"
-                                android:layout_width="42dp"
-                                android:padding="0dp"
-                                style="@style/Widget.Material3.Button.TonalButton"
-                                android:minWidth="0dp"
+                            <com.google.android.material.button.MaterialButton
+                                style="@style/Widget.GhostIDE.TerminalKey"
+                                android:contentDescription="@string/terminal_key_right"
                                 android:id="@+id/keyRight"
                                 android:text="→" />
 
-                            <View
-                                android:layout_height="24dp"
-                                android:layout_width="1dp"
-                                android:layout_marginEnd="8dp"
-                                android:background="?attr/colorOutlineVariant"
-                                android:layout_marginStart="8dp"
-                                android:id="@+id/divExtra3" />
+                            <Space
+                                android:layout_width="8dp"
+                                android:layout_height="1dp" />
 
-                            <Button
-                                android:layout_height="34dp"
-                                android:layout_width="40dp"
-                                android:layout_marginEnd="4dp"
-                                android:padding="0dp"
-                                style="@style/Widget.Material3.Button.TonalButton"
-                                android:minWidth="0dp"
+                            <com.google.android.material.button.MaterialButton
+                                style="@style/Widget.GhostIDE.TerminalKey"
+                                android:id="@+id/keyHome"
+                                android:text="HOME" />
+
+                            <com.google.android.material.button.MaterialButton
+                                style="@style/Widget.GhostIDE.TerminalKey"
+                                android:id="@+id/keyEnd"
+                                android:text="END" />
+
+                            <Space
+                                android:layout_width="8dp"
+                                android:layout_height="1dp" />
+
+                            <com.google.android.material.button.MaterialButton
+                                style="@style/Widget.GhostIDE.TerminalKey"
                                 android:id="@+id/keySlash"
                                 android:text="/" />
 
-                            <Button
-                                android:layout_height="34dp"
-                                android:layout_width="40dp"
-                                android:layout_marginEnd="4dp"
-                                android:padding="0dp"
-                                style="@style/Widget.Material3.Button.TonalButton"
-                                android:minWidth="0dp"
+                            <com.google.android.material.button.MaterialButton
+                                style="@style/Widget.GhostIDE.TerminalKey"
                                 android:id="@+id/keyDash"
                                 android:text="-" />
 
-                            <Button
-                                android:layout_height="34dp"
-                                android:layout_width="40dp"
-                                android:padding="0dp"
-                                style="@style/Widget.Material3.Button.TonalButton"
-                                android:minWidth="0dp"
+                            <com.google.android.material.button.MaterialButton
+                                style="@style/Widget.GhostIDE.TerminalKey"
                                 android:id="@+id/keyPipe"
                                 android:text="|" />
+
+                            <com.google.android.material.button.MaterialButton
+                                style="@style/Widget.GhostIDE.TerminalKey"
+                                android:id="@+id/keyTilde"
+                                android:text="~" />
+
+                            <Space
+                                android:layout_width="8dp"
+                                android:layout_height="1dp" />
+
+                            <com.google.android.material.button.MaterialButton
+                                style="@style/Widget.GhostIDE.TerminalKey"
+                                android:contentDescription="@string/terminal_paste"
+                                app:icon="@drawable/outline_content_paste"
+                                app:iconGravity="textStart"
+                                app:iconPadding="0dp"
+                                app:iconSize="20dp"
+                                android:id="@+id/keyPaste" />
 
                         </LinearLayout>
 
@@ -271,15 +359,15 @@
                         android:paddingEnd="12dp"
                         android:gravity="center_vertical"
                         android:orientation="horizontal"
-                        android:paddingBottom="8dp"
+                        android:paddingBottom="4dp"
                         android:paddingStart="12dp"
                         android:id="@+id/commandInputRow"
-                        android:paddingTop="8dp">
+                        android:paddingTop="2dp">
 
                         <com.google.android.material.textfield.TextInputLayout
                             android:layout_height="wrap_content"
                             android:layout_width="0dp"
-                            style="@style/Widget.GhostIDE.TextInputLayout"
+                            style="@style/Widget.GhostIDE.TextInputLayout.Dense"
                             app:endIconMode="custom"
                             app:endIconDrawable="@drawable/ic_send"
                             app:endIconContentDescription="@string/terminal_send_command"
@@ -290,14 +378,16 @@
                             <EditText
                                 android:layout_height="wrap_content"
                                 android:layout_width="match_parent"
+                                android:minHeight="48dp"
                                 android:imeOptions="actionSend|flagNoFullscreen"
                                 android:importantForAutofill="no"
                                 android:textSize="14sp"
-                                android:textColor="?attr/colorOnSurface"
+                                android:fontFamily="monospace"
+                                android:textDirection="ltr"
+                                android:textAlignment="viewStart"
                                 android:hint="@string/terminal_command_hint"
-                                android:textColorHint="?attr/colorOnSurfaceVariant"
-                                android:maxLines="1"
-                                android:inputType="text"
+                                android:maxLines="4"
+                                android:inputType="text|textNoSuggestions"
                                 android:id="@+id/commandInput" />
 
                         </com.google.android.material.textfield.TextInputLayout>
@@ -305,30 +395,6 @@
                     </LinearLayout>
 
                 </FrameLayout>
-
-                <LinearLayout
-                    android:layout_height="30dp"
-                    android:layout_width="match_parent"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:gravity="center"
-                    android:orientation="horizontal"
-                    android:id="@+id/dragHandle">
-
-                    <View
-                        android:layout_height="4dp"
-                        android:layout_width="36dp"
-                        android:background="@drawable/bg_drag_handle"
-                        android:id="@+id/dragHandlePill" />
-
-                    <ImageView
-                        android:layout_height="16dp"
-                        android:layout_width="16dp"
-                        android:contentDescription="@string/terminal_toggle_dock"
-                        android:src="@drawable/ic_expand"
-                        android:layout_marginStart="6dp"
-                        android:id="@+id/handleChevron" />
-
-                </LinearLayout>
 
             </LinearLayout>
 

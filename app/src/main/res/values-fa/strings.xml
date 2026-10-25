@@ -809,4 +809,30 @@
     <string name="about_free_summary">%1$s GB آزاد</string>
     <string name="onboarding_terminal_header">ترمینال لینوکس</string>
     <string name="language_system_default">پیش‌فرض سیستم</string>
+    <!-- Terminal activity redesign -->
+    <string name="terminal_session_count_one">۱ نشست</string>
+    <string name="terminal_session_count_many">%1$d نشست</string>
+    <string name="terminal_install_banner_title">در حال نصب دبیان</string>
+    <string name="terminal_install_banner_hint">در این مدت می‌توانید از شل استفاده کنید</string>
+    <string name="terminal_install_failed_title">نصب دبیان ناموفق بود</string>
+    <string name="terminal_install_ready_title">دبیان آماده است</string>
+    <string name="terminal_install_ready_message">برای شروع، یک نشست دبیان باز کنید</string>
+    <string name="terminal_action_retry">تلاش دوباره</string>
+    <string name="terminal_action_open_debian">باز کردن دبیان</string>
+    <string name="terminal_action_dismiss">بستن</string>
+    <string name="terminal_setup_title">آماده‌سازی دبیان</string>
+    <string name="terminal_setup_status">فقط در اولین اجرا: ابزارهای پایه نصب می‌شوند. ادامهٔ نصب در ترمینال نمایش داده می‌شود.</string>
+    <string name="terminal_version_label">Ghost IDE %1$s</string>
+    <string name="terminal_key_up">پیکان بالا</string>
+    <string name="terminal_key_down">پیکان پایین</string>
+    <string name="terminal_key_left">پیکان چپ</string>
+    <string name="terminal_key_right">پیکان راست</string>
+    <string name="terminal_key_ctrl_sticky">کنترل، روی کلید بعدی اعمال می‌شود</string>
+    <string name="terminal_key_alt_sticky">آلت، روی کلید بعدی اعمال می‌شود</string>
+    <string name="terminal_paste">چسباندن</string>
+    <string name="terminal_copy_all_output">کپی کل خروجی</string>
+    <string name="terminal_share_selection">اشتراک‌گذاری متن انتخاب‌شده</string>
+    <string name="terminal_copied">کپی شد</string>
+    <string name="terminal_session_shell">شل</string>
+    <string name="terminal_session_debian">دبیان</string>
 </resources>

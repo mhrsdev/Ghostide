@@ -1,20 +1,17 @@
 package ir.hanzodev1375.ghostide.terminal.activity;
 
 import android.Manifest;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.SystemClock;
 import android.text.TextUtils;
 import android.util.TypedValue;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.animation.DecelerateInterpolator;
-import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
@@ -25,6 +22,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.graphics.ColorUtils;
 import androidx.core.graphics.Insets;
 import androidx.core.graphics.drawable.DrawableCompat;
 import androidx.core.view.ViewCompat;
@@ -33,6 +31,8 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.viewpager2.adapter.FragmentStateAdapter;
 import androidx.viewpager2.widget.ViewPager2;
+import com.google.android.material.button.MaterialButton;
+import com.google.android.material.progressindicator.LinearProgressIndicator;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
 import com.termux.terminal.TerminalSession;
@@ -73,19 +73,20 @@ public class TerminalActivity extends BaseCompat implements TerminalViewModel.Se
   public static final String EXTRA_WORKING_DIR = "working_dir";
   public static final String EXTRA_COMMAND = "command";
   private static final String LOG_TAG = "TerminalActivity";
+  private static final float INACTIVE_TAB_ALPHA = 0.68f;
+  private static final float IDLE_DOT_ALPHA = 0.45f;
+  private static final float KEY_RIPPLE_ALPHA = 0.18f;
+  private static final float REVEAL_OFFSET_DP = 6f;
+  private static final int COMMAND_INPUT_MAX_LINES = 4;
 
   private ActivityTerminalBinding b;
   private TerminalViewModel viewModel;
   private TerminalInputDock inputDock;
   private SessionPagerAdapter pagerAdapter;
-  private int defaultKeyBackgroundColor;
-  private int defaultKeyTextColor;
+  private MaterialButton[] extraKeys;
+  private boolean revealPending;
 
   private View initOverlay;
-  private TextView initOverlayStatus;
-  private AlertDialog installDialog;
-  private TextView installStatusText;
-  private ProgressBar installProgressBar;
   private DebianInstaller.InstallListener installListener;
 
   private AlertDialog transferDialog;
@@ -102,16 +103,26 @@ public class TerminalActivity extends BaseCompat implements TerminalViewModel.Se
     M3Theme.apply(b.getRoot());
     viewModel = new ViewModelProvider(this).get(TerminalViewModel.class);
     viewModel.setActivityListener(this);
+    revealPending = savedInstanceState == null;
     setupToolbar();
     setupEdgeToEdgeInsets();
     setupViewPager();
     setupExtraKeys();
     applyJsonTheme();
     setupInputDock();
+    setupInstallBanner();
     setupBackHandler();
     setupBackgroundBlur();
     setupInitOverlay();
     maybeRequestNotificationPermission();
+  }
+
+  @Override
+  protected void onDestroy() {
+    viewModel.releaseActivityListener(this);
+    if (transferDialog != null && transferDialog.isShowing()) transferDialog.dismiss();
+    if (initOverlay != null) initOverlay.animate().cancel();
+    super.onDestroy();
   }
 
   @Override
@@ -129,13 +140,17 @@ public class TerminalActivity extends BaseCompat implements TerminalViewModel.Se
     super.onStop();
   }
 
+  /**
+   * Attaches to a running install, or starts the automatic install once per screen. A cancelled or
+   * failed install is not restarted on every onStart; the banner and the overflow menu offer it.
+   */
   private void maybeStartInstall() {
-    if (DebianBootstrap.isInstalled(this)) return;
-    if (!DebianInstaller.isInstalling()) {
-      startDebianInstall();
-    } else {
+    if (DebianInstaller.isInstalling()) {
       attachToRunningInstall();
+      return;
     }
+    if (DebianBootstrap.isInstalled(this)) return;
+    if (viewModel.consumeAutoInstallAttempt()) startDebianInstall();
   }
 
   private void maybeRequestNotificationPermission() {
@@ -170,10 +185,14 @@ public class TerminalActivity extends BaseCompat implements TerminalViewModel.Se
     b.tabLayout.addOnTabSelectedListener(
         new TabLayout.OnTabSelectedListener() {
           @Override
-          public void onTabSelected(TabLayout.Tab tab) {}
+          public void onTabSelected(TabLayout.Tab tab) {
+            updateTabView(tab, tab.getPosition());
+          }
 
           @Override
-          public void onTabUnselected(TabLayout.Tab tab) {}
+          public void onTabUnselected(TabLayout.Tab tab) {
+            updateTabView(tab, tab.getPosition());
+          }
 
           @Override
           public void onTabReselected(TabLayout.Tab tab) {
@@ -185,20 +204,70 @@ public class TerminalActivity extends BaseCompat implements TerminalViewModel.Se
   }
 
   private void bindTab(TabLayout.Tab tab, int position) {
-    List<TerminalTab> tabs = viewModel.getSessionList();
-    tab.setText(tabs.get(position).getDisplayTitle());
+    tab.setCustomView(R.layout.item_terminal_session_tab);
     tab.view.setOnLongClickListener(
         v -> {
           confirmCloseTab(position);
           return true;
         });
+    updateTabView(tab, position);
+  }
+
+  /**
+   * Renders one session tab: the title, and a status dot that is primary for the selected tab,
+   * tertiary for a background tab with unseen output, error once the shell exited, and a dim
+   * outline otherwise.
+   */
+  private void updateTabView(@Nullable TabLayout.Tab tab, int position) {
+    List<TerminalTab> tabs = viewModel.getSessionList();
+    if (tab == null || tab.getCustomView() == null || position < 0 || position >= tabs.size()) {
+      return;
+    }
+    TerminalTab model = tabs.get(position);
+    View custom = tab.getCustomView();
+    TextView title = custom.findViewById(R.id.tabTitle);
+    View dot = custom.findViewById(R.id.tabStatusDot);
+    boolean selected = tab.isSelected();
+    String text = model.getDisplayTitle();
+    title.setText(text);
+    tab.setContentDescription(text);
+    int onSurface = fallback(M3Theme.onSurface(), Color.WHITE);
+    title.setTextColor(onSurface);
+    title.setAlpha(selected ? 1f : INACTIVE_TAB_ALPHA);
+    int dotColor;
+    float dotAlpha = 1f;
+    if (!model.session.isRunning()) {
+      dotColor = fallback(M3Theme.error(), onSurface);
+    } else if (selected) {
+      dotColor = fallback(M3Theme.primary(), onSurface);
+    } else if (model.hasUnseenOutput()) {
+      dotColor = fallback(M3Theme.tertiary(), fallback(M3Theme.primary(), onSurface));
+    } else {
+      dotColor = fallback(M3Theme.outline(), onSurface);
+      dotAlpha = IDLE_DOT_ALPHA;
+    }
+    Drawable dotBackground = dot.getBackground();
+    if (dotBackground != null) DrawableCompat.setTint(dotBackground.mutate(), dotColor);
+    dot.setAlpha(dotAlpha);
   }
 
   private void refreshTabs() {
     pagerAdapter.notifyDataSetChanged();
     for (int i = 0; i < viewModel.getSessionList().size(); i++) {
-      TabLayout.Tab tab = b.tabLayout.getTabAt(i);
-      if (tab != null) tab.setText(viewModel.getSessionList().get(i).getDisplayTitle());
+      updateTabView(b.tabLayout.getTabAt(i), i);
+    }
+    updateToolbarSubtitle();
+  }
+
+  private void updateToolbarSubtitle() {
+    int count = viewModel.getSessionList().size();
+    if (getSupportActionBar() == null) return;
+    if (count <= 0) {
+      getSupportActionBar().setSubtitle(null);
+    } else if (count == 1) {
+      getSupportActionBar().setSubtitle(R.string.terminal_session_count_one);
+    } else {
+      getSupportActionBar().setSubtitle(getString(R.string.terminal_session_count_many, count));
     }
   }
 
@@ -254,7 +323,10 @@ public class TerminalActivity extends BaseCompat implements TerminalViewModel.Se
 
   @Override
   public void onServiceConnected() {
-    animateTerminalReveal();
+    if (revealPending) {
+      revealPending = false;
+      animateTerminalReveal();
+    }
     boolean runRequested = hasCommandExtra();
     if (viewModel.getSessionList().isEmpty() || runRequested) {
       // اگه سشنی موجود نیست، یا این اکتیویتی برای اجرای کد (EXTRA_COMMAND) اومده، همیشه یه
@@ -272,7 +344,7 @@ public class TerminalActivity extends BaseCompat implements TerminalViewModel.Se
               : 0;
       viewModel.switchToTab(idx);
       refreshTabs();
-      b.viewPager.setCurrentItem(idx, true);
+      b.viewPager.setCurrentItem(idx, false);
     }
   }
 
@@ -291,7 +363,7 @@ public class TerminalActivity extends BaseCompat implements TerminalViewModel.Se
       return;
     }
     v.setAlpha(0f);
-    v.setTranslationY(18f);
+    v.setTranslationY(REVEAL_OFFSET_DP * getResources().getDisplayMetrics().density);
     v.animate()
         .alpha(1f)
         .translationY(0f)
@@ -318,8 +390,12 @@ public class TerminalActivity extends BaseCompat implements TerminalViewModel.Se
 
   @Override
   public void onTitleChanged(int index) {
-    TabLayout.Tab tab = b.tabLayout.getTabAt(index);
-    if (tab != null) tab.setText(viewModel.getSessionList().get(index).getDisplayTitle());
+    updateTabView(b.tabLayout.getTabAt(index), index);
+  }
+
+  @Override
+  public void onSessionActivity(int index) {
+    updateTabView(b.tabLayout.getTabAt(index), index);
   }
 
   @Override
@@ -357,7 +433,8 @@ public class TerminalActivity extends BaseCompat implements TerminalViewModel.Se
             b.handleChevron,
             this::currentSession);
     inputDock.attach();
-    inputDock.attachKeyboardWatcher(getWindow().getDecorView());
+    b.commandInput.setHorizontallyScrolling(false);
+    b.commandInput.setMaxLines(COMMAND_INPUT_MAX_LINES);
   }
 
   public TerminalInputDock getInputDock() {
@@ -382,22 +459,33 @@ public class TerminalActivity extends BaseCompat implements TerminalViewModel.Se
 
   // ─── Edge to edge ────────────────────────────────────────────────────
 
+  /**
+   * The window is edge-to-edge: the toolbar pads under the status bar, the dock pads above the
+   * navigation bar or the keyboard (whichever is taller), side insets keep landscape content out of
+   * cutouts, and the IME visibility from the same insets drives the dock.
+   */
   private void setupEdgeToEdgeInsets() {
     ViewCompat.setOnApplyWindowInsetsListener(
         b.coordinator,
         (v, insets) -> {
-          Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+          Insets bars =
+              insets.getInsets(
+                  WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
           Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
+          b.mainContent.setPadding(bars.left, 0, bars.right, 0);
           b.toolbar.setPadding(
               b.toolbar.getPaddingLeft(),
-              systemBars.top,
+              bars.top,
               b.toolbar.getPaddingRight(),
               b.toolbar.getPaddingBottom());
           b.inputDock.setPadding(
               b.inputDock.getPaddingLeft(),
               b.inputDock.getPaddingTop(),
               b.inputDock.getPaddingRight(),
-              Math.max(systemBars.bottom, ime.bottom));
+              Math.max(bars.bottom, ime.bottom));
+          if (inputDock != null) {
+            inputDock.setKeyboardVisible(insets.isVisible(WindowInsetsCompat.Type.ime()));
+          }
           return insets;
         });
   }
@@ -406,7 +494,10 @@ public class TerminalActivity extends BaseCompat implements TerminalViewModel.Se
 
   private void setupToolbar() {
     setSupportActionBar(b.toolbar);
-    if (getSupportActionBar() != null) getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+    if (getSupportActionBar() != null) {
+      getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+      getSupportActionBar().setTitle(R.string.terminal_title);
+    }
     b.toolbar.setNavigationOnClickListener(v -> finish());
     b.btnMoreMenu.setOnClickListener(this::showMoreMenu);
     styleToolbarChrome();
@@ -470,7 +561,9 @@ public class TerminalActivity extends BaseCompat implements TerminalViewModel.Se
       viewModel.addSession(null);
       return;
     }
-    List<String> items = Arrays.asList("Shell", "Debian");
+    List<String> items =
+        Arrays.asList(
+            getString(R.string.terminal_session_shell), getString(R.string.terminal_session_debian));
     ObjectUtil.showGlassMenu(
         this,
         anchor,
@@ -488,20 +581,12 @@ public class TerminalActivity extends BaseCompat implements TerminalViewModel.Se
   // ─── Extra keys ──────────────────────────────────────────────────────
 
   private void setupExtraKeys() {
-    int tonalBg = fallback(M3Theme.secondaryContainer(), fallback(M3Theme.secondary(), 0));
-    int tonalFg = fallback(M3Theme.onSecondaryContainer(), fallback(M3Theme.onSecondary(), 0));
-    defaultKeyBackgroundColor = tonalBg;
-    defaultKeyTextColor = tonalFg;
-
-    Button[] keys = {
-      b.keyEsc, b.keyTab, b.keyCtrl, b.keyAlt,
-      b.keyUp, b.keyDown, b.keyLeft, b.keyRight,
-      b.keySlash, b.keyDash, b.keyPipe
-    };
-    for (Button key : keys) {
-      key.setBackgroundTintList(ColorStateList.valueOf(tonalBg));
-      key.setTextColor(tonalFg);
-    }
+    extraKeys =
+        new MaterialButton[] {
+          b.keyEsc, b.keyTab, b.keyCtrl, b.keyAlt, b.keyUp, b.keyDown, b.keyLeft, b.keyRight,
+          b.keyHome, b.keyEnd, b.keySlash, b.keyDash, b.keyPipe, b.keyTilde, b.keyPaste
+        };
+    styleExtraKeys();
 
     b.keyEsc.setOnClickListener(v -> sendKeyEvent(KeyEvent.KEYCODE_ESCAPE));
     b.keyTab.setOnClickListener(v -> sendKeyEvent(KeyEvent.KEYCODE_TAB));
@@ -509,39 +594,72 @@ public class TerminalActivity extends BaseCompat implements TerminalViewModel.Se
     b.keyDown.setOnClickListener(v -> sendKeyEvent(KeyEvent.KEYCODE_DPAD_DOWN));
     b.keyLeft.setOnClickListener(v -> sendKeyEvent(KeyEvent.KEYCODE_DPAD_LEFT));
     b.keyRight.setOnClickListener(v -> sendKeyEvent(KeyEvent.KEYCODE_DPAD_RIGHT));
+    b.keyHome.setOnClickListener(v -> sendKeyEvent(KeyEvent.KEYCODE_MOVE_HOME));
+    b.keyEnd.setOnClickListener(v -> sendKeyEvent(KeyEvent.KEYCODE_MOVE_END));
     b.keySlash.setOnClickListener(v -> typeText("/"));
     b.keyDash.setOnClickListener(v -> typeText("-"));
     b.keyPipe.setOnClickListener(v -> typeText("|"));
-    b.keyCtrl.setOnClickListener(
-        v -> {
-          viewModel.toggleCtrl();
-          updateModifierButtonStyle(b.keyCtrl, viewModel.isCtrlToggled());
-        });
-    b.keyAlt.setOnClickListener(
-        v -> {
-          viewModel.toggleAlt();
-          updateModifierButtonStyle(b.keyAlt, viewModel.isAltToggled());
-        });
+    b.keyTilde.setOnClickListener(v -> typeText("~"));
+    b.keyPaste.setOnClickListener(v -> pasteIntoSession());
+    b.keyCtrl.setContentDescription(getString(R.string.terminal_key_ctrl_sticky));
+    b.keyAlt.setContentDescription(getString(R.string.terminal_key_alt_sticky));
+    b.keyCtrl.setOnClickListener(v -> viewModel.toggleCtrl());
+    b.keyAlt.setOnClickListener(v -> viewModel.toggleAlt());
+    viewModel.getModifierState().observe(this, this::renderModifiers);
   }
 
-  private void updateModifierButtonStyle(Button button, boolean active) {
-    if (active) {
-      int bg = fallback(M3Theme.primary(), 0);
-      int fg = fallback(M3Theme.onPrimary(), 0);
-      button.setBackgroundTintList(ColorStateList.valueOf(bg));
-      button.setTextColor(fg);
-    } else {
-      button.setBackgroundTintList(ColorStateList.valueOf(defaultKeyBackgroundColor));
-      button.setTextColor(defaultKeyTextColor);
+  /**
+   * The sticky CTRL/ALT state lives in the ViewModel and is cleared there when the next key
+   * consumes it, so the checked state of the keys always mirrors what the next key press will do.
+   */
+  private void renderModifiers(@Nullable Integer state) {
+    int bits = state != null ? state : 0;
+    b.keyCtrl.setChecked((bits & TerminalViewModel.MODIFIER_CTRL) != 0);
+    b.keyAlt.setChecked((bits & TerminalViewModel.MODIFIER_ALT) != 0);
+  }
+
+  private void styleExtraKeys() {
+    if (extraKeys == null) return;
+    int onSurface = fallback(M3Theme.onSurface(), Color.WHITE);
+    int keyBackground =
+        fallback(M3Theme.surfaceContainerHighest(), fallback(M3Theme.surfaceVariant(), 0));
+    int checkedBackground = fallback(M3Theme.primary(), onSurface);
+    int checkedText = fallback(M3Theme.onPrimary(), keyBackground);
+    int[][] states = {
+      new int[] {android.R.attr.state_checked},
+      new int[] {-android.R.attr.state_enabled},
+      new int[] {}
+    };
+    ColorStateList background =
+        new ColorStateList(
+            states,
+            new int[] {
+              checkedBackground, ColorUtils.setAlphaComponent(keyBackground, 0x61), keyBackground
+            });
+    ColorStateList text =
+        new ColorStateList(
+            states,
+            new int[] {checkedText, ColorUtils.setAlphaComponent(onSurface, 0x61), onSurface});
+    ColorStateList ripple =
+        ColorStateList.valueOf(
+            ColorUtils.setAlphaComponent(onSurface, Math.round(255 * KEY_RIPPLE_ALPHA)));
+    for (MaterialButton key : extraKeys) {
+      key.setBackgroundTintList(background);
+      key.setTextColor(text);
+      key.setIconTint(text);
+      key.setRippleColor(ripple);
+      key.setStrokeWidth(0);
     }
   }
 
   private void sendKeyEvent(int keyCode) {
     TerminalSessionFragment fragment = getCurrentFragment();
-    if (fragment != null) {
-      long now = SystemClock.uptimeMillis();
-      fragment.sendKeyEvent(keyCode);
-    }
+    if (fragment != null) fragment.sendKeyEvent(keyCode);
+  }
+
+  private void pasteIntoSession() {
+    TerminalSession session = currentSession();
+    if (session != null) session.onPasteTextFromClipboard();
   }
 
   private void typeText(String text) {
@@ -569,21 +687,23 @@ public class TerminalActivity extends BaseCompat implements TerminalViewModel.Se
     setupBackgroundBlur(b.backgroundIconTerminal, b.toolbar, b.tabsBar, b.inputDock);
   }
 
+  /**
+   * Chrome (toolbar, tabs, dock) is one tonal surface; the terminal output below it uses the
+   * darkest container tone (see TerminalSessionFragment) so the two read as separate layers.
+   */
   private void applyJsonTheme() {
     boolean hasBackgroundImage = isBackgroundImageEnabled();
 
     if (hasBackgroundImage) {
       b.coordinator.setBackgroundColor(Color.TRANSPARENT);
     } else {
-      Integer surfaceContainer = M3Theme.surfaceContainer();
-      Integer surface = M3Theme.surface();
-      Integer surfaceHigh = M3Theme.surfaceContainerHigh();
-      if (surfaceContainer == null) surfaceContainer = surface;
-      if (surfaceContainer != null) b.coordinator.setBackgroundColor(surfaceContainer);
-      if (surfaceHigh != null) {
-        applyViewColor(b.toolbar, surfaceHigh);
-        if (b.tabsBar != null) applyViewColor(b.tabsBar, surfaceHigh);
-        applyViewColor(b.inputDock, surfaceHigh);
+      Integer chrome = M3Theme.surfaceContainer();
+      if (chrome == null) chrome = M3Theme.surface();
+      if (chrome != null) {
+        b.coordinator.setBackgroundColor(chrome);
+        applyViewColor(b.toolbar, chrome);
+        applyViewColor(b.tabsBar, chrome);
+        applyViewColor(b.inputDock, chrome);
       }
     }
 
@@ -594,17 +714,16 @@ public class TerminalActivity extends BaseCompat implements TerminalViewModel.Se
 
     M3Theme.toolbar(b.toolbar);
     styleTerminalTabs();
+    styleExtraKeys();
 
     if (onSurface != null) b.handleChevron.setColorFilter(onSurface);
     if (primary != null) b.commandInputLayout.setEndIconTintList(ColorStateList.valueOf(primary));
     if (onSurfaceVariant != null) b.commandInput.setHintTextColor(onSurfaceVariant);
     if (outlineVariant != null) {
       applyViewColor(b.dividerTop, outlineVariant);
-      applyViewColor(b.divExtra1, outlineVariant);
-      applyViewColor(b.divExtra2, outlineVariant);
-      applyViewColor(b.divExtra3, outlineVariant);
       applyViewColor(b.dragHandlePill, outlineVariant);
     }
+    styleInstallBanner();
 
     applyColorBackground();
   }
@@ -616,6 +735,8 @@ public class TerminalActivity extends BaseCompat implements TerminalViewModel.Se
       if (b.tabLayout != null) {
         styleTerminalTabs();
       }
+      styleExtraKeys();
+      styleInstallBanner();
       applyColorBackground();
       themeUtils.applyImageBackground(b.backgroundIconTerminal);
     }
@@ -631,6 +752,11 @@ public class TerminalActivity extends BaseCompat implements TerminalViewModel.Se
       b.tabLayout.setBackgroundColor(0);
     }
     M3Theme.tabs(b.tabLayout);
+    Integer primary = M3Theme.primary();
+    if (primary != null) b.tabLayout.setSelectedTabIndicatorColor(primary);
+    for (int i = 0; i < b.tabLayout.getTabCount(); i++) {
+      updateTabView(b.tabLayout.getTabAt(i), i);
+    }
   }
   private void applyColorBackground() {
     try {
@@ -675,7 +801,6 @@ public class TerminalActivity extends BaseCompat implements TerminalViewModel.Se
 
   private void setupInitOverlay() {
     initOverlay = b.getRoot().findViewById(R.id.initOverlay);
-    initOverlayStatus = b.getRoot().findViewById(R.id.initOverlayStatus);
     TextView versionText = b.getRoot().findViewById(R.id.initOverlayVersion);
     GLSLShaderView shader = b.getRoot().findViewById(R.id.initOverlayShader);
     if (shader != null) {
@@ -686,18 +811,20 @@ public class TerminalActivity extends BaseCompat implements TerminalViewModel.Se
         shader.setVisibility(View.GONE);
       }
     }
+    String version;
     try {
-      String version = getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
-      versionText.setText("v" + version);
-    } catch (Exception e) {
-      versionText.setText("v1.0");
+      version = getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
+    } catch (PackageManager.NameNotFoundException e) {
+      version = null;
     }
+    versionText.setText(
+        version != null ? getString(R.string.terminal_version_label, "v" + version) : null);
     viewModel.setInitOverlayShower(this::showInitOverlay);
     viewModel.setInitOverlayHider(this::hideInitOverlay);
   }
 
   private void showInitOverlay() {
-    if (initOverlay == null) return;
+    if (initOverlay == null || isDestroyed()) return;
     initOverlay.setVisibility(View.VISIBLE);
     initOverlay.setAlpha(0f);
     initOverlay
@@ -706,11 +833,10 @@ public class TerminalActivity extends BaseCompat implements TerminalViewModel.Se
         .setDuration(400)
         .setInterpolator(new DecelerateInterpolator())
         .start();
-    cycleInitStatus(0);
   }
 
   private void hideInitOverlay() {
-    if (initOverlay == null) return;
+    if (initOverlay == null || isDestroyed()) return;
     initOverlay
         .animate()
         .alpha(0f)
@@ -718,17 +844,6 @@ public class TerminalActivity extends BaseCompat implements TerminalViewModel.Se
         .setInterpolator(new DecelerateInterpolator())
         .withEndAction(() -> initOverlay.setVisibility(View.GONE))
         .start();
-  }
-
-  private void cycleInitStatus(int step) {
-    if (initOverlay == null || initOverlay.getVisibility() != View.VISIBLE) return;
-    String[] messages = {
-      "Setting up DNS...", "Installing Node.js...", "Installing Web LSP...", "Almost ready..."
-    };
-    if (step < messages.length) {
-      initOverlayStatus.setText(messages[step]);
-      b.getRoot().postDelayed(() -> cycleInitStatus(step + 1), 4000);
-    }
   }
 
   // ─── Back ────────────────────────────────────────────────────────────
@@ -772,39 +887,159 @@ public class TerminalActivity extends BaseCompat implements TerminalViewModel.Se
         .show();
   }
 
-  private void buildInstallDialogViews() {
-    LinearLayout layout = new LinearLayout(this);
-    layout.setOrientation(LinearLayout.VERTICAL);
-    int pad = (int) (16 * getResources().getDisplayMetrics().density);
-    layout.setPadding(pad, pad, pad, pad);
+  private enum InstallBannerState {
+    HIDDEN,
+    RUNNING,
+    FAILED,
+    READY
+  }
 
-    installStatusText = new TextView(this);
-    installStatusText.setText(getString(R.string.terminal_status_starting_download));
+  private InstallBannerState bannerState = InstallBannerState.HIDDEN;
 
-    installProgressBar = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
-    installProgressBar.setMax(100);
-    installProgressBar.setIndeterminate(false);
+  private void setupInstallBanner() {
+    b.installBannerAction.setOnClickListener(v -> onInstallBannerAction());
+    b.installBannerDismiss.setOnClickListener(v -> hideInstallBanner());
+    if (TextUtils.getLayoutDirectionFromLocale(getResources().getConfiguration().getLocales().get(0))
+        == View.LAYOUT_DIRECTION_RTL) {
+      mirrorInstallBannerForRtl();
+    }
+    styleInstallBanner();
+  }
 
-    layout.addView(installStatusText);
-    layout.addView(installProgressBar);
+  /**
+   * The app declares supportsRtl=false, so layout direction never resolves to RTL. For a
+   * right-to-left locale the banner row is mirrored by hand: children reversed, start/end margins
+   * and paddings swapped, and the progress fills from the right.
+   */
+  private void mirrorInstallBannerForRtl() {
+    LinearLayout row = b.installBannerRow;
+    int count = row.getChildCount();
+    View[] children = new View[count];
+    for (int i = 0; i < count; i++) children[i] = row.getChildAt(i);
+    row.removeAllViews();
+    for (int i = count - 1; i >= 0; i--) {
+      View child = children[i];
+      LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) child.getLayoutParams();
+      int start = lp.getMarginStart();
+      lp.setMarginStart(lp.getMarginEnd());
+      lp.setMarginEnd(start);
+      row.addView(child, lp);
+    }
+    b.installBanner.setPaddingRelative(
+        b.installBanner.getPaddingEnd(),
+        b.installBanner.getPaddingTop(),
+        b.installBanner.getPaddingStart(),
+        b.installBanner.getPaddingBottom());
+    LinearLayout.LayoutParams progressLp =
+        (LinearLayout.LayoutParams) b.installBannerProgress.getLayoutParams();
+    int progressStart = progressLp.getMarginStart();
+    progressLp.setMarginStart(progressLp.getMarginEnd());
+    progressLp.setMarginEnd(progressStart);
+    b.installBannerProgress.setLayoutParams(progressLp);
+    b.installBannerProgress.setIndicatorDirection(
+        LinearProgressIndicator.INDICATOR_DIRECTION_RIGHT_TO_LEFT);
+  }
 
-    installDialog =
-        new DialogCompat(this)
-            .setTitle(getString(R.string.terminal_install_debian))
-            .setView(layout)
-            .setCancelable(false)
-            .setNegativeButton(
-                getString(R.string.terminal_action_cancel),
-                (dialog, which) -> {
-                  DebianInstaller.cancelInstall();
-                  GhostToast.makeText(
-                          this,
-                          getString(R.string.terminal_install_cancelled),
-                          GhostToast.LENGTH_SHORT)
-                      .show();
-                })
-            .create();
-    installDialog.show();
+  private void styleInstallBanner() {
+    int onSurface = fallback(M3Theme.onSurface(), Color.WHITE);
+    int primary = fallback(M3Theme.primary(), onSurface);
+    Integer container = M3Theme.surfaceContainerHigh();
+    if (container != null) b.installBanner.setBackgroundColor(container);
+    b.installBannerTitle.setTextColor(onSurface);
+    b.installBannerStatus.setTextColor(onSurface);
+    b.installBannerDismiss.setImageTintList(ColorStateList.valueOf(onSurface));
+    b.installBannerAction.setBackgroundTintList(ColorStateList.valueOf(Color.TRANSPARENT));
+    b.installBannerAction.setStrokeWidth(0);
+    b.installBannerAction.setTextColor(primary);
+    b.installBannerAction.setRippleColor(
+        ColorStateList.valueOf(ColorUtils.setAlphaComponent(primary, 0x33)));
+    int iconColor =
+        bannerState == InstallBannerState.FAILED ? fallback(M3Theme.error(), primary) : primary;
+    b.installBannerIcon.setImageTintList(ColorStateList.valueOf(iconColor));
+    b.installBannerProgress.setIndicatorColor(primary);
+    b.installBannerProgress.setTrackColor(
+        fallback(M3Theme.surfaceContainerHighest(), ColorUtils.setAlphaComponent(primary, 0x40)));
+  }
+
+  /**
+   * Shows the non-blocking install progress above the terminal.
+   *
+   * @param percent download percentage, or a negative value for an indeterminate phase
+   */
+  private void showInstallRunning(String status, int percent) {
+    bannerState = InstallBannerState.RUNNING;
+    b.installBanner.setVisibility(View.VISIBLE);
+    b.installBannerTitle.setText(R.string.terminal_install_banner_title);
+    b.installBannerStatus.setText(status);
+    b.installBannerAction.setText(R.string.terminal_action_cancel);
+    b.installBannerAction.setVisibility(View.VISIBLE);
+    b.installBannerDismiss.setVisibility(View.GONE);
+    b.installBannerIcon.setImageResource(R.drawable.ic_download);
+    b.installBannerProgress.setVisibility(View.VISIBLE);
+    if (percent < 0) {
+      if (!b.installBannerProgress.isIndeterminate()) {
+        b.installBannerProgress.setVisibility(View.INVISIBLE);
+        b.installBannerProgress.setIndeterminate(true);
+        b.installBannerProgress.setVisibility(View.VISIBLE);
+      }
+    } else {
+      if (b.installBannerProgress.isIndeterminate()) {
+        b.installBannerProgress.setVisibility(View.INVISIBLE);
+        b.installBannerProgress.setIndeterminate(false);
+        b.installBannerProgress.setVisibility(View.VISIBLE);
+      }
+      b.installBannerProgress.setProgressCompat(percent, true);
+    }
+    styleInstallBanner();
+  }
+
+  private void showInstallFailed(String message) {
+    bannerState = InstallBannerState.FAILED;
+    b.installBanner.setVisibility(View.VISIBLE);
+    b.installBannerTitle.setText(R.string.terminal_install_failed_title);
+    b.installBannerStatus.setText(message);
+    b.installBannerAction.setText(R.string.terminal_action_retry);
+    b.installBannerAction.setVisibility(View.VISIBLE);
+    b.installBannerDismiss.setVisibility(View.VISIBLE);
+    b.installBannerIcon.setImageResource(R.drawable.ic_info);
+    b.installBannerProgress.setVisibility(View.GONE);
+    styleInstallBanner();
+  }
+
+  private void showInstallReady() {
+    bannerState = InstallBannerState.READY;
+    b.installBanner.setVisibility(View.VISIBLE);
+    b.installBannerTitle.setText(R.string.terminal_install_ready_title);
+    b.installBannerStatus.setText(R.string.terminal_install_ready_message);
+    b.installBannerAction.setText(R.string.terminal_action_open_debian);
+    b.installBannerAction.setVisibility(View.VISIBLE);
+    b.installBannerDismiss.setVisibility(View.VISIBLE);
+    b.installBannerIcon.setImageResource(R.drawable.check_24px);
+    b.installBannerProgress.setVisibility(View.GONE);
+    styleInstallBanner();
+  }
+
+  private void hideInstallBanner() {
+    bannerState = InstallBannerState.HIDDEN;
+    b.installBanner.setVisibility(View.GONE);
+  }
+
+  private void onInstallBannerAction() {
+    switch (bannerState) {
+      case RUNNING -> {
+        DebianInstaller.cancelInstall();
+        hideInstallBanner();
+        GhostToast.makeText(
+                this, getString(R.string.terminal_install_cancelled), GhostToast.LENGTH_SHORT)
+            .show();
+      }
+      case FAILED -> startDebianInstall();
+      case READY -> {
+        hideInstallBanner();
+        addNewDebianSession();
+      }
+      default -> hideInstallBanner();
+    }
   }
 
   private DebianInstaller.InstallListener getOrCreateInstallListener() {
@@ -815,10 +1050,9 @@ public class TerminalActivity extends BaseCompat implements TerminalViewModel.Se
           public void onDownloadProgress(int percent) {
             runOnUiThread(
                 () -> {
-                  installStatusText.setText(
-                      getString(R.string.terminal_status_downloading, percent));
-                  installProgressBar.setIndeterminate(false);
-                  installProgressBar.setProgress(percent);
+                  if (isDestroyed()) return;
+                  showInstallRunning(
+                      getString(R.string.terminal_status_downloading, percent), percent);
                 });
           }
 
@@ -826,9 +1060,9 @@ public class TerminalActivity extends BaseCompat implements TerminalViewModel.Se
           public void onExtractProgress(int extractedEntries) {
             runOnUiThread(
                 () -> {
-                  installStatusText.setText(
-                      getString(R.string.terminal_status_extracting, extractedEntries));
-                  installProgressBar.setIndeterminate(true);
+                  if (isDestroyed()) return;
+                  showInstallRunning(
+                      getString(R.string.terminal_status_extracting, extractedEntries), -1);
                 });
           }
 
@@ -836,7 +1070,8 @@ public class TerminalActivity extends BaseCompat implements TerminalViewModel.Se
           public void onSuccess() {
             runOnUiThread(
                 () -> {
-                  if (installDialog != null) installDialog.dismiss();
+                  if (isDestroyed()) return;
+                  showInstallReady();
                   GhostToast.makeText(
                           TerminalActivity.this,
                           getString(R.string.terminal_debian_installed_success),
@@ -851,9 +1086,8 @@ public class TerminalActivity extends BaseCompat implements TerminalViewModel.Se
           public void onError(String message) {
             runOnUiThread(
                 () -> {
-                  if (installDialog != null) installDialog.dismiss();
-                  GhostToast.makeText(TerminalActivity.this, message, GhostToast.LENGTH_LONG)
-                      .show();
+                  if (isDestroyed()) return;
+                  showInstallFailed(message);
                 });
           }
         };
@@ -861,12 +1095,16 @@ public class TerminalActivity extends BaseCompat implements TerminalViewModel.Se
   }
 
   private void startDebianInstall() {
-    buildInstallDialogViews();
-    DebianInstaller.installDebian(this, getOrCreateInstallListener());
+    showInstallRunning(
+        getString(R.string.terminal_status_starting_download)
+            + " · "
+            + getString(R.string.terminal_install_banner_hint),
+        -1);
+    DebianInstaller.installDebian(getApplicationContext(), getOrCreateInstallListener());
   }
 
   private void attachToRunningInstall() {
-    buildInstallDialogViews();
+    showInstallRunning(getString(R.string.terminal_status_starting_download), -1);
     DebianInstaller.attach(getOrCreateInstallListener());
   }
 

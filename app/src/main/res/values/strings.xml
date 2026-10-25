@@ -813,4 +813,30 @@
     <string name="about_free_summary">%1$s GB free</string>
     <string name="onboarding_terminal_header">Linux terminal</string>
     <string name="language_system_default">System default</string>
+    <!-- Terminal activity redesign -->
+    <string name="terminal_session_count_one">1 session</string>
+    <string name="terminal_session_count_many">%1$d sessions</string>
+    <string name="terminal_install_banner_title">Installing Debian</string>
+    <string name="terminal_install_banner_hint">You can keep using the shell meanwhile</string>
+    <string name="terminal_install_failed_title">Debian installation failed</string>
+    <string name="terminal_install_ready_title">Debian is ready</string>
+    <string name="terminal_install_ready_message">Open a Debian session to start using it</string>
+    <string name="terminal_action_retry">Retry</string>
+    <string name="terminal_action_open_debian">Open Debian</string>
+    <string name="terminal_action_dismiss">Dismiss</string>
+    <string name="terminal_setup_title">Preparing Debian</string>
+    <string name="terminal_setup_status">First run only: installing the base tools. The setup keeps running in the terminal.</string>
+    <string name="terminal_version_label">Ghost IDE %1$s</string>
+    <string name="terminal_key_up">Up arrow</string>
+    <string name="terminal_key_down">Down arrow</string>
+    <string name="terminal_key_left">Left arrow</string>
+    <string name="terminal_key_right">Right arrow</string>
+    <string name="terminal_key_ctrl_sticky">Control, applies to the next key</string>
+    <string name="terminal_key_alt_sticky">Alt, applies to the next key</string>
+    <string name="terminal_paste">Paste</string>
+    <string name="terminal_copy_all_output">Copy all output</string>
+    <string name="terminal_share_selection">Share selection</string>
+    <string name="terminal_copied">Copied</string>
+    <string name="terminal_session_shell">Shell</string>
+    <string name="terminal_session_debian">Debian</string>
 </resources>

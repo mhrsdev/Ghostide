@@ -613,6 +613,8 @@ Directory structure:
     │               │   ├── bg_input_row.xml
     │               │   ├── bg_position_indicator.xml
     │               │   ├── bg_tab_indicator.xml
+    │               │   ├── bg_terminal_tab_dot.xml
+    │               │   ├── bg_terminal_tab_indicator.xml
     │               │   ├── bg_url_bar.xml
     │               │   ├── check_24px.xml
     │               │   ├── folder.xml
@@ -792,6 +794,7 @@ Directory structure:
     │               │   ├── item_saved_request.xml
     │               │   ├── item_slider_row.xml
     │               │   ├── item_snippet.xml
+    │               │   ├── item_terminal_session_tab.xml
     │               │   ├── item_terminal_tab.xml
     │               │   ├── item_theme_grid.xml
     │               │   ├── item_theme_ref_row.xml

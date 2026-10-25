@@ -8,6 +8,7 @@ public class TerminalTab {
   public final int id;
   public final TerminalSession session;
   private String customTitle;
+  private boolean unseenOutput;
 
   public TerminalTab(int id, TerminalSession session) {
     this.id = id;
@@ -24,5 +25,14 @@ public class TerminalTab {
 
   public void setCustomTitle(String customTitle) {
     this.customTitle = customTitle;
+  }
+
+  /** True when the session printed output while its tab was not the selected one. */
+  public boolean hasUnseenOutput() {
+    return unseenOutput;
+  }
+
+  public void setUnseenOutput(boolean unseenOutput) {
+    this.unseenOutput = unseenOutput;
   }
 }

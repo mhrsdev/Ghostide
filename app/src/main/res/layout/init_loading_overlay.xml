@@ -4,7 +4,7 @@
     android:id="@+id/initOverlay"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#E6101010"
+    android:background="?attr/colorSurfaceContainerLowest"
     android:clickable="true"
     android:focusable="true"
     android:visibility="gone">
@@ -15,16 +15,19 @@
         android:layout_height="match_parent" />
 
     <LinearLayout
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:gravity="center"
+        android:paddingStart="32dp"
+        android:paddingEnd="32dp"
         android:orientation="vertical">
 
         <ImageView
-            android:layout_width="80dp"
-            android:layout_height="80dp"
+            android:layout_width="72dp"
+            android:layout_height="72dp"
             android:layout_gravity="center"
+            android:importantForAccessibility="no"
             android:src="@drawable/atomicghost"
             android:scaleType="fitCenter"
             android:layout_marginBottom="20dp" />
@@ -33,41 +36,36 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:text="Ghost IDE"
-            android:textColor="#FFFFFF"
-            android:textSize="28sp"
-            android:textStyle="bold"
-            android:fontFamily="sans-serif-medium"
-            android:layout_marginBottom="6dp" />
+            android:text="@string/terminal_setup_title"
+            android:textAppearance="?attr/textAppearanceTitleLarge"
+            android:gravity="center"
+            android:layout_marginBottom="4dp" />
 
         <TextView
             android:id="@+id/initOverlayVersion"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:text="v1.1.5"
-            android:textColor="#B0FFFFFF"
-            android:textSize="13sp"
-            android:letterSpacing="0.08"
-            android:layout_marginBottom="32dp" />
+            android:alpha="0.6"
+            android:textAppearance="?attr/textAppearanceLabelMedium"
+            android:layout_marginBottom="28dp" />
 
-        <ProgressBar
-            android:layout_width="48dp"
-            android:layout_height="48dp"
+        <com.google.android.material.progressindicator.CircularProgressIndicator
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:indeterminate="true"
-            android:indeterminateTint="#7C4DFF"
-            android:layout_marginBottom="24dp" />
+            android:layout_marginBottom="20dp" />
 
         <TextView
             android:id="@+id/initOverlayStatus"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:text="Setting up environment..."
-            android:textColor="#90FFFFFF"
-            android:textSize="13sp"
-            android:textAlignment="center" />
+            android:alpha="0.72"
+            android:gravity="center"
+            android:text="@string/terminal_setup_status"
+            android:textAppearance="?attr/textAppearanceBodyMedium" />
 
     </LinearLayout>
 

@@ -26,14 +26,15 @@ public final class TerminalColorsUtil {
     var theme = GhostIdeAppLoader.getInstance().getThemeUtils();
     var setting = GhostIdeAppLoader.getInstance().getSetting();
 
-    var colorPrimaryFixed =
+    String foreground =
         setting.isShowBackground()
             ? toHex(Color.parseColor(theme.getTheme().getWidget().getText()))
-            : toHex(fallback(M3Theme.primary(), Color.WHITE));
+            : toHex(fallback(M3Theme.onSurface(), Color.WHITE));
+    String cursor = toHex(fallback(M3Theme.primary(), Color.WHITE));
 
     Properties props = new Properties();
-    props.setProperty("foreground", colorPrimaryFixed);
-    props.setProperty("cursor", colorPrimaryFixed);
+    props.setProperty("foreground", foreground);
+    props.setProperty("cursor", cursor);
     try {
       TerminalColors.COLOR_SCHEME.updateWith(props);
     } catch (Exception ignored) {

@@ -25,6 +25,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class TerminalViewModel extends AndroidViewModel {
 
@@ -32,6 +34,16 @@ public class TerminalViewModel extends AndroidViewModel {
   private static final String ASSET_INIT_SH = "shell/init.sh";
   private static final String INIT_RUN_MARKER = "ghostide-init-run";
   private static final String[] HELPER_COMMANDS = {"weblsp"};
+
+  /** Bit set in {@link #getModifierState()} while the sticky CTRL key is armed. */
+  public static final int MODIFIER_CTRL = 1;
+
+  /** Bit set in {@link #getModifierState()} while the sticky ALT key is armed. */
+  public static final int MODIFIER_ALT = 2;
+
+  private static final int INIT_FIRST_DELAY_MS = 2000;
+  private static final int INIT_RETRY_DELAY_MS = 200;
+  private static final int INIT_OVERLAY_HIDE_DELAY_MS = 3000;
 
   private final MutableLiveData<List<TerminalTab>> sessions = new MutableLiveData<>(new ArrayList<>());
   private final MutableLiveData<Integer> currentTabIndex = new MutableLiveData<>(-1);
@@ -55,8 +67,12 @@ public class TerminalViewModel extends AndroidViewModel {
   private boolean isBound;
   private boolean ctrlToggled;
   private boolean altToggled;
+  private final MutableLiveData<Integer> modifierState = new MutableLiveData<>(0);
+  private int fontSizeSp = -1;
+  private boolean autoInstallAttempted;
 
   private final Handler mainHandler = new Handler(Looper.getMainLooper());
+  private final ExecutorService ioExecutor = Executors.newSingleThreadExecutor();
 
   public interface SessionListener {
     void onServiceConnected();
@@ -64,6 +80,9 @@ public class TerminalViewModel extends AndroidViewModel {
     void onSessionRemoved(boolean empty);
     void onTitleChanged(int index);
     void onServiceLost();
+
+    /** A tab that is not selected printed new output; its activity indicator should update. */
+    default void onSessionActivity(int index) {}
   }
 
   /** وقتی init.sh تازه قراره اجرا بشه (نصب تازه) صدا زده میشه تا Activity اورلیِ لودینگ رو نشون بده. */
@@ -102,6 +121,42 @@ public class TerminalViewModel extends AndroidViewModel {
 
   public void setActivityListener(SessionListener listener) {
     this.activityListener = listener;
+  }
+
+  /**
+   * Drops every reference to a destroyed host: the session listener (only if it is still {@code
+   * listener}) and the init overlay callbacks it registered.
+   */
+  public void releaseActivityListener(SessionListener listener) {
+    if (activityListener == listener) {
+      activityListener = null;
+      initOverlayShower = null;
+      initOverlayHider = null;
+    }
+  }
+
+  /** Sticky modifier keys armed from the extra-keys row, as {@link #MODIFIER_CTRL} bits. */
+  public LiveData<Integer> getModifierState() {
+    return modifierState;
+  }
+
+  /** Terminal font size chosen with pinch-zoom, or -1 while the default is still in use. */
+  public int getFontSizeSp() {
+    return fontSizeSp;
+  }
+
+  public void setFontSizeSp(int fontSizeSp) {
+    this.fontSizeSp = fontSizeSp;
+  }
+
+  /**
+   * Returns true only the first time it is called for this ViewModel, so the automatic Debian
+   * install starts once per screen instead of again after every cancel, failure or onStart.
+   */
+  public boolean consumeAutoInstallAttempt() {
+    if (autoInstallAttempted) return false;
+    autoInstallAttempted = true;
+    return true;
   }
 
   public void setInitOverlayShower(Runnable shower) {
@@ -160,18 +215,28 @@ public class TerminalViewModel extends AndroidViewModel {
 
   public void consumeCtrlToggle() {
     ctrlToggled = false;
+    publishModifiers();
   }
 
   public void consumeAltToggle() {
     altToggled = false;
+    publishModifiers();
   }
 
   public void toggleCtrl() {
     ctrlToggled = !ctrlToggled;
+    publishModifiers();
   }
 
   public void toggleAlt() {
     altToggled = !altToggled;
+    publishModifiers();
+  }
+
+  private void publishModifiers() {
+    int state = (ctrlToggled ? MODIFIER_CTRL : 0) | (altToggled ? MODIFIER_ALT : 0);
+    Integer current = modifierState.getValue();
+    if (current == null || current != state) modifierState.setValue(state);
   }
 
   public void bindService() {
@@ -184,40 +249,54 @@ public class TerminalViewModel extends AndroidViewModel {
   public void unbindService() {
     if (!isBound) return;
     isBound = false;
+    if (service != null) service.clearUiListener(serviceListener);
     getApplication().unbindService(connection);
     service = null;
   }
 
+  /**
+   * Output arrives on the main thread (TerminalSession's handler), once per PTY read. The refresher
+   * is called directly; the fragment coalesces the redraw to one per frame, so this path allocates
+   * nothing while output streams.
+   */
+  private final TerminalSessionService.SessionListener serviceListener =
+      new TerminalSessionService.SessionListener() {
+        @Override
+        public void onTextChanged(TerminalSession session) {
+          int index = indexOfSession(session);
+          if (index < 0) return;
+          List<TerminalTab> list = sessions.getValue();
+          if (list == null) return;
+          TerminalTab tab = list.get(index);
+          ScreenRefresher refresher = screenRefreshers.get(tab.id);
+          if (refresher != null) refresher.onScreenUpdated();
+          Integer current = currentTabIndex.getValue();
+          if ((current == null || current != index) && !tab.hasUnseenOutput()) {
+            tab.setUnseenOutput(true);
+            if (activityListener != null) activityListener.onSessionActivity(index);
+          }
+        }
+
+        @Override
+        public void onTitleChanged(TerminalSession session) {
+          int index = indexOfSession(session);
+          if (index >= 0) {
+            int i = index;
+            mainHandler.post(() -> {
+              if (activityListener != null) activityListener.onTitleChanged(i);
+            });
+          }
+        }
+
+        @Override
+        public void onSessionFinished(TerminalSession session) {
+          removeSessionFromList(session);
+        }
+      };
+
   public void setServiceListener() {
     if (service == null) return;
-    service.setUiListener(
-        new TerminalSessionService.SessionListener() {
-          @Override
-          public void onTextChanged(TerminalSession session) {
-            int index = indexOfSession(session);
-            if (index < 0) return;
-            List<TerminalTab> list = sessions.getValue();
-            if (list == null) return;
-            ScreenRefresher refresher = screenRefreshers.get(list.get(index).id);
-            if (refresher != null) mainHandler.post(refresher::onScreenUpdated);
-          }
-
-          @Override
-          public void onTitleChanged(TerminalSession session) {
-            int index = indexOfSession(session);
-            if (index >= 0) {
-              int i = index;
-              mainHandler.post(() -> {
-                if (activityListener != null) activityListener.onTitleChanged(i);
-              });
-            }
-          }
-
-          @Override
-          public void onSessionFinished(TerminalSession session) {
-            removeSessionFromList(session);
-          }
-        });
+    service.setUiListener(serviceListener);
   }
 
   public void addSession(@Nullable String workingDir) {
@@ -246,7 +325,7 @@ public class TerminalViewModel extends AndroidViewModel {
     int newIndex = sessions.getValue().size() - 1;
     currentTabIndex.setValue(newIndex);
     if (debianReady) {
-      syncShellScriptsToFilesDir();
+      ioExecutor.execute(this::syncShellScriptsToFilesDir);
       runInitScriptIfNeeded();
     }
     int added = newIndex;
@@ -281,8 +360,9 @@ public class TerminalViewModel extends AndroidViewModel {
   public void switchToTab(int position) {
     List<TerminalTab> list = sessions.getValue();
     if (list == null || position < 0 || position >= list.size()) return;
-    TerminalSession session = list.get(position).session;
-    TerminalColorsUtil.refreshSession(session);
+    TerminalTab tab = list.get(position);
+    tab.setUnseenOutput(false);
+    TerminalColorsUtil.refreshSession(tab.session);
     currentTabIndex.setValue(position);
   }
 
@@ -345,39 +425,52 @@ public class TerminalViewModel extends AndroidViewModel {
     File marker = new File(rootfs, INIT_RUN_MARKER);
     if (marker.exists()) return;
 
-    if (initOverlayShower != null) {
-      mainHandler.post(() -> initOverlayShower.run());
-    }
+    mainHandler.post(() -> {
+      if (initOverlayShower != null) initOverlayShower.run();
+    });
+    mainHandler.postDelayed(() -> writeInitScriptWhenReady(rootfs, marker), INIT_FIRST_DELAY_MS);
+  }
 
-    mainHandler.postDelayed(
+  private void writeInitScriptWhenReady(File rootfs, File marker) {
+    List<TerminalTab> list = sessions.getValue();
+    if (list == null || list.isEmpty()) return;
+    TerminalSession session = list.get(list.size() - 1).session;
+    if (session.getEmulator() == null) {
+      mainHandler.postDelayed(() -> writeInitScriptWhenReady(rootfs, marker), INIT_RETRY_DELAY_MS);
+      return;
+    }
+    ioExecutor.execute(
         () -> {
-          List<TerminalTab> list = sessions.getValue();
-          if (list == null || list.isEmpty()) return;
-          TerminalSession session = list.get(list.size() - 1).session;
-          if (session.getEmulator() == null) {
-            mainHandler.postDelayed(this::runInitScriptIfNeeded, 200);
-            return;
-          }
           installHelperCommands(rootfs);
-          String initScript = ResourceUtils.readAssets2String(ASSET_INIT_SH);
-          String weblspScript = ResourceUtils.readAssets2String("shell/weblsp.sh");
-          if (initScript != null && !initScript.isEmpty()) {
-            initScript = applyJavaVersion(initScript);
-            StringBuilder combined = new StringBuilder(initScript);
-            if (weblspScript != null && !weblspScript.isEmpty()) {
-              combined.append("\n");
-              combined.append(weblspScript);
-            }
-            combined.append("\necho '[GHOSTIDE] setup complete ✓'\n");
-            session.write(combined.toString());
-            FileUtils.createFileByDeleteOldFile(marker);
-            FileIOUtils.writeFileFromString(marker, "done");
-            if (initOverlayHider != null) {
-              mainHandler.postDelayed(() -> initOverlayHider.run(), 3000);
-            }
-          }
-        },
-        2000);
+          String script = buildInitScript();
+          if (script == null) return;
+          FileUtils.createFileByDeleteOldFile(marker);
+          FileIOUtils.writeFileFromString(marker, "done");
+          mainHandler.post(
+              () -> {
+                if (indexOfSession(session) < 0) return;
+                session.write(script);
+                mainHandler.postDelayed(
+                    () -> {
+                      if (initOverlayHider != null) initOverlayHider.run();
+                    },
+                    INIT_OVERLAY_HIDE_DELAY_MS);
+              });
+        });
+  }
+
+  @Nullable
+  private String buildInitScript() {
+    String initScript = ResourceUtils.readAssets2String(ASSET_INIT_SH);
+    if (initScript == null || initScript.isEmpty()) return null;
+    String weblspScript = ResourceUtils.readAssets2String("shell/weblsp.sh");
+    StringBuilder combined = new StringBuilder(applyJavaVersion(initScript));
+    if (weblspScript != null && !weblspScript.isEmpty()) {
+      combined.append("\n");
+      combined.append(weblspScript);
+    }
+    combined.append("\necho '[GHOSTIDE] setup complete ✓'\n");
+    return combined.toString();
   }
 
   private String applyJavaVersion(String script) {
@@ -420,6 +513,10 @@ public class TerminalViewModel extends AndroidViewModel {
   protected void onCleared() {
     super.onCleared();
     mainHandler.removeCallbacksAndMessages(null);
+    ioExecutor.shutdown();
+    activityListener = null;
+    initOverlayShower = null;
+    initOverlayHider = null;
     unbindService();
   }
 }

@@ -41,6 +41,7 @@ public class TerminalInputDock {
   private static final int ANIM_DURATION = 300;
   private static final int FLING_VELOCITY_THRESHOLD = 600;
   private static final int KEYBOARD_COLLAPSE_DELAY = 350;
+  private static final float PAGE_SLIDE_DP = 10f;
 
   /** منحنی استاندارد متریال (fast-out / slow-in) برای حس نرم‌تر. */
   private static final TimeInterpolator EASING = new PathInterpolator(0.2f, 0f, 0f, 1f);
@@ -60,6 +61,8 @@ public class TerminalInputDock {
   private final GestureDetector handleDetector;
 
   private final Runnable collapseRunnable = this::collapse;
+  private final Rect visibleFrame = new Rect();
+  private final float pageSlidePx;
 
   private int contentHeight;
   private float progress;
@@ -68,6 +71,7 @@ public class TerminalInputDock {
   private boolean dragging;
   private boolean dragged;
   private boolean flingHandled;
+  private boolean keyboardVisible;
 
   public TerminalInputDock(
       View inputDock,
@@ -89,6 +93,7 @@ public class TerminalInputDock {
     this.handleChevron = handleChevron;
     this.sessionProvider = sessionProvider;
     this.handleDetector = createHandleDetector();
+    this.pageSlidePx = PAGE_SLIDE_DP * inputDock.getResources().getDisplayMetrics().density;
     configureInputField();
     setPagesToRestingState();
 
@@ -120,12 +125,19 @@ public class TerminalInputDock {
         .getViewTreeObserver()
         .addOnGlobalLayoutListener(
             () -> {
-              Rect visibleFrame = new Rect();
               rootView.getWindowVisibleDisplayFrame(visibleFrame);
               int screenHeight = rootView.getRootView().getHeight();
               int hiddenArea = screenHeight - visibleFrame.bottom;
               onKeyboardVisibilityChanged(hiddenArea > (int) (screenHeight * 0.15f));
             });
+  }
+
+  /**
+   * Reports the soft keyboard state from window insets. Hosts that already observe {@code
+   * WindowInsetsCompat.Type.ime()} call this instead of {@link #attachKeyboardWatcher(View)}.
+   */
+  public void setKeyboardVisible(boolean visible) {
+    onKeyboardVisibilityChanged(visible);
   }
 
   /** سویپ به چپ → صفحه‌ی ورودی متن. */
@@ -157,6 +169,10 @@ public class TerminalInputDock {
     expanded = false;
     commandInput.clearFocus();
     setPagesToRestingState();
+    if (progress <= 0f) {
+      setPagesHeight(0);
+      return;
+    }
     animateHeight(progress, 0f);
   }
 
@@ -202,6 +218,8 @@ public class TerminalInputDock {
   }
 
   private void onKeyboardVisibilityChanged(boolean visible) {
+    if (visible == keyboardVisible) return;
+    keyboardVisible = visible;
     if (visible) {
       cancelPendingCollapse();
       if (!expanded && !dragging) expand();
@@ -219,16 +237,15 @@ public class TerminalInputDock {
   private void expand() {
     heightAnimator.cancel();
     expanded = true;
-    if (contentHeight <= 0) {
-      contentHeight = measureContentHeight();
-      if (contentHeight <= 0) {
-        dockPages.post(() -> { if (expanded) expand(); });
-        return;
-      }
-    }
+    setPagesHeight(ViewGroup.LayoutParams.WRAP_CONTENT);
     animateHeight(progress, 1f);
   }
 
+  /**
+   * Animates only alpha and a short slide. The dock height is committed once (WRAP_CONTENT when
+   * expanding, 0 after collapsing), so the terminal above is resized once per transition instead
+   * of on every animation frame, which would resize the PTY and reflow the screen repeatedly.
+   */
   private void animateHeight(float from, float to) {
     heightAnimator.cancel();
     heightAnimator.removeAllUpdateListeners();
@@ -236,16 +253,26 @@ public class TerminalInputDock {
     heightAnimator.setDuration(ANIM_DURATION);
     heightAnimator.setInterpolator(EASING);
     heightAnimator.setFloatValues(from, to);
-    heightAnimator.addUpdateListener(a -> applyHeight((float) a.getAnimatedValue()));
-    if (to >= 1f) {
-      heightAnimator.addListener(
-          new AnimatorListenerAdapter() {
-            @Override
-            public void onAnimationEnd(Animator animation) {
+    heightAnimator.addUpdateListener(a -> applyProgress((float) a.getAnimatedValue()));
+    heightAnimator.addListener(
+        new AnimatorListenerAdapter() {
+          private boolean cancelled;
+
+          @Override
+          public void onAnimationCancel(Animator animation) {
+            cancelled = true;
+          }
+
+          @Override
+          public void onAnimationEnd(Animator animation) {
+            if (cancelled) return;
+            if (expanded) {
               onExpandEnd();
+            } else {
+              setPagesHeight(0);
             }
-          });
-    }
+          }
+        });
     heightAnimator.start();
   }
 
@@ -253,16 +280,25 @@ public class TerminalInputDock {
     setPagesToRestingState();
   }
 
-  private void applyHeight(float p) {
+  private void applyProgress(float p) {
     progress = clamp(p);
+    dockPages.setAlpha(progress);
+    dockPages.setTranslationY((1f - progress) * pageSlidePx);
+    handleChevron.setRotation(180f * progress);
+  }
+
+  /** Follows the finger while the handle is dragged; this is the only per-frame resize path. */
+  private void applyDragProgress(float p) {
+    applyProgress(p);
+    setPagesHeight(Math.round(contentHeight * progress));
+  }
+
+  private void setPagesHeight(int height) {
     ViewGroup.LayoutParams lp = dockPages.getLayoutParams();
-    int height = Math.round(contentHeight * progress);
     if (lp.height != height) {
       lp.height = height;
       dockPages.setLayoutParams(lp);
     }
-    dockPages.setAlpha(progress);
-    handleChevron.setRotation(180f * progress);
   }
 
   private int measureContentHeight() {
@@ -355,10 +391,8 @@ public class TerminalInputDock {
     }
     // یه تپ ساده قبلاً توسط onSingleTapConfirmed (toggle) مدیریت شده؛ پس کاری نکن.
     if (!dragged) return;
-    if (contentHeight <= 0) return;
     if (progress >= 0.5f) {
-      expanded = true;
-      animateHeight(progress, 1f);
+      expand();
     } else {
       expanded = false;
       animateHeight(progress, 0f);
@@ -376,6 +410,8 @@ public class TerminalInputDock {
                 dragged = false;
                 cancelPendingCollapse();
                 heightAnimator.cancel();
+                int measured = measureContentHeight();
+                if (measured > 0) contentHeight = measured;
                 return true;
               }
 
@@ -383,7 +419,7 @@ public class TerminalInputDock {
               public boolean onScroll(MotionEvent e1, MotionEvent e2, float dx, float dy) {
                 if (contentHeight <= 0) return true;
                 dragged = true;
-                applyHeight(progress - dy / contentHeight);
+                applyDragProgress(progress - dy / contentHeight);
                 return true;
               }
 
