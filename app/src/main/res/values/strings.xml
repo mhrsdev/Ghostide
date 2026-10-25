@@ -921,4 +921,23 @@
     <string name="theme_preview_sample_tab_code">Code</string>
     <string name="theme_preview_sample_tab_files">Files</string>
     <string name="theme_preview_sample_tab_terminal">Terminal</string>
+    <!-- Settings screen UX: section summaries, search and labels -->
+    <string name="settings_summary_editor">Typing, completion, display, cursor and shortcuts</string>
+    <string name="settings_summary_app">Theme, language, app icon, glass and files</string>
+    <string name="settings_summary_ai">Provider, API keys and the OpenCode server</string>
+    <string name="settings_summary_lsp">Inlay hints, hover, signature help and diagnostics</string>
+    <string name="settings_summary_runner">Language runners, extra LSP servers and custom commands</string>
+    <string name="settings_summary_icon_pack">Icons used for files and folders</string>
+    <string name="settings_summary_background_plugin">Renderer drawn behind the app</string>
+    <string name="settings_summary_plugins">Options added by installed plugins</string>
+    <string name="settings_search_hint">Search settings</string>
+    <plurals name="settings_search_matches">
+        <item quantity="one">%d match</item>
+        <item quantity="other">%d matches</item>
+    </plurals>
+    <string name="settings_search_empty_title">No matching settings</string>
+    <string name="settings_search_empty_hint">Try another word, or the name of a section</string>
+    <string name="pref_glsl_effects">GPU shader effects</string>
+    <string name="pref_glsl_effects_desc">Allow GLSL effects such as star particles, spectrum and glass caustics. Turn off if they misbehave on this device.</string>
+    <string name="pref_glass_tint_label">Tint: %1$s</string>
 </resources>

@@ -1,5 +1,6 @@
 package ir.hanzodev1375.ghostide.settings;
 
+import android.util.Log;
 import com.google.gson.Gson;
 import ir.hanzodev1375.components.views.GhostToast;
 import ir.hanzodev1375.ghostide.R;
@@ -22,6 +23,14 @@ import java.util.Set;
 
 public class EditorSettingSection extends SettingSection {
 
+  private static final String TAG = "EditorSettingSection";
+  private static final int[] TAB_SIZES = {2, 4, 6, 8};
+  private static final int[] TAB_SIZE_LABELS = {
+    R.string.tab_size_2, R.string.tab_size_4, R.string.tab_size_6, R.string.tab_size_8
+  };
+  private static final int[] LINE_HEIGHT_LABELS = {
+    R.string.line_height_1, R.string.line_height_2, R.string.line_height_3, R.string.line_height_4
+  };
   private static final int POS_TAB_SIZE = 17;
   private static final int POS_LINE_HEIGHT = 18;
   private static final int POS_CURSOR_BLINK = 19;
@@ -147,9 +156,9 @@ public class EditorSettingSection extends SettingSection {
             R.string.pref_delete_tab_desc,
             prefs.enableDeleteTab(),
             prefs::setDeleteTab));
-    items.add(textItem(R.string.pref_tab_size, R.string.pref_tab_size_desc));
-    items.add(textItem(R.string.pref_line_height, R.string.pref_line_height_desc));
-    items.add(textItem(R.string.pref_cursor_blink_period, R.string.pref_cursor_blink_period_desc));
+    items.add(textItem(R.string.pref_tab_size, tabSizeDescription()));
+    items.add(textItem(R.string.pref_line_height, lineHeightDescription()));
+    items.add(textItem(R.string.pref_cursor_blink_period, cursorBlinkDescription()));
     items.add(
         switchItem(
             R.string.pref_minimap,
@@ -323,34 +332,42 @@ public class EditorSettingSection extends SettingSection {
   // ---------------------------------------------------------------------
 
   private void showTabSizeDialog() {
-    int[] sizes = {2, 4, 6, 8};
-    String[] labels = {
-      getString(R.string.tab_size_2),
-      getString(R.string.tab_size_4),
-      getString(R.string.tab_size_6),
-      getString(R.string.tab_size_8)
-    };
+    int[] sizes = TAB_SIZES;
+    String[] labels = new String[TAB_SIZE_LABELS.length];
+    for (int i = 0; i < labels.length; i++) {
+      labels[i] = getString(TAB_SIZE_LABELS[i]);
+    }
     int current = prefs.getCodeEditorTabSize();
     int checked = 0;
     for (int i = 0; i < sizes.length; i++) {
       if (sizes[i] == current) checked = i;
     }
     showSingleChoiceDialog(
-        R.string.pref_tab_size, labels, checked, which -> prefs.setCodeEditorTabSize(sizes[which]));
+        R.string.pref_tab_size,
+        labels,
+        checked,
+        which -> {
+          prefs.setCodeEditorTabSize(sizes[which]);
+          updateDescriptionAt(POS_TAB_SIZE, tabSizeDescription());
+        });
   }
 
   private void showLineHeightDialog() {
     String[] values = {"1", "2", "3", "4"};
-    String[] labels = {
-      getString(R.string.line_height_1),
-      getString(R.string.line_height_2),
-      getString(R.string.line_height_3),
-      getString(R.string.line_height_4)
-    };
+    String[] labels = new String[LINE_HEIGHT_LABELS.length];
+    for (int i = 0; i < labels.length; i++) {
+      labels[i] = getString(LINE_HEIGHT_LABELS[i]);
+    }
     int checked = ((int) prefs.getCurrentEditorLineHeight()) - 1;
     if (checked < 0) checked = 1;
     showSingleChoiceDialog(
-        R.string.pref_line_height, labels, checked, which -> prefs.setLineHeight(values[which]));
+        R.string.pref_line_height,
+        labels,
+        checked,
+        which -> {
+          prefs.setLineHeight(values[which]);
+          updateDescriptionAt(POS_LINE_HEIGHT, lineHeightDescription());
+        });
   }
 
   private void showCursorBlinkDialog() {
@@ -361,7 +378,10 @@ public class EditorSettingSection extends SettingSection {
         50f,
         prefs.getCursorBlinkPeriod(),
         value -> getString(R.string.cursor_blink_ms, (int) value.floatValue()),
-        value -> prefs.setCursorBlinkPeriod((int) value.floatValue()));
+        value -> {
+          prefs.setCursorBlinkPeriod((int) value.floatValue());
+          updateDescriptionAt(POS_CURSOR_BLINK, cursorBlinkDescription());
+        });
   }
 
   private void showFontDialog() {
@@ -524,6 +544,36 @@ public class EditorSettingSection extends SettingSection {
   // Helpers
   // ---------------------------------------------------------------------
 
+  private String withCurrentValue(int descriptionRes, String value) {
+    return getString(descriptionRes)
+        + "\n"
+        + String.format(getString(R.string.current_value), value);
+  }
+
+  private String tabSizeDescription() {
+    int current = prefs.getCodeEditorTabSize();
+    String label = String.valueOf(current);
+    for (int i = 0; i < TAB_SIZES.length; i++) {
+      if (TAB_SIZES[i] == current) label = getString(TAB_SIZE_LABELS[i]);
+    }
+    return withCurrentValue(R.string.pref_tab_size_desc, label);
+  }
+
+  private String lineHeightDescription() {
+    int index = ((int) prefs.getCurrentEditorLineHeight()) - 1;
+    String label =
+        index >= 0 && index < LINE_HEIGHT_LABELS.length
+            ? getString(LINE_HEIGHT_LABELS[index])
+            : String.valueOf(prefs.getCurrentEditorLineHeight());
+    return withCurrentValue(R.string.pref_line_height_desc, label);
+  }
+
+  private String cursorBlinkDescription() {
+    return withCurrentValue(
+        R.string.pref_cursor_blink_period_desc,
+        getString(R.string.cursor_blink_ms, prefs.getCursorBlinkPeriod()));
+  }
+
   private String getFontDisplayName(String fontKey) {
     switch (fontKey) {
       case "inconsolata_regular":
@@ -570,7 +620,8 @@ public class EditorSettingSection extends SettingSection {
           names.add(name);
         }
       }
-    } catch (Exception ignored) {
+    } catch (Exception e) {
+      Log.w(TAG, "Cannot read cursor packs from " + jsonFile.getName(), e);
     }
     Collections.sort(names);
     return names;

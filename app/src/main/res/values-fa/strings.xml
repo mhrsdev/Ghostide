@@ -917,4 +917,23 @@
     <string name="theme_preview_sample_tab_code">کد</string>
     <string name="theme_preview_sample_tab_files">فایل‌ها</string>
     <string name="theme_preview_sample_tab_terminal">ترمینال</string>
+    <!-- Settings screen UX: section summaries, search and labels -->
+    <string name="settings_summary_editor">تایپ، تکمیل خودکار، نمایش، نشانگر و میانبرها</string>
+    <string name="settings_summary_app">تم، زبان، آیکون برنامه، شیشه و فایل‌ها</string>
+    <string name="settings_summary_ai">ارائه‌دهنده، کلیدهای API و سرور OpenCode</string>
+    <string name="settings_summary_lsp">راهنمای درون‌خطی، اطلاعات شناور، امضای توابع و خطایابی</string>
+    <string name="settings_summary_runner">اجراکننده‌های زبان، سرورهای LSP اضافه و دستورهای سفارشی</string>
+    <string name="settings_summary_icon_pack">آیکون‌های فایل‌ها و پوشه‌ها</string>
+    <string name="settings_summary_background_plugin">نمایش‌دهنده‌ای که پشت برنامه کشیده می‌شود</string>
+    <string name="settings_summary_plugins">گزینه‌هایی که پلاگین‌های نصب‌شده اضافه کرده‌اند</string>
+    <string name="settings_search_hint">جستجو در تنظیمات</string>
+    <plurals name="settings_search_matches">
+        <item quantity="one">%d مورد</item>
+        <item quantity="other">%d مورد</item>
+    </plurals>
+    <string name="settings_search_empty_title">تنظیمی پیدا نشد</string>
+    <string name="settings_search_empty_hint">کلمه دیگری یا نام یک بخش را امتحان کنید</string>
+    <string name="pref_glsl_effects">افکت‌های شیدر GPU</string>
+    <string name="pref_glsl_effects_desc">اجازه اجرای افکت‌های GLSL مثل ذرات ستاره، طیف و درخشش شیشه. اگر روی این دستگاه مشکل دارند خاموششان کنید.</string>
+    <string name="pref_glass_tint_label">شدت: %1$s</string>
 </resources>

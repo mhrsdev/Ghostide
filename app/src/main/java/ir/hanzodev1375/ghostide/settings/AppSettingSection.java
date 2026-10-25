@@ -128,7 +128,7 @@ public class AppSettingSection extends SettingSection {
                 + String.format(
                     getString(R.string.current_value),
                     prefs.getAnimationBatteryThreshold() + "%")));
-    items.add(textItem(R.string.pref_grid_title, R.string.pref_grid_subtitle));
+    items.add(textItem(R.string.pref_grid_title, gridCountDescription()));
     items.add(
         switchItem(
             R.string.pref_show_hidden_files,
@@ -158,10 +158,10 @@ public class AppSettingSection extends SettingSection {
                 + String.format(
                     getString(R.string.current_value),
                     String.format(Locale.US, "%.2f", getGlassTint()))));
-      items.add(
+    items.add(
         switchItem(
-            R.string.terfrtitle,
-            R.string.terfrsubtitle,
+            R.string.pref_glsl_effects,
+            R.string.pref_glsl_effects_desc,
             componentsprefs.isGlslEnabled(),
             componentsprefs::setGlslEnabled));
     return items;
@@ -286,7 +286,20 @@ public class AppSettingSection extends SettingSection {
       }
     }
     showSingleChoiceDialog(
-        R.string.pref_grid_title, labels, checked, which -> prefs.setGridSpanCount(values[which]));
+        R.string.pref_grid_title,
+        labels,
+        checked,
+        which -> {
+          prefs.setGridSpanCount(values[which]);
+          updateDescriptionAt(POS_GRID_COUNT, gridCountDescription());
+        });
+  }
+
+  private String gridCountDescription() {
+    return getString(R.string.pref_grid_subtitle)
+        + "\n"
+        + String.format(
+            getString(R.string.current_value), String.valueOf(prefs.getGridSpanCount()));
   }
 
   private void showAnimationThresholdDialog() {
@@ -321,6 +334,10 @@ public class AppSettingSection extends SettingSection {
     slidersheet.show();
   }
 
+  private String glassTintLabel(float tint) {
+    return getString(R.string.pref_glass_tint_label, String.format(Locale.US, "%.2f", tint));
+  }
+
   private float getGlassTint() {
     return componentsprefs.getGlassTint();
   }
@@ -334,10 +351,8 @@ public class AppSettingSection extends SettingSection {
     slider.setValueTo(1f);
     slider.setStepSize(0.01f);
     slider.setValue(current);
-    slidersheet.setLable(String.format(Locale.US, "Tint: %.2f", current));
-    slider.addOnChangeListener(
-        (s, value, fromUser) ->
-            slidersheet.setLable(String.format(Locale.US, "Tint: %.2f", value)));
+    slidersheet.setLable(glassTintLabel(current));
+    slider.addOnChangeListener((s, value, fromUser) -> slidersheet.setLable(glassTintLabel(value)));
     slidersheet.setButtonOk(
         v -> {
           componentsPrefs.setGlassTint(slider.getValue());

@@ -8,24 +8,55 @@
     <LinearLayout
          android:layout_height="wrap_content"
          android:layout_width="match_parent"
+         android:minHeight="72dp"
          android:gravity="center_vertical"
          android:background="?attr/selectableItemBackground"
          android:clickable="true"
-         android:padding="16dp"
+         android:paddingHorizontal="16dp"
+         android:paddingVertical="12dp"
          android:orientation="horizontal"
          android:focusable="true"
          android:id="@+id/expandable_header">
 
-        <TextView
+        <ImageView
+             android:layout_height="40dp"
+             android:layout_width="40dp"
+             android:layout_marginEnd="16dp"
+             android:padding="8dp"
+             android:scaleType="centerInside"
+             android:visibility="gone"
+             android:importantForAccessibility="no"
+             android:id="@+id/expandable_icon" />
+
+        <LinearLayout
              android:layout_height="wrap_content"
              android:layout_width="0dp"
-             android:textAppearance="?attr/textAppearanceTitleMedium"
              android:layout_weight="1"
-             android:id="@+id/expandable_title" />
+             android:orientation="vertical">
+
+            <TextView
+                 android:layout_height="wrap_content"
+                 android:layout_width="match_parent"
+                 android:textAppearance="?attr/textAppearanceTitleMedium"
+                 android:id="@+id/expandable_title" />
+
+            <TextView
+                 android:layout_height="wrap_content"
+                 android:layout_width="match_parent"
+                 android:layout_marginTop="2dp"
+                 android:alpha="0.72"
+                 android:maxLines="2"
+                 android:ellipsize="end"
+                 android:textAppearance="?attr/textAppearanceBodySmall"
+                 android:visibility="gone"
+                 android:id="@+id/expandable_summary" />
+
+        </LinearLayout>
 
         <ImageView
              android:layout_height="24dp"
              android:layout_width="24dp"
+             android:layout_marginStart="12dp"
              android:src="@drawable/ic_arrow_down"
              android:alpha="0.72"
              android:importantForAccessibility="no"

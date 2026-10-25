@@ -6,10 +6,17 @@ import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup.MarginLayoutParams;
+import android.view.accessibility.AccessibilityEvent;
+import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
+import android.widget.Switch;
 import android.widget.TextView;
+import androidx.annotation.NonNull;
+import androidx.core.view.AccessibilityDelegateCompat;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.accessibility.AccessibilityNodeInfoCompat;
 import com.bumptech.glide.Glide;
 import com.google.android.material.materialswitch.MaterialSwitch;
 import ir.hanzodev1375.ghostide.databinding.LayoutSwitchPerfenceBinding;
@@ -17,6 +24,15 @@ import ir.hanzodev1375.ghostide.utils.LocaleDirection;
 import ir.hanzodev1375.ghostide.utils.ShapeUtil;
 import ir.theme.M3Theme;
 
+/**
+ * One settings row: optional icon, title, optional summary and an optional trailing switch.
+ *
+ * <p>The row itself is the touch target and the accessibility node. With its switch visible it is
+ * reported as a checkable switch whose state is announced on toggle; otherwise it is reported as a
+ * button that opens the row's dialog. The inner switch is hidden from accessibility services so the
+ * row is read once. The row is mirrored for right-to-left languages because the app declares {@code
+ * supportsRtl="false"}.
+ */
 public class PreferenceSwitchGroup extends RelativeLayout implements View.OnClickListener {
 
   private static final int BG_TYPE_UNKNOWN = -1;
@@ -49,7 +65,42 @@ public class PreferenceSwitchGroup extends RelativeLayout implements View.OnClic
     setOnClickListener(this);
     showIcon(false);
     M3Theme.listCard(binding.getRoot());
+    int startGravity = LocaleDirection.startGravity(context);
+    binding.preferenceName.setGravity(startGravity);
+    binding.preferenceDescription.setGravity(startGravity);
     LocaleDirection.mirrorRow(binding.getRoot());
+    ViewCompat.setImportantForAccessibility(
+        binding.preferenceSwitch, ViewCompat.IMPORTANT_FOR_ACCESSIBILITY_NO);
+    ViewCompat.setAccessibilityDelegate(this, new RowAccessibilityDelegate());
+  }
+
+  private boolean hasVisibleSwitch() {
+    return binding.preferenceSwitch.getVisibility() == View.VISIBLE;
+  }
+
+  private final class RowAccessibilityDelegate extends AccessibilityDelegateCompat {
+
+    @Override
+    public void onInitializeAccessibilityNodeInfo(
+        @NonNull View host, @NonNull AccessibilityNodeInfoCompat info) {
+      super.onInitializeAccessibilityNodeInfo(host, info);
+      if (hasVisibleSwitch()) {
+        info.setClassName(Switch.class.getName());
+        info.setCheckable(true);
+        info.setChecked(binding.preferenceSwitch.isChecked());
+      } else {
+        info.setClassName(Button.class.getName());
+      }
+    }
+
+    @Override
+    public void onInitializeAccessibilityEvent(@NonNull View host, @NonNull AccessibilityEvent event) {
+      super.onInitializeAccessibilityEvent(host, event);
+      if (hasVisibleSwitch()) {
+        event.setClassName(Switch.class.getName());
+        event.setChecked(binding.preferenceSwitch.isChecked());
+      }
+    }
   }
 
   @Override

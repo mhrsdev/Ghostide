@@ -8,6 +8,9 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
+import androidx.activity.OnBackPressedCallback;
+import androidx.annotation.NonNull;
 import com.blankj.utilcode.util.KeyboardUtils;
 import com.blankj.utilcode.util.ThreadUtils;
 import androidx.core.graphics.Insets;
@@ -35,17 +38,27 @@ import ir.hanzodev1375.ghostide.settings.PluginSettingSection;
 import ir.hanzodev1375.ghostide.settings.SettingSection;
 import ir.theme.M3Theme;
 import ir.theme.ThemeUtils;
+import java.util.Locale;
 
 /**
  * Thin coordinator for the settings screen. Every section (Editor/App/AI/LSP) lives in
  * {@code ir.hanzodev1375.ghostide.settings} and owns its own rows, clicks and dialogs; this
  * activity only wires views, search and theme together.
+ *
+ * <p>Search filters every section at once: a section whose title matches shows all of its rows,
+ * otherwise only the matching rows are shown. Sections without matches are hidden, the others are
+ * opened and their headers show the match count. Clearing the query restores the sections that
+ * were open before the search. The open sections, the scroll position and an open search survive
+ * rotation and activity recreation.
  */
 public class SettingActivity extends BaseCompat {
 
   private static final int MIN_POOLED_ROWS = 30;
   private static final int WARM_UP_ROWS = 48;
   private static final int WARM_UP_BATCH = 3;
+  private static final long FILTER_DELAY_MS = 200L;
+  private static final String STATE_SEARCH_VISIBLE = "settings_search_visible";
+  private static final String STATE_PRE_SEARCH_EXPANDED = "settings_pre_search_expanded";
 
   private PreferencesUtils prefs;
   private AiPreferencesUtils aiPrefs;
@@ -57,14 +70,25 @@ public class SettingActivity extends BaseCompat {
   private IconPackSettingSection iconPackSection;
   private BackgroundPluginSettingSection backgroundPluginSection;
   private PluginSettingSection pluginSection;
-  private ExpandableLayout expandEditor, expandApp, LspView, expandAi, expandRunner, expandIconPack,
-      expandBackgroundPlugin, expandPlugins;
-  private RecyclerView rvEditor, rvApp, rvLsp, rvAi, rvRunner, rvIconPack, rvBackgroundPlugin,
-      rvPlugins;
+  private ExpandableLayout expandEditor, expandApp, expandLsp, expandAi, expandRunner,
+      expandIconPack, expandBackgroundPlugin, expandPlugins;
+  private ExpandableLayout[] cards;
+  private SettingSection[] sections;
+  private RecyclerView rvEditor;
   private SearchLayout ser;
+  private View searchEmptyView;
   private Runnable filterRunnable;
+  private String appliedQuery = "";
+  private boolean[] preSearchExpanded;
   private RecyclerView.RecycledViewPool rowPool;
   private MessageQueue.IdleHandler rowPoolWarmUp;
+  private final OnBackPressedCallback closeSearchOnBack =
+      new OnBackPressedCallback(false) {
+        @Override
+        public void handleOnBackPressed() {
+          toggleSearch();
+        }
+      };
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -79,6 +103,7 @@ public class SettingActivity extends BaseCompat {
             });
     MaterialToolbar toolbar = findViewById(R.id.toolbar);
     ser = findViewById(R.id.searchitem);
+    searchEmptyView = findViewById(R.id.settings_search_empty);
 
     setSupportActionBar(toolbar);
     if (getSupportActionBar() != null) {
@@ -89,51 +114,22 @@ public class SettingActivity extends BaseCompat {
     expandEditor = findViewById(R.id.expandEditor);
     expandApp = findViewById(R.id.expandApp);
     expandAi = findViewById(R.id.expandAi);
-    LspView = findViewById(R.id.lspsetting);
+    expandLsp = findViewById(R.id.lspsetting);
     expandRunner = findViewById(R.id.expandRunner);
     expandIconPack = findViewById(R.id.expandIconPack);
     expandBackgroundPlugin = findViewById(R.id.expandBackgroundPlugin);
     expandPlugins = findViewById(R.id.expandPlugins);
-
-    expandEditor.setTitle(getString(R.string.section_editor));
-    expandApp.setTitle(getString(R.string.section_app));
-    expandAi.setTitle(getString(R.string.ai_section_title));
-    LspView.setTitle(getString(R.string.lsptitles));
-    expandRunner.setTitle(getString(R.string.runner_section_title));
-    expandIconPack.setTitle(getString(R.string.icon_pack_title));
-    expandBackgroundPlugin.setTitle(getString(R.string.background_plugin_title));
-    expandPlugins.setTitle(getString(R.string.plugin_settings_title));
-
-    setExpandableBackdrop(findViewById(R.id.backgroundIconSetting));
-
-    rvEditor = expandEditor.getRecyclerView();
-    rvApp = expandApp.getRecyclerView();
-    rvAi = expandAi.getRecyclerView();
-    rvLsp = LspView.getRecyclerView();
-    rvRunner = expandRunner.getRecyclerView();
-    rvIconPack = expandIconPack.getRecyclerView();
-    rvBackgroundPlugin = expandBackgroundPlugin.getRecyclerView();
-    rvPlugins = expandPlugins.getRecyclerView();
-    rvEditor.setLayoutManager(new LinearLayoutManager(this));
-    rvApp.setLayoutManager(new LinearLayoutManager(this));
-    rvAi.setLayoutManager(new LinearLayoutManager(this));
-    rvLsp.setLayoutManager(new LinearLayoutManager(this));
-    rvRunner.setLayoutManager(new LinearLayoutManager(this));
-    rvIconPack.setLayoutManager(new LinearLayoutManager(this));
-    rvBackgroundPlugin.setLayoutManager(new LinearLayoutManager(this));
-    rvPlugins.setLayoutManager(new LinearLayoutManager(this));
-
-    // Shared recycled view pool for all setting sections to reuse row views
-    RecyclerView.RecycledViewPool sharedPool = new RecyclerView.RecycledViewPool();
-    sharedPool.setMaxRecycledViews(0, MIN_POOLED_ROWS);
-    rvEditor.setRecycledViewPool(sharedPool);
-    rvApp.setRecycledViewPool(sharedPool);
-    rvAi.setRecycledViewPool(sharedPool);
-    rvLsp.setRecycledViewPool(sharedPool);
-    rvRunner.setRecycledViewPool(sharedPool);
-    rvIconPack.setRecycledViewPool(sharedPool);
-    rvBackgroundPlugin.setRecycledViewPool(sharedPool);
-    rvPlugins.setRecycledViewPool(sharedPool);
+    cards =
+        new ExpandableLayout[] {
+          expandEditor,
+          expandApp,
+          expandAi,
+          expandLsp,
+          expandRunner,
+          expandIconPack,
+          expandBackgroundPlugin,
+          expandPlugins
+        };
 
     editorSection = new EditorSettingSection(this, prefs);
     appSection = new AppSettingSection(this, prefs);
@@ -143,29 +139,48 @@ public class SettingActivity extends BaseCompat {
     iconPackSection = new IconPackSettingSection(this, prefs);
     backgroundPluginSection = new BackgroundPluginSettingSection(this);
     pluginSection = new PluginSettingSection(this);
+    sections =
+        new SettingSection[] {
+          editorSection,
+          appSection,
+          aiSection,
+          lspSection,
+          runnerSection,
+          iconPackSection,
+          backgroundPluginSection,
+          pluginSection
+        };
 
-    rvEditor.setAdapter(editorSection.createAdapter());
-    rvApp.setAdapter(appSection.createAdapter());
-    rvAi.setAdapter(aiSection.createAdapter());
-    rvLsp.setAdapter(lspSection.createAdapter());
-    rvRunner.setAdapter(runnerSection.createAdapter());
-    rvIconPack.setAdapter(iconPackSection.createAdapter());
-    rvBackgroundPlugin.setAdapter(backgroundPluginSection.createAdapter());
-    rvPlugins.setAdapter(pluginSection.createAdapter());
+    setExpandableBackdrop(findViewById(R.id.backgroundIconSetting));
+    rvEditor = expandEditor.getRecyclerView();
+    RecyclerView.RecycledViewPool sharedPool = new RecyclerView.RecycledViewPool();
+    sharedPool.setMaxRecycledViews(0, MIN_POOLED_ROWS);
+    setupSection(expandEditor, editorSection, sharedPool, R.string.section_editor,
+        R.string.settings_summary_editor, R.drawable.ic_plugin_editor);
+    setupSection(expandApp, appSection, sharedPool, R.string.section_app,
+        R.string.settings_summary_app, R.drawable.ic_phone_android);
+    setupSection(expandAi, aiSection, sharedPool, R.string.ai_section_title,
+        R.string.settings_summary_ai, R.drawable.ic_star);
+    setupSection(expandLsp, lspSection, sharedPool, R.string.lsptitles,
+        R.string.settings_summary_lsp, R.drawable.ic_plugin_lsp);
+    setupSection(expandRunner, runnerSection, sharedPool, R.string.runner_section_title,
+        R.string.settings_summary_runner, R.drawable.play_arrow);
+    setupSection(expandIconPack, iconPackSection, sharedPool, R.string.icon_pack_title,
+        R.string.settings_summary_icon_pack, R.drawable.outline_color_lens);
+    setupSection(expandBackgroundPlugin, backgroundPluginSection, sharedPool,
+        R.string.background_plugin_title, R.string.settings_summary_background_plugin,
+        R.drawable.ic_photo);
+    setupSection(expandPlugins, pluginSection, sharedPool, R.string.plugin_settings_title,
+        R.string.settings_summary_plugins, R.drawable.ic_plugin_misc);
     sharedPool.setMaxRecycledViews(0, Math.max(MIN_POOLED_ROWS, totalRowCount()));
     rowPool = sharedPool;
     warmUpRowPool();
-    hideSectionIfEmpty(expandEditor, editorSection);
-    hideSectionIfEmpty(expandApp, appSection);
-    hideSectionIfEmpty(expandAi, aiSection);
-    hideSectionIfEmpty(LspView, lspSection);
-    hideSectionIfEmpty(expandRunner, runnerSection);
-    hideSectionIfEmpty(expandIconPack, iconPackSection);
-    hideSectionIfEmpty(expandBackgroundPlugin, backgroundPluginSection);
-    hideSectionIfEmpty(expandPlugins, pluginSection);
+    updateSectionVisibility();
 
     ser.setIconClose(R.drawable.ic_close);
     ser.setIconSearch(R.drawable.outline_search);
+    ser.setHint(getString(R.string.settings_search_hint));
+    getOnBackPressedDispatcher().addCallback(this, closeSearchOnBack);
 
     View root = findViewById(R.id.settingRoot);
     ViewCompat.setOnApplyWindowInsetsListener(
@@ -184,35 +199,18 @@ public class SettingActivity extends BaseCompat {
           return insets;
         });
 
-    // Prevents crash when DiffUtil updates lists while animations are running
-    rvEditor.setItemAnimator(null);
-    rvApp.setItemAnimator(null);
-    rvAi.setItemAnimator(null);
-    rvLsp.setItemAnimator(null);
-    rvRunner.setItemAnimator(null);
-    rvIconPack.setItemAnimator(null);
-    rvBackgroundPlugin.setItemAnimator(null);
-    rvPlugins.setItemAnimator(null);
-
     ser.setOnTextChangedListener(
         (item) -> {
           ser.removeCallbacks(filterRunnable);
-          filterRunnable =
-              () -> {
-                if (item.isEmpty()) {
-                  resetAll();
-                  collapseAll();
-                  return;
-                }
-                filterAll(item);
-                expandMatching();
-              };
-          ser.postDelayed(filterRunnable, 200);
+          filterRunnable = () -> applyQuery(item);
+          ser.postDelayed(filterRunnable, FILTER_DELAY_MS);
         });
 
-    if ("githublogin".equals(getIntent().getStringExtra("open_section"))) {
+    if (savedInstanceState == null
+        && "githublogin".equals(getIntent().getStringExtra("open_section"))) {
       ThreadUtils.runOnUiThreadDelayed(
           () -> {
+            if (isFinishing() || isDestroyed()) return;
             expandApp.expand();
             appSection.openGitHubAccount();
           },
@@ -220,41 +218,113 @@ public class SettingActivity extends BaseCompat {
     }
 
     M3Theme.applyTopLevel(root);
+    themeSearchEmptyView();
   }
 
-  private void filterAll(String query) {
-    editorSection.filter(query);
-    appSection.filter(query);
-    lspSection.filter(query);
-    aiSection.filter(query);
-    runnerSection.filter(query);
-    iconPackSection.filter(query);
-    backgroundPluginSection.filter(query);
-    pluginSection.filter(query);
+  private void setupSection(
+      ExpandableLayout card,
+      SettingSection section,
+      RecyclerView.RecycledViewPool pool,
+      int titleRes,
+      int summaryRes,
+      int iconRes) {
+    card.setTitle(getString(titleRes));
+    card.setSummary(getString(summaryRes));
+    card.setIcon(iconRes);
+    RecyclerView list = card.getRecyclerView();
+    list.setLayoutManager(new LinearLayoutManager(this));
+    list.setRecycledViewPool(pool);
+    list.setItemAnimator(null);
+    list.setAdapter(section.createAdapter());
+  }
+
+  private void themeSearchEmptyView() {
+    if (searchEmptyView == null) return;
+    M3Theme.apply(searchEmptyView);
+    M3Theme.imageView((ImageView) findViewById(R.id.settings_search_empty_icon));
+  }
+
+  /**
+   * Filters every section with {@code rawQuery}. An empty query ends the search and restores the
+   * sections that were open before it began.
+   */
+  private void applyQuery(String rawQuery) {
+    if (isFinishing() || isDestroyed() || sections == null) return;
+    String query = rawQuery == null ? "" : rawQuery.trim();
+    if (query.isEmpty()) {
+      endSearch();
+      return;
+    }
+    if (preSearchExpanded == null) preSearchExpanded = expandedStates();
+    Locale locale = Locale.getDefault();
+    String lowerQuery = query.toLowerCase(locale);
+    int total = 0;
+    for (int i = 0; i < sections.length; i++) {
+      SettingSection section = sections[i];
+      ExpandableLayout card = cards[i];
+      SettingsAdapter adapter = section.getAdapter();
+      if (adapter == null || adapter.getFullItemCount() == 0) {
+        card.setVisibility(View.GONE);
+        continue;
+      }
+      boolean titleMatches = card.getTitle().toString().toLowerCase(locale).contains(lowerQuery);
+      if (titleMatches) {
+        section.resetToFull();
+      } else {
+        section.filter(query);
+      }
+      int shown = adapter.getItemCount();
+      total += shown;
+      card.setVisibility(shown > 0 ? View.VISIBLE : View.GONE);
+      card.setSummaryOverride(
+          shown > 0
+              ? getResources().getQuantityString(R.plurals.settings_search_matches, shown, shown)
+              : null);
+      if (shown > 0) card.expand();
+      else card.collapse();
+    }
+    searchEmptyView.setVisibility(total == 0 ? View.VISIBLE : View.GONE);
+    if (appliedQuery != null && !appliedQuery.equals(query)) {
+      NestedScrollView scrollView = findViewById(R.id.scrollView);
+      if (scrollView != null) scrollView.scrollTo(0, 0);
+    }
+    appliedQuery = query;
+  }
+
+  private void endSearch() {
+    resetAll();
+    searchEmptyView.setVisibility(View.GONE);
+    for (ExpandableLayout card : cards) {
+      card.setSummaryOverride(null);
+    }
+    updateSectionVisibility();
+    if (preSearchExpanded != null && preSearchExpanded.length == cards.length) {
+      for (int i = 0; i < cards.length; i++) {
+        if (preSearchExpanded[i]) cards[i].expand();
+        else cards[i].collapse();
+      }
+    }
+    preSearchExpanded = null;
+    appliedQuery = "";
+  }
+
+  private boolean[] expandedStates() {
+    boolean[] states = new boolean[cards.length];
+    for (int i = 0; i < cards.length; i++) {
+      states[i] = cards[i].isExpanded();
+    }
+    return states;
   }
 
   private void resetAll() {
-    for (SettingSection section : settingSections()) {
+    for (SettingSection section : sections) {
       section.resetToFull();
     }
   }
 
-  private SettingSection[] settingSections() {
-    return new SettingSection[] {
-      editorSection,
-      appSection,
-      lspSection,
-      aiSection,
-      runnerSection,
-      iconPackSection,
-      backgroundPluginSection,
-      pluginSection
-    };
-  }
-
   private int totalRowCount() {
     int total = 0;
-    for (SettingSection section : settingSections()) {
+    for (SettingSection section : sections) {
       SettingsAdapter adapter = section.getAdapter();
       if (adapter != null) total += adapter.getItemCount();
     }
@@ -312,41 +382,40 @@ public class SettingActivity extends BaseCompat {
   @Override
   protected void onDestroy() {
     cancelRowPoolWarmUp();
+    if (ser != null) ser.removeCallbacks(filterRunnable);
     super.onDestroy();
   }
 
-  private void expandMatching() {
-    expandIfMatching(expandEditor, editorSection);
-    expandIfMatching(expandApp, appSection);
-    expandIfMatching(expandAi, aiSection);
-    expandIfMatching(LspView, lspSection);
-    expandIfMatching(expandRunner, runnerSection);
-    expandIfMatching(expandIconPack, iconPackSection);
-    expandIfMatching(expandBackgroundPlugin, backgroundPluginSection);
-    expandIfMatching(expandPlugins, pluginSection);
-  }
-
-  /** Opens a section only when the current filter left rows in it, so search never expands empties. */
-  private void expandIfMatching(ExpandableLayout layout, SettingSection section) {
-    if (layout.getVisibility() != View.VISIBLE) return;
-    boolean hasMatches = section.getAdapter() != null && section.getAdapter().getItemCount() > 0;
-    if (hasMatches) {
-      if (!layout.isExpanded()) layout.expand();
-    } else if (layout.isExpanded()) {
-      layout.collapse();
+  @Override
+  protected void onSaveInstanceState(@NonNull Bundle outState) {
+    super.onSaveInstanceState(outState);
+    if (ser != null) outState.putBoolean(STATE_SEARCH_VISIBLE, ser.isShow());
+    if (preSearchExpanded != null) {
+      outState.putBooleanArray(STATE_PRE_SEARCH_EXPANDED, preSearchExpanded);
     }
   }
 
-  private void collapseAll() {
-    for (ExpandableLayout layout : expandableCards()) {
-      if (layout.isExpanded()) layout.collapse();
+  @Override
+  protected void onRestoreInstanceState(@NonNull Bundle savedInstanceState) {
+    super.onRestoreInstanceState(savedInstanceState);
+    boolean[] expanded = savedInstanceState.getBooleanArray(STATE_PRE_SEARCH_EXPANDED);
+    if (expanded != null && cards != null && expanded.length == cards.length) {
+      preSearchExpanded = expanded;
+    }
+    if (savedInstanceState.getBoolean(STATE_SEARCH_VISIBLE, false) && ser != null) {
+      ser.setVisibility(View.VISIBLE);
+      closeSearchOnBack.setEnabled(true);
+      if (!ser.getQuery().trim().isEmpty()) appliedQuery = null;
     }
   }
 
-  /** Shows the card when the section has rows and hides it when it has none. */
-  private void hideSectionIfEmpty(ExpandableLayout layout, SettingSection section) {
-    boolean hasRows = section.getAdapter() != null && section.getAdapter().getItemCount() > 0;
-    layout.setVisibility(hasRows ? View.VISIBLE : View.GONE);
+  /** Shows a card when its section has rows and hides it when it has none. */
+  private void updateSectionVisibility() {
+    for (int i = 0; i < cards.length; i++) {
+      SettingsAdapter adapter = sections[i].getAdapter();
+      boolean hasRows = adapter != null && adapter.getFullItemCount() > 0;
+      cards[i].setVisibility(hasRows ? View.VISIBLE : View.GONE);
+    }
   }
 
   @Override
@@ -356,23 +425,11 @@ public class SettingActivity extends BaseCompat {
     iconPackSection.reload();
     backgroundPluginSection.reload();
     pluginSection.reload();
-    hideSectionIfEmpty(expandIconPack, iconPackSection);
-    hideSectionIfEmpty(expandBackgroundPlugin, backgroundPluginSection);
-    hideSectionIfEmpty(expandPlugins, pluginSection);
+    updateSectionVisibility();
   }
 
   private ExpandableLayout[] expandableCards() {
-    if (expandEditor == null) return new ExpandableLayout[0];
-    return new ExpandableLayout[] {
-      expandEditor,
-      expandApp,
-      expandAi,
-      LspView,
-      expandRunner,
-      expandIconPack,
-      expandBackgroundPlugin,
-      expandPlugins
-    };
+    return cards != null ? cards : new ExpandableLayout[0];
   }
 
   /** Points every expandable glass card at the settings background so it has a backdrop to sample. */
@@ -431,6 +488,7 @@ public class SettingActivity extends BaseCompat {
       layout.refresh();
       layout.invalidate();
     }
+    themeSearchEmptyView();
   }
 
   @Override
@@ -463,9 +521,11 @@ public class SettingActivity extends BaseCompat {
       ser.hide();
       KeyboardUtils.hideSoftInput(ser);
       if (!ser.getQuery().isEmpty()) ser.clear();
+      closeSearchOnBack.setEnabled(false);
     } else {
       ser.show();
       ser.requestFocusForEditText();
+      closeSearchOnBack.setEnabled(true);
     }
   }
 }

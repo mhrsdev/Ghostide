@@ -97,9 +97,12 @@ public class SettingsAdapter extends RecyclerView.Adapter<SettingsAdapter.ViewHo
 
     if (item.getIconRes() != 0) {
       holder.switchGroup.setIcon(item.getIconRes());
+    } else {
+      holder.switchGroup.showIcon(false);
     }
     holder.switchGroup.getSwitch().setOnCheckedChangeListener(null);
     holder.switchGroup.setValue(item.isChecked());
+    holder.switchGroup.getSwitch().jumpDrawablesToCurrentState();
     if (item.getListener() != null) {
       holder.switchGroup.getSwitch().setVisibility(View.VISIBLE);
       holder.switchGroup.setSwitchChangedListener(
@@ -128,13 +131,19 @@ public class SettingsAdapter extends RecyclerView.Adapter<SettingsAdapter.ViewHo
     }
     String lowerText = text.toLowerCase(Locale.getDefault());
     String lowerQuery = query.toLowerCase(Locale.getDefault());
+    if (lowerText.length() != text.length()) {
+      return spannableString;
+    }
     int startIndex = lowerText.indexOf(lowerQuery);
 
     if (startIndex == -1) {
       return spannableString;
     }
 
-    int highlightColor = fallback(M3Theme.error(), 0);
+    Integer highlightColor = M3Theme.primary();
+    if (highlightColor == null) {
+      return spannableString;
+    }
     while (startIndex != -1) {
       int endIndex = startIndex + lowerQuery.length();
       spannableString.setSpan(
@@ -150,6 +159,11 @@ public class SettingsAdapter extends RecyclerView.Adapter<SettingsAdapter.ViewHo
   @Override
   public int getItemCount() {
     return items.size();
+  }
+
+  /** @return the number of rows before any filter is applied. */
+  public int getFullItemCount() {
+    return backupList.size();
   }
 
   public void resetToFull() {
@@ -180,9 +194,8 @@ public class SettingsAdapter extends RecyclerView.Adapter<SettingsAdapter.ViewHo
     } else {
       next = new ArrayList<>();
       for (SettingItem item : backupList) {
-        if (item.getTitle().toLowerCase(locale).contains(newQuery)
-            || (item.getDescription() != null
-                && item.getDescription().toLowerCase(locale).contains(newQuery))) {
+        if (contains(item.getTitle(), newQuery, locale)
+            || contains(item.getDescription(), newQuery, locale)) {
           next.add(item);
         }
       }
@@ -195,6 +208,10 @@ public class SettingsAdapter extends RecyclerView.Adapter<SettingsAdapter.ViewHo
     notifyDataSetChanged();
   }
 
+  private static boolean contains(String text, String lowerQuery, Locale locale) {
+    return text != null && text.toLowerCase(locale).contains(lowerQuery);
+  }
+
   static class ViewHolder extends RecyclerView.ViewHolder {
     PreferenceSwitchGroup switchGroup;
 
@@ -204,7 +221,4 @@ public class SettingsAdapter extends RecyclerView.Adapter<SettingsAdapter.ViewHo
     }
   }
 
-  private static int fallback(Integer value, int def) {
-    return value != null ? value : def;
-  }
 }
