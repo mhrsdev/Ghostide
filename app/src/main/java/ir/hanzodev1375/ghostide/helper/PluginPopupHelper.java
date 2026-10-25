@@ -15,6 +15,7 @@ import ir.hanzodev1375.ghostide.plugin.gpl.GplInstalledPlugins;
 import ir.hanzodev1375.ghostide.plugin.gpl.GplManifest;
 import ir.hanzodev1375.ghostide.plugin.gpl.GplManifestReader;
 import ir.hanzodev1375.ghostide.plugin.gpl.GplPluginLoader;
+import ir.hanzodev1375.ghostide.plugin.PluginAvailability;
 import ir.hanzodev1375.ghostide.plugin.PluginPopupDispatcher;
 import ir.hanzodev1375.ghostide.plugin.PluginPanelHost;
 import ir.hanzodev1375.ghostide.utils.ObjectUtil;
@@ -42,11 +43,17 @@ public class PluginPopupHelper {
       return;
     }
 
+    var availability = PluginAvailability.get(activity);
+    if (!availability.isMasterEnabled()) {
+      GhostToast.makeText(activity, R.string.plugin_popup_paused, GhostToast.LENGTH_SHORT).show();
+      return;
+    }
+
     var loader = GplPluginLoader.getInstance(activity);
     for (var f : installedFiles) {
       try {
         var manifest = GplManifestReader.read(f);
-        if (manifest == null) continue;
+        if (manifest == null || !availability.isEffectivelyEnabled(manifest.id())) continue;
         if (!loader.isLoaded(manifest.id())) {
           loader.load(f);
         }
@@ -65,6 +72,9 @@ public class PluginPopupHelper {
                   try {
                     GplManifest manifest = GplManifestReader.read(f);
                     if (manifest == null) {
+                      return Optional.<PluginPopupAdapter.PluginItem>empty();
+                    }
+                    if (!availability.isEffectivelyEnabled(manifest.id())) {
                       return Optional.<PluginPopupAdapter.PluginItem>empty();
                     }
 

@@ -4,6 +4,7 @@ import android.content.Context;
 import android.os.Build;
 import android.util.Log;
 
+import ir.hanzodev1375.ghostide.plugin.PluginAvailability;
 import ir.hanzodev1375.ghostide.plugin.api.MutableServiceRegistry;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -32,6 +33,9 @@ import ir.hanzodev1375.ghostide.plugin.api.PluginDescriptor;
 public final class GplPluginLoader {
 
   private static final String TAG = "GplPluginLoader";
+
+  /** How long {@link #unloadSafely(String)} waits for a plugin's {@code deactivate()}. */
+  public static final long DEACTIVATE_TIMEOUT_MS = 4000L;
   private static volatile GplPluginLoader instance;
 
   private final Context appContext;
@@ -61,6 +65,9 @@ public final class GplPluginLoader {
     LoadedGplPlugin existing = loaded.get(manifest.id());
     if (existing != null) {
       return existing;
+    }
+    if (!PluginAvailability.get(appContext).isEffectivelyEnabled(manifest.id())) {
+      throw new PluginDisabledException(manifest.id());
     }
 
     ClassLoader classLoader;
@@ -118,7 +125,12 @@ public final class GplPluginLoader {
             new AndroidPluginLogger(manifest.id()),
             installPriority(gplFile));
 
-    plugin.activate(pluginContext);
+    try {
+      plugin.activate(pluginContext);
+    } catch (RuntimeException | LinkageError e) {
+      releaseRegistrations(manifest.id(), pluginContext);
+      throw e;
+    }
 
     LoadedGplPlugin loadedPlugin = new LoadedGplPlugin(descriptor, plugin, pluginContext);
     loaded.put(manifest.id(), loadedPlugin);
@@ -189,13 +201,48 @@ public final class GplPluginLoader {
     return dexPath.toString();
   }
 
+  /**
+   * Unloads {@code pluginId} if it is loaded. A failure while the plugin stops is logged, never
+   * thrown; use {@link #unloadSafely(String)} to observe it.
+   */
   public synchronized void unload(String pluginId) {
+    Throwable failure = unloadSafely(pluginId);
+    if (failure != null) {
+      Log.w(TAG, "Plugin " + pluginId + " did not stop cleanly", failure);
+    }
+  }
+
+  /**
+   * Stops {@code pluginId} and always releases what it registered, even when its {@code
+   * deactivate()} throws or does not return within {@link #DEACTIVATE_TIMEOUT_MS}: the plugin is
+   * forgotten by this loader, its disposables are disposed and every extension it owns is removed
+   * from {@code GlobalRegistry.extensions()}.
+   *
+   * @return {@code null} when the plugin was not loaded or stopped cleanly, otherwise the first
+   *     failure raised while stopping it
+   */
+  public synchronized Throwable unloadSafely(String pluginId) {
     LoadedGplPlugin plugin = loaded.remove(pluginId);
     if (plugin == null) {
-      return;
+      return null;
     }
-    plugin.unload();
+    Throwable failure = plugin.deactivate(DEACTIVATE_TIMEOUT_MS);
+    Throwable disposeFailure = plugin.dispose();
     GlobalRegistry.extensions().unregisterOwner(pluginId);
+    return failure != null ? failure : disposeFailure;
+  }
+
+  private static void releaseRegistrations(String pluginId, DefaultPluginContext pluginContext) {
+    Throwable disposeFailure = pluginContext.disposeAll();
+    if (disposeFailure != null) {
+      Log.w(TAG, "Disposing a plugin that failed to activate also failed: " + pluginId, disposeFailure);
+    }
+    GlobalRegistry.extensions().unregisterOwner(pluginId);
+  }
+
+  /** Ids of every plugin currently loaded, in no particular order. */
+  public synchronized List<String> getLoadedIds() {
+    return new ArrayList<>(loaded.keySet());
   }
 
   public synchronized boolean isLoaded(String pluginId) {

@@ -42,11 +42,17 @@ public final class PluginPopupController {
       return;
     }
 
+    var availability = PluginAvailability.get(context);
+    if (!availability.isMasterEnabled()) {
+      GhostToast.makeText(context, R.string.plugin_popup_paused, GhostToast.LENGTH_SHORT).show();
+      return;
+    }
+
     var loader = GplPluginLoader.getInstance(context);
     for (var f : installedFiles) {
       try {
         var manifest = GplManifestReader.read(f);
-        if (manifest == null) continue;
+        if (manifest == null || !availability.isEffectivelyEnabled(manifest.id())) continue;
         if (!loader.isLoaded(manifest.id())) {
           loader.load(f);
           Log.d(TAG, "showPluginPopup: loaded .gpl plugin: " + manifest.id());
@@ -71,6 +77,9 @@ public final class PluginPopupController {
                     GplManifest manifest = GplManifestReader.read(f);
                     if (manifest == null) {
                       Log.w(TAG, "  manifest null for: " + f.getName());
+                      return Optional.<PluginPopupAdapter.PluginItem>empty();
+                    }
+                    if (!availability.isEffectivelyEnabled(manifest.id())) {
                       return Optional.<PluginPopupAdapter.PluginItem>empty();
                     }
                     Log.d(TAG, "  file=" + f.getName() + " manifestId=" + manifest.id());

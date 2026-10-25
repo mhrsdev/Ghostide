@@ -14,7 +14,10 @@ import ir.hanzodev1375.components.childern.ViewChilder;
 import ir.hanzodev1375.ghostide.R;
 import ir.hanzodev1375.ghostide.ide.ui.api.PluginScreen;
 import ir.hanzodev1375.ghostide.ide.ui.api.PluginUiExtensionPoints;
+import ir.hanzodev1375.ghostide.plugin.PluginUsage;
+import ir.hanzodev1375.ghostide.plugin.api.ExtensionRegistration;
 import ir.hanzodev1375.ghostide.plugin.api.GlobalRegistry;
+import ir.hanzodev1375.ghostide.plugin.gpl.GplPluginLoader;
 import ir.theme.M3Theme;
 
 /**
@@ -24,6 +27,9 @@ import ir.theme.M3Theme;
 public class PluginScreenActivity extends BaseCompat {
 
   public static final String EXTRA_SCREEN_ID = "ir.hanzodev1375.ghostide.extra.PLUGIN_SCREEN_ID";
+
+  private String ownerPluginId;
+  private boolean ownedByGplPlugin;
 
   public static Intent createIntent(Context context, String screenId) {
     Intent intent = new Intent(context, PluginScreenActivity.class);
@@ -38,13 +44,17 @@ public class PluginScreenActivity extends BaseCompat {
     setupBackgroundBlur();
 
     String screenId = getIntent().getStringExtra(EXTRA_SCREEN_ID);
-    PluginScreen screen = findScreen(screenId);
+    ExtensionRegistration<PluginScreen> registration = findScreen(screenId);
+    PluginScreen screen = registration == null ? null : registration.extension();
     if (screen == null) {
       GhostToast.makeText(this, "Plugin screen not found: " + screenId, GhostToast.LENGTH_SHORT).show();
       finish();
       return;
     }
 
+    ownerPluginId = registration.ownerPluginId();
+    ownedByGplPlugin = GplPluginLoader.getInstance(this).isLoaded(ownerPluginId);
+    PluginUsage.screenOpened(ownerPluginId);
     setTitle(screen.getTitle());
     if (savedInstanceState == null) {
       Fragment fragment = screen.createFragment();
@@ -57,6 +67,29 @@ public class PluginScreenActivity extends BaseCompat {
     M3Theme.applyTopLevel(findViewById(R.id.plugin_screen_container));
   }
 
+  /**
+   * Closes the screen when its plugin was turned off while this screen was in the background, so
+   * no code of a stopped plugin keeps running in front of the user.
+   */
+  @Override
+  protected void onResume() {
+    super.onResume();
+    if (ownedByGplPlugin
+        && ownerPluginId != null
+        && !GplPluginLoader.getInstance(this).isLoaded(ownerPluginId)) {
+      GhostToast.makeText(this, R.string.plugin_screen_plugin_stopped, GhostToast.LENGTH_SHORT)
+          .show();
+      finish();
+    }
+  }
+
+  @Override
+  protected void onDestroy() {
+    PluginUsage.screenClosed(ownerPluginId);
+    ownerPluginId = null;
+    super.onDestroy();
+  }
+
   private void setupBackgroundBlur() {
     ViewChilder background = findViewById(R.id.backgroundIconPluginScreen);
     View container = findViewById(R.id.plugin_screen_container);
@@ -64,15 +97,15 @@ public class PluginScreenActivity extends BaseCompat {
     setupBackgroundBlur(background, container);
   }
 
-  private static PluginScreen findScreen(String screenId) {
+  private static ExtensionRegistration<PluginScreen> findScreen(String screenId) {
     if (screenId == null) {
       return null;
     }
-    List<PluginScreen> screens =
-        GlobalRegistry.extensions().extensions(PluginUiExtensionPoints.PLUGIN_SCREEN);
-    for (PluginScreen screen : screens) {
-      if (screenId.equals(screen.getId())) {
-        return screen;
+    List<ExtensionRegistration<PluginScreen>> screens =
+        GlobalRegistry.extensions().registrations(PluginUiExtensionPoints.PLUGIN_SCREEN);
+    for (ExtensionRegistration<PluginScreen> registration : screens) {
+      if (screenId.equals(registration.extension().getId())) {
+        return registration;
       }
     }
     return null;

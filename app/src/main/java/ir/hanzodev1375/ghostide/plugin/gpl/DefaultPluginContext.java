@@ -61,10 +61,24 @@ final class DefaultPluginContext implements PluginContext {
     return disposable;
   }
 
-  void disposeAll() {
+  /**
+   * Disposes every registered {@link Disposable} in reverse registration order. One failing
+   * disposable does not stop the others.
+   *
+   * @return the first exception thrown by a disposable, or {@code null} when all succeeded
+   */
+  Throwable disposeAll() {
+    RuntimeException firstFailure = null;
     for (int i = disposables.size() - 1; i >= 0; i--) {
-      disposables.get(i).dispose();
+      try {
+        disposables.get(i).dispose();
+      } catch (RuntimeException e) {
+        if (firstFailure == null) {
+          firstFailure = e;
+        }
+      }
     }
     disposables.clear();
+    return firstFailure;
   }
 }

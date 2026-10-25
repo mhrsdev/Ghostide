@@ -18,6 +18,8 @@ import ir.hanzodev1375.components.store.event.PluginSetupEvent;
 import ir.hanzodev1375.components.store.event.PluginSetupRequestEvent;
 import ir.hanzodev1375.components.store.model.PluginItem;
 import ir.hanzodev1375.components.store.model.PluginSetupActionData;
+import ir.hanzodev1375.ghostide.R;
+import ir.hanzodev1375.ghostide.plugin.PluginAvailability;
 import ir.hanzodev1375.ghostide.plugin.api.PluginSetupAction;
 import ir.hanzodev1375.ghostide.plugin.gpl.GplInstalledPlugins;
 import ir.hanzodev1375.ghostide.plugin.gpl.GplManifest;
@@ -80,6 +82,7 @@ public class GplPluginInstallerHost {
       }
       File installed =
           new File(GplInstalledPlugins.installDir(context), manifest.id() + GPL_EXTENSION);
+      boolean fresh = !installed.exists();
       if (!installed.getAbsolutePath().equals(downloaded.getAbsolutePath())) {
         if (installed.exists() && !installed.delete()) {
           downloaded.delete();
@@ -91,6 +94,14 @@ public class GplPluginInstallerHost {
           postFailure(item, "could not move plugin file");
           return;
         }
+      }
+      PluginAvailability availability = PluginAvailability.get(context);
+      if (fresh) {
+        availability.setPluginEnabled(manifest.id(), true);
+      }
+      if (!availability.isEffectivelyEnabled(manifest.id())) {
+        postSuccess(item, manifest.name());
+        return;
       }
       GplPluginLoader.getInstance(context).load(installed);
       postSuccess(item, manifest.name());
@@ -149,6 +160,11 @@ public class GplPluginInstallerHost {
     }
     if (file == null) {
       postFailure(item, "setup file not found");
+      return;
+    }
+    GplManifest manifest = GplManifestReader.read(file);
+    if (manifest != null && !PluginAvailability.get(context).isEffectivelyEnabled(manifest.id())) {
+      postFailure(item, context.getString(R.string.plugin_manager_setup_paused));
       return;
     }
     emitSetupFromFile(item, file);

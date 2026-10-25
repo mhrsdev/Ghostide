@@ -4,6 +4,7 @@ import android.content.Context;
 import android.util.Log;
 
 import ir.hanzodev1375.components.store.data.PluginRepository;
+import ir.hanzodev1375.ghostide.plugin.PluginAvailability;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
@@ -34,13 +35,21 @@ public final class GplInstalledPlugins {
     return Arrays.asList(files);
   }
 
-  /** Loads every installed plugin not already active. A broken plugin is skipped, not fatal. */
+  /**
+   * Loads every installed plugin not already active, except those turned off in {@link
+   * PluginAvailability} (individually or through the master switch). A broken plugin is skipped,
+   * not fatal.
+   */
   public static void loadAll(Context context, GplPluginLoader loader) {
+    PluginAvailability availability = PluginAvailability.get(context);
     for (File file : listInstalled(context)) {
       try {
         GplManifest manifest = GplManifestReader.read(file);
         if (manifest == null) {
           Log.w(TAG, "Skipping plugin with unreadable manifest: " + file);
+          continue;
+        }
+        if (!availability.isEffectivelyEnabled(manifest.id())) {
           continue;
         }
         if (!loader.isLoaded(manifest.id())) {

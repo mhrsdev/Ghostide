@@ -304,6 +304,7 @@ Directory structure:
     │           │       │       │       └── VectorModelLoaderFactory.java
     │           │       │       ├── helper/
     │           │       │       │   ├── FileGitHelper.java
+    │           │       │       │   ├── InstalledPluginSheet.java
     │           │       │       │   ├── PluginPopupHelper.java
     │           │       │       │   └── ZipModeHelper.java
     │           │       │       ├── history/
@@ -354,6 +355,8 @@ Directory structure:
     │           │       │       │   ├── BackgroundRendererBridge.java
     │           │       │       │   ├── FloatingPanelWindow.java
     │           │       │       │   ├── Plugin.java
+    │           │       │       │   ├── PluginActivationController.java
+    │           │       │       │   ├── PluginAvailability.java
     │           │       │       │   ├── PluginConfigModel.java
     │           │       │       │   ├── PluginContext.java
     │           │       │       │   ├── PluginHostRouter.java
@@ -363,6 +366,7 @@ Directory structure:
     │           │       │       │   ├── PluginPopupController.java
     │           │       │       │   ├── PluginPopupDispatcher.java
     │           │       │       │   ├── PluginSettingsActivity.java
+    │           │       │       │   ├── PluginUsage.java
     │           │       │       │   ├── gpl/
     │           │       │       │   │   ├── AndroidPluginLogger.java
     │           │       │       │   │   ├── DefaultPluginContext.java
@@ -372,6 +376,7 @@ Directory structure:
     │           │       │       │   │   ├── GplPluginContextWrapper.java
     │           │       │       │   │   ├── GplPluginLoader.java
     │           │       │       │   │   ├── LoadedGplPlugin.java
+    │           │       │       │   │   ├── PluginDisabledException.java
     │           │       │       │   │   ├── PluginScopedExtensions.java
     │           │       │       │   │   └── PluginStorageImpl.java
     │           │       │       │   └── install/
@@ -659,6 +664,10 @@ Directory structure:
     │               │   ├── ic_plugin_editor.xml
     │               │   ├── ic_plugin_lsp.xml
     │               │   ├── ic_plugin_misc.xml
+    │               │   ├── ic_plugin_state_active.xml
+    │               │   ├── ic_plugin_state_error.xml
+    │               │   ├── ic_plugin_state_off.xml
+    │               │   ├── ic_plugin_state_paused.xml
     │               │   ├── ic_refresh.xml
     │               │   ├── ic_resize.xml
     │               │   ├── ic_restore.xml
@@ -807,6 +816,7 @@ Directory structure:
     │               │   ├── popup_split_layout.xml
     │               │   ├── recyclerview.xml
     │               │   ├── selection_panel.xml
+    │               │   ├── sheet_installed_plugin.xml
     │               │   ├── sheet_terminal.xml
     │               │   ├── sheet_theme_store_preview.xml
     │               │   ├── sysmbol_item.xml
