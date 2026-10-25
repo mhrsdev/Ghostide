@@ -3,70 +3,70 @@ package ir.hanzodev1375.ghostide.store;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.os.Bundle;
-import android.os.Environment;
-import android.view.LayoutInflater;
+import android.text.TextUtils;
+import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.TextView;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.graphics.ColorUtils;
+import androidx.core.text.TextUtilsCompat;
+import androidx.core.view.ViewCompat;
 import androidx.lifecycle.ViewModelProvider;
-import com.blankj.utilcode.util.FileIOUtils;
-import com.blankj.utilcode.util.FileUtils;
-import com.google.android.material.appbar.MaterialToolbar;
-import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.button.MaterialButton;
-import com.google.android.material.checkbox.MaterialCheckBox;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.android.material.materialswitch.MaterialSwitch;
-import com.google.android.material.slider.Slider;
-import com.google.android.material.tabs.TabLayout;
-import com.google.android.material.textfield.TextInputLayout;
-import ir.hanzodev1375.components.sheet.BaseBlurBottomSheet;
-import ir.hanzodev1375.components.views.GhostToast;
 import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import ir.hanzodev1375.ghostide.R;
-import ir.hanzodev1375.ghostide.codeeditors.IdeEditor;
-import ir.hanzodev1375.ghostide.codeeditors.colorscheme.GhostColorScheme;
-import ir.hanzodev1375.ghostide.editorlangs.LanguageManager;
-import ir.hanzodev1375.ghostide.databinding.SheetThemeStorePreviewBinding;
-import ir.theme.EditorTheme;
-import ir.theme.GhostTheme;
-import ir.theme.M3Theme;
-import ir.theme.MaterialTheme;
-import ir.theme.ThemeManager;
-import ir.theme.ThemeMediaPath;
-import ir.theme.WidgetTheme;
-import ir.theme.ActivityTheme;
-import ir.theme.internal.ThemeRefResolver;
-import java.io.File;
-import io.github.rosemoe.sora.widget.schemes.EditorColorScheme;
-import ir.hanzodev1375.components.childern.ViewChilder;
-import ir.hanzodev1375.components.store.api.ThemesApi;
-import ir.hanzodev1375.components.store.event.ThemeInstalledEvent;
+import com.google.gson.JsonParseException;
+import com.google.gson.reflect.TypeToken;
+import ir.hanzodev1375.components.sheet.BaseBlurBottomSheet;
 import ir.hanzodev1375.components.store.model.ThemeItem;
+import ir.hanzodev1375.components.views.GhostToast;
+import ir.hanzodev1375.ghostide.R;
+import ir.hanzodev1375.ghostide.databinding.SheetThemeStorePreviewBinding;
+import ir.theme.M3Theme;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
 import ninja.coder.appuploader.main.appupdate.MarkwonHelper;
-import org.greenrobot.eventbus.EventBus;
 
+/**
+ * Store theme preview: shows a store theme in a miniature Ghost IDE screen, lets the user step
+ * through the store list without closing the sheet, and installs the theme through the existing
+ * store install path.
+ *
+ * <p>Browsing never changes the active app theme: the preview is drawn from colours extracted by
+ * {@link ThemeStorePreviewViewModel} into {@link ThemePreviewData}, and nothing global (M3Theme
+ * preview state, the TextMate theme registry) is written until the user taps Apply.
+ */
 public class ThemeStorePreviewSheet extends BaseBlurBottomSheet {
 
-  private static final String ARG_THEME_JSON = "theme_json";
+  private static final String ARG_THEMES_JSON = "themes_json";
+  private static final String ARG_INDEX = "index";
+  private static final String STATE_INDEX = "state_index";
+  private static final int DISABLED_ICON_ALPHA = 97;
+  private static final int RIPPLE_ALPHA = 31;
 
-  private SheetThemeStorePreviewBinding binding;
-  private ThemeItem theme;
-  private IdeEditor editorPreview;
-  private View widgetRoot;
-  private GhostTheme appliedTheme;
-  private File appliedThemeFile;
-  private boolean themeReady = false;
-  private boolean themeApplied = false;
+  private SheetThemeStorePreviewBinding ui;
   private ThemeStorePreviewViewModel viewModel;
+  private final List<ThemeItem> themes = new ArrayList<>();
+  private int index;
+  private boolean rtl;
 
+  /** Preview of a single theme. */
   public static ThemeStorePreviewSheet newInstance(ThemeItem theme) {
+    return newInstance(Collections.singletonList(theme), 0);
+  }
+
+  /**
+   * Preview that starts at {@code themes.get(index)} and can step through {@code themes}.
+   *
+   * @param themes the store entries in the order the list shows them; must not be empty.
+   */
+  public static ThemeStorePreviewSheet newInstance(List<ThemeItem> themes, int index) {
     ThemeStorePreviewSheet sheet = new ThemeStorePreviewSheet();
     Bundle args = new Bundle();
-    args.putString(ARG_THEME_JSON, new Gson().toJson(theme));
+    args.putString(ARG_THEMES_JSON, new Gson().toJson(themes));
+    args.putInt(ARG_INDEX, index);
     sheet.setArguments(args);
     return sheet;
   }
@@ -74,668 +74,268 @@ public class ThemeStorePreviewSheet extends BaseBlurBottomSheet {
   @Override
   public void onCreate(@Nullable Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    if (getArguments() != null) {
-      theme = new Gson().fromJson(getArguments().getString(ARG_THEME_JSON), ThemeItem.class);
+    Bundle args = getArguments();
+    if (args != null) {
+      try {
+        List<ThemeItem> parsed =
+            new Gson()
+                .fromJson(
+                    args.getString(ARG_THEMES_JSON),
+                    new TypeToken<List<ThemeItem>>() {}.getType());
+        if (parsed != null) {
+          for (ThemeItem item : parsed) {
+            if (item != null) {
+              themes.add(item);
+            }
+          }
+        }
+      } catch (JsonParseException e) {
+        themes.clear();
+      }
+      index = args.getInt(ARG_INDEX, 0);
     }
-    if (theme == null) {
-      dismiss();
+    if (savedInstanceState != null) {
+      index = savedInstanceState.getInt(STATE_INDEX, index);
     }
+    index = Math.max(0, Math.min(index, themes.size() - 1));
+    if (themes.isEmpty()) {
+      dismissAllowingStateLoss();
+    }
+  }
+
+  @Override
+  public void onSaveInstanceState(@NonNull Bundle outState) {
+    super.onSaveInstanceState(outState);
+    outState.putInt(STATE_INDEX, index);
   }
 
   @Override
   protected void onContentReady(ViewGroup contentContainer) {
-    View view =
-        getLayoutInflater().inflate(R.layout.sheet_theme_store_preview, contentContainer, false);
-    contentContainer.addView(
-        view,
-        new ViewGroup.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-
-    binding = SheetThemeStorePreviewBinding.bind(view);
-
-    if (theme == null) {
-      dismiss();
+    if (themes.isEmpty()) {
       return;
     }
-    binding.previewTitle.setText(theme.name());
-    binding.previewSubtitle.setText(
+    ui = SheetThemeStorePreviewBinding.inflate(getLayoutInflater(), contentContainer, false);
+    contentContainer.addView(
+        ui.getRoot(),
+        new ViewGroup.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+    rtl =
+        TextUtilsCompat.getLayoutDirectionFromLocale(Locale.getDefault())
+            == ViewCompat.LAYOUT_DIRECTION_RTL;
+    if (rtl) {
+      mirrorForRtl();
+    }
+
+    ui.closeButton.setOnClickListener(v -> dismiss());
+    ui.prevButton.setOnClickListener(v -> step(rtl ? 1 : -1));
+    ui.nextButton.setOnClickListener(v -> step(rtl ? -1 : 1));
+    ui.retryButton.setOnClickListener(v -> select());
+    ui.applyButton.setOnClickListener(v -> viewModel.install(current()));
+    boolean browsing = themes.size() > 1;
+    ui.pagerRow.setVisibility(browsing ? View.VISIBLE : View.GONE);
+
+    M3Theme.apply(ui.getRoot());
+    applyChromeColors();
+
+    viewModel = new ViewModelProvider(this).get(ThemeStorePreviewViewModel.class);
+    viewModel.getPreview().observe(getViewLifecycleOwner(), this::render);
+    viewModel.getDescription().observe(getViewLifecycleOwner(), this::renderDescription);
+    viewModel.getInstalling().observe(getViewLifecycleOwner(), busy -> renderApply());
+    viewModel.getInstallResult().observe(getViewLifecycleOwner(), this::onInstallResult);
+    select();
+  }
+
+  /**
+   * Chrome colours that M3Theme's traversal does not cover for these views. The icon buttons are
+   * turned back into standard M3 icon buttons: the traversal paints every MaterialButton as a
+   * filled primary button.
+   */
+  private void applyChromeColors() {
+    Integer outline = M3Theme.outlineVariant();
+    if (outline != null) {
+      ui.dragHandle.setBackgroundTintList(ColorStateList.valueOf(outline));
+      ui.previewCanvas.setRingColor(outline);
+    }
+    Integer primary = M3Theme.primary();
+    if (primary != null) {
+      ui.previewProgress.setIndicatorColor(primary);
+    }
+    ui.previewCanvas.setLabelTypeface(ui.previewTitle.getTypeface());
+    Integer onSurface = M3Theme.onSurface();
+    if (onSurface != null) {
+      ColorStateList iconTint =
+          new ColorStateList(
+              new int[][] {new int[] {-android.R.attr.state_enabled}, new int[] {}},
+              new int[] {
+                ColorUtils.setAlphaComponent(onSurface, DISABLED_ICON_ALPHA), onSurface
+              });
+      ColorStateList ripple =
+          ColorStateList.valueOf(ColorUtils.setAlphaComponent(onSurface, RIPPLE_ALPHA));
+      for (MaterialButton button : new MaterialButton[] {ui.closeButton, ui.prevButton, ui.nextButton}) {
+        button.setBackgroundTintList(ColorStateList.valueOf(Color.TRANSPARENT));
+        button.setIconTint(iconTint);
+        button.setRippleColor(ripple);
+      }
+    }
+  }
+
+  /**
+   * The app keeps {@code supportsRtl} off, so rows are mirrored by hand for right-to-left locales:
+   * the close button moves to the left, text is right aligned and the badges start on the right.
+   */
+  private void mirrorForRtl() {
+    reverseChildren(ui.headerRow);
+    reverseChildren(ui.badgeRow);
+    int right = Gravity.RIGHT | Gravity.CENTER_VERTICAL;
+    ui.previewTitle.setGravity(right);
+    ui.previewSubtitle.setGravity(right);
+    ui.previewDescriptionLabel.setGravity(right);
+    ui.previewDescription.setGravity(Gravity.RIGHT);
+    ui.prevButton.setContentDescription(getString(R.string.theme_preview_next));
+    ui.nextButton.setContentDescription(getString(R.string.theme_preview_previous));
+  }
+
+  private static void reverseChildren(ViewGroup group) {
+    List<View> children = new ArrayList<>();
+    for (int i = group.getChildCount() - 1; i >= 0; i--) {
+      children.add(group.getChildAt(i));
+    }
+    group.removeAllViews();
+    for (View child : children) {
+      group.addView(child);
+    }
+  }
+
+  private ThemeItem current() {
+    return themes.get(index);
+  }
+
+  private void step(int delta) {
+    int next = index + delta;
+    if (next < 0 || next >= themes.size()) {
+      return;
+    }
+    index = next;
+    select();
+  }
+
+  /** Shows the theme at {@link #index}; after a failure it starts the download again. */
+  private void select() {
+    if (ui == null) {
+      return;
+    }
+    ThemeItem item = current();
+    ui.previewTitle.setText(item.name());
+    ui.previewSubtitle.setText(
         getString(
             R.string.themes_dev_version,
-            theme.devname() != null ? theme.devname() : "",
-            theme.version()));
-
-    editorPreview = binding.editorPreview;
-    setupTabs();
-    buildWidgetSample(binding.widgetContent);
-
-    binding.fabClose.setOnClickListener(v -> dismiss());
-    binding.fabInstall.setEnabled(false);
-    binding.fabInstall.setAlpha(0.55f);
-    binding.fabInstall.setOnClickListener(v -> installTheme(view));
-
-    hidePreviewContent();
-    setupViewModel();
-
-    M3Theme.applyTopLevel(view);
-    loadDescription();
-    viewModel.download(theme.linkdownload());
+            item.devname() != null ? item.devname() : "",
+            item.version()));
+    ui.positionText.setText(
+        String.format(Locale.getDefault(), "%d / %d", index + 1, themes.size()));
+    boolean canGoBack = index > 0;
+    boolean canGoForward = index < themes.size() - 1;
+    ui.prevButton.setEnabled(rtl ? canGoForward : canGoBack);
+    ui.nextButton.setEnabled(rtl ? canGoBack : canGoForward);
+    ui.previewCanvas.setContentDescription(
+        getString(R.string.theme_preview_canvas_description, item.name()));
+    viewModel.select(item, previewWidthPx());
+    viewModel.loadDescription(item.doc());
   }
 
-  private void loadDescription() {
-    if (binding.previewDescriptionLabel != null) {
-      binding.previewDescriptionLabel.setText("Description");
-    }
-    String url = theme.doc();
-    if (binding.previewDescription == null || url == null || url.isEmpty()) return;
-    ThemesApi.fetchText(
-        getContext(),
-        url,
-        new ThemesApi.TextCallbacks() {
-          @Override
-          public void onSuccess(String content) {
-            if (content == null || content.isEmpty()) return;
-            binding.previewDescription.post(
-                () -> MarkwonHelper.setMarkdown(binding.previewDescription, content));
-          }
-
-          @Override
-          public void onError(String message) {
-            if (message != null)
-              binding.previewDescription.post(
-                  () -> MarkwonHelper.setMarkdown(binding.previewDescription, message));
-          }
-        });
+  private int previewWidthPx() {
+    return getResources().getDisplayMetrics().widthPixels;
   }
 
-  private void setupTabs() {
-    binding.tabLayout.addTab(binding.tabLayout.newTab().setText("Editor"));
-    binding.tabLayout.addTab(binding.tabLayout.newTab().setText("Widgets"));
-    binding.tabLayout.addOnTabSelectedListener(
-        new TabLayout.OnTabSelectedListener() {
-          @Override
-          public void onTabSelected(TabLayout.Tab tab) {
-            updateTabVisibility(tab.getPosition() == 0);
-          }
-
-          @Override
-          public void onTabUnselected(TabLayout.Tab tab) {}
-
-          @Override
-          public void onTabReselected(TabLayout.Tab tab) {}
-        });
-    updateTabVisibility(true);
-  }
-
-  private void updateTabVisibility(boolean editor) {
-    if (binding == null) return;
-    binding.editorContent.setVisibility(editor ? View.VISIBLE : View.GONE);
-    binding.widgetContent.setVisibility(editor ? View.GONE : View.VISIBLE);
-  }
-
-  private void buildWidgetSample(ViewGroup parent) {
-    LayoutInflater inflater = LayoutInflater.from(requireContext());
-    widgetRoot = inflater.inflate(R.layout.widget_theme_preview_sample, parent, false);
-    parent.addView(widgetRoot);
-  }
-
-  private void setupViewModel() {
-    viewModel = new ViewModelProvider(this).get(ThemeStorePreviewViewModel.class);
-    viewModel
-        .getState()
-        .observe(
-            getViewLifecycleOwner(),
-            state -> {
-              if (binding == null) return;
-              switch (state) {
-                case ThemeStorePreviewViewModel.STATE_DOWNLOADING:
-                  showProgress(true);
-                  break;
-                case ThemeStorePreviewViewModel.STATE_READY:
-                  showProgress(false);
-                  File file = viewModel.getAppliedThemeFile();
-                  if (file != null) {
-                    applyPreview(file);
-                  } else {
-                    onDownloadFailed();
-                  }
-                  break;
-                case ThemeStorePreviewViewModel.STATE_ERROR:
-                  showProgress(false);
-                  onDownloadFailed();
-                  break;
-                default:
-                  break;
-              }
-            });
-    viewModel
-        .getProgress()
-        .observe(
-            getViewLifecycleOwner(),
-            p -> {
-              if (binding == null || p == null) return;
-              binding.previewProgress.setProgress(p);
-              binding.previewProgressText.setText(p + "%");
-            });
-  }
-
-  private void showProgress(boolean show) {
-    if (binding == null) return;
-    binding.previewProgressContainer.setVisibility(show ? View.VISIBLE : View.GONE);
-    binding.previewProgressContainer.setAlpha(show ? 1f : 0f);
-    if (show) {
-      binding.previewProgressContainer.animate().alpha(1f).setDuration(250).start();
-    }
-  }
-
-  private void hidePreviewContent() {
-    if (binding == null) return;
-    binding.tabLayout.setVisibility(View.GONE);
-    binding.contentContainer.setVisibility(View.GONE);
-    binding.installBar.setVisibility(View.GONE);
-  }
-
-  private void showPreviewContent() {
-    if (binding == null) return;
-    binding.tabLayout.setVisibility(View.VISIBLE);
-    binding.contentContainer.setVisibility(View.VISIBLE);
-    binding.installBar.setVisibility(View.VISIBLE);
-  }
-
-  private void onDownloadFailed() {
-    GhostToast.makeText(requireContext(), R.string.themes_download_failed, GhostToast.LENGTH_SHORT).show();
-  }
-
-  private void applyPreview(File themeFile) {
-    String json = FileIOUtils.readFile2String(themeFile);
-    if (json == null || json.isEmpty()) {
-      GhostToast.makeText(requireContext(), R.string.themes_download_failed, GhostToast.LENGTH_SHORT).show();
+  private void render(@Nullable ThemeStorePreviewViewModel.PreviewState state) {
+    if (ui == null || state == null) {
       return;
     }
-    try {
-      JsonObject obj = JsonParser.parseString(json).getAsJsonObject();
-      ThemeRefResolver.resolveJson(obj);
-      GhostTheme t = new Gson().fromJson(obj, GhostTheme.class);
-      if (t == null) throw new IllegalStateException();
-      if (t.getActivity() == null) t.setActivity(new ActivityTheme());
-      if (t.getEditor() == null) t.setEditor(new EditorTheme());
-      if (t.getWidget() == null) t.setWidget(new WidgetTheme());
-      if (t.getMaterial3() == null) t.setMaterial3(new MaterialTheme());
-
-      appliedTheme = t;
-      appliedThemeFile = themeFile;
-      themeReady = true;
-
-      applyEditorTheme(t);
-      applyWidgetTheme(t);
-      applyBackground(t, themeFile);
-
-      showPreviewContent();
-      binding.fabInstall.setEnabled(true);
-      binding.fabInstall.setAlpha(1f);
-    } catch (Exception e) {
-      GhostToast.makeText(requireContext(), R.string.themes_download_failed, GhostToast.LENGTH_SHORT).show();
-    }
-  }
-
-  private void applyEditorTheme(GhostTheme theme) {
-    EditorTheme t = theme.getEditor();
-    GhostColorScheme fresh = GhostColorScheme.create(t, true);
-    if (editorPreview.getColorScheme() != fresh) {
-      editorPreview.setColorScheme(fresh);
-    }
-    var scheme = editorPreview.getColorScheme();
-    if (scheme instanceof GhostColorScheme) {
-      WidgetTheme widget = theme.getWidget();
-      String imagePath = widget != null ? widget.getImagepath() : null;
-      boolean hasImage = imagePath != null && !imagePath.isEmpty();
-      ((GhostColorScheme) scheme).setUseThemeBackground(!hasImage);
-    }
-    scheme.setColor(GhostColorScheme.LINE_DIVIDER, parseColor(t.getLineDivider()));
-    scheme.setColor(GhostColorScheme.LINE_NUMBER, parseColor(t.getLineNumber()));
-    scheme.setColor(
-        GhostColorScheme.LINE_NUMBER_BACKGROUND, parseColor(t.getLineNumberBackground()));
-    scheme.setColor(GhostColorScheme.TEXT_NORMAL, parseColor(t.getTextNormal()));
-    scheme.setColor(
-        GhostColorScheme.SELECTED_TEXT_BACKGROUND, parseColor(t.getSelectedTextBackground()));
-    scheme.setColor(GhostColorScheme.SELECTION_INSERT, parseColor(t.getSelectionInsert()));
-    scheme.setColor(GhostColorScheme.SELECTION_HANDLE, parseColor(t.getSelectionHandle()));
-    scheme.setColor(GhostColorScheme.CURRENT_LINE, parseColor(t.getCurrentLine()));
-    scheme.setColor(GhostColorScheme.UNDERLINE, parseColor(t.getUnderline()));
-    scheme.setColor(GhostColorScheme.SCROLL_BAR_THUMB, parseColor(t.getScrollBarThumb()));
-    scheme.setColor(
-        GhostColorScheme.SCROLL_BAR_THUMB_PRESSED, parseColor(t.getScrollBarThumbPressed()));
-    scheme.setColor(GhostColorScheme.SCROLL_BAR_TRACK, parseColor(t.getScrollBarTrack()));
-    scheme.setColor(GhostColorScheme.BLOCK_LINE, parseColor(t.getBlockLine()));
-    scheme.setColor(GhostColorScheme.BLOCK_LINE_CURRENT, parseColor(t.getBlockLineCurrent()));
-    scheme.setColor(GhostColorScheme.LINE_NUMBER_PANEL, parseColor(t.getLineNumberPanel()));
-    scheme.setColor(
-        GhostColorScheme.LINE_NUMBER_PANEL_TEXT, parseColor(t.getLineNumberPanelText()));
-    scheme.setColor(
-        GhostColorScheme.COMPLETION_WND_BACKGROUND, parseColor(t.getCompletionWndBackground()));
-    scheme.setColor(GhostColorScheme.COMPLETION_WND_CORNER, parseColor(t.getCompletionWndCorner()));
-    scheme.setColor(GhostColorScheme.KEYWORD, parseColor(t.getKeyword()));
-    scheme.setColor(GhostColorScheme.COMMENT, parseColor(t.getComment()));
-    scheme.setColor(GhostColorScheme.OPERATOR, parseColor(t.getOperator()));
-    scheme.setColor(GhostColorScheme.LITERAL, parseColor(t.getLiteral()));
-    scheme.setColor(GhostColorScheme.IDENTIFIER_VAR, parseColor(t.getIdentifierVar()));
-    scheme.setColor(GhostColorScheme.IDENTIFIER_NAME, parseColor(t.getIdentifierName()));
-    scheme.setColor(GhostColorScheme.FUNCTION_NAME, parseColor(t.getFunctionName()));
-    scheme.setColor(GhostColorScheme.ANNOTATION, parseColor(t.getAnnotation()));
-    scheme.setColor(
-        GhostColorScheme.MATCHED_TEXT_BACKGROUND, parseColor(t.getMatchedTextBackground()));
-    scheme.setColor(GhostColorScheme.MATCHED_TEXT_BORDER, parseColor(t.getMatchedTextBorder()));
-    scheme.setColor(GhostColorScheme.TEXT_SELECTED, parseColor(t.getTextSelected()));
-    scheme.setColor(GhostColorScheme.NON_PRINTABLE_CHAR, parseColor(t.getNonPrintableChar()));
-    scheme.setColor(GhostColorScheme.HTML_TAG, parseColor(t.getHtmlTag()));
-    scheme.setColor(GhostColorScheme.ATTRIBUTE_NAME, parseColor(t.getAttributeName()));
-    scheme.setColor(GhostColorScheme.ATTRIBUTE_VALUE, parseColor(t.getAttributeValue()));
-    scheme.setColor(GhostColorScheme.PROBLEM_ERROR, parseColor(t.getProblemError()));
-    scheme.setColor(GhostColorScheme.PROBLEM_WARNING, parseColor(t.getProblemWarning()));
-    scheme.setColor(GhostColorScheme.PROBLEM_TYPO, parseColor(t.getProblemTypo()));
-    scheme.setColor(GhostColorScheme.COLORNEXTDOT, parseColor(t.getColornextdot()));
-    scheme.setColor(GhostColorScheme.COLORNEXTBRAK, parseColor(t.getColornextbrak()));
-    scheme.setColor(GhostColorScheme.COLORNEXTCHAR, parseColor(t.getColornextchar()));
-    scheme.setColor(GhostColorScheme.COLORUPPERCASE, parseColor(t.getColoruppercase()));
-    scheme.setColor(GhostColorScheme.COLORNEXTLESS, parseColor(t.getColornextless()));
-    scheme.setColor(GhostColorScheme.LINE_NUMBER_CURRENT, parseColor(t.getLineNumberCurrent()));
-    scheme.setColor(GhostColorScheme.SELECTED_TEXT_BORDER, parseColor(t.getSelectedTextBorder()));
-    scheme.setColor(GhostColorScheme.CURRENT_ROW_BORDER, parseColor(t.getCurrentRowBorder()));
-    scheme.setColor(
-        GhostColorScheme.HIGHLIGHTED_DELIMITERS_BACKGROUND,
-        parseColor(t.getHighlightedDelimitersBackground()));
-    scheme.setColor(
-        GhostColorScheme.HIGHLIGHTED_DELIMITERS_UNDERLINE,
-        parseColor(t.getHighlightedDelimitersUnderline()));
-    scheme.setColor(
-        GhostColorScheme.HIGHLIGHTED_DELIMITERS_FOREGROUND,
-        parseColor(t.getHighlightedDelimitersForeground()));
-    scheme.setColor(
-        GhostColorScheme.HIGHLIGHTED_DELIMITERS_BORDER,
-        parseColor(t.getHighlightedDelimitersBorder()));
-    scheme.setColor(
-        GhostColorScheme.TEXT_HIGHLIGHT_BACKGROUND, parseColor(t.getTextHighlightBackground()));
-    scheme.setColor(GhostColorScheme.TEXT_HIGHLIGHT_BORDER, parseColor(t.getTextHighlightBorder()));
-    scheme.setColor(
-        GhostColorScheme.TEXT_HIGHLIGHT_STRONG_BACKGROUND,
-        parseColor(t.getTextHighlightStrongBackground()));
-    scheme.setColor(
-        GhostColorScheme.TEXT_HIGHLIGHT_STRONG_BORDER,
-        parseColor(t.getTextHighlightStrongBorder()));
-    scheme.setColor(
-        GhostColorScheme.STATIC_SPAN_BACKGROUND, parseColor(t.getStaticSpanBackground()));
-    scheme.setColor(
-        GhostColorScheme.STATIC_SPAN_FOREGROUND, parseColor(t.getStaticSpanForeground()));
-    scheme.setColor(
-        GhostColorScheme.TEXT_INLAY_HINT_BACKGROUND, parseColor(t.getTextInlayHintBackground()));
-    scheme.setColor(
-        GhostColorScheme.TEXT_INLAY_HINT_FOREGROUND, parseColor(t.getTextInlayHintForeground()));
-    scheme.setColor(
-        GhostColorScheme.SNIPPET_BACKGROUND_EDITING, parseColor(t.getSnippetBackgroundEditing()));
-    scheme.setColor(
-        GhostColorScheme.SNIPPET_BACKGROUND_RELATED, parseColor(t.getSnippetBackgroundRelated()));
-    scheme.setColor(
-        GhostColorScheme.SNIPPET_BACKGROUND_INACTIVE, parseColor(t.getSnippetBackgroundInactive()));
-    scheme.setColor(GhostColorScheme.HARD_WRAP_MARKER, parseColor(t.getHardWrapMarker()));
-    scheme.setColor(
-        GhostColorScheme.FUNCTION_CHAR_BACKGROUND_STROKE,
-        parseColor(t.getFunctionCharBackgroundStroke()));
-    scheme.setColor(
-        GhostColorScheme.DIAGNOSTIC_TOOLTIP_BACKGROUND,
-        parseColor(t.getDiagnosticTooltipBackground()));
-    scheme.setColor(
-        GhostColorScheme.DIAGNOSTIC_TOOLTIP_BRIEF_MSG,
-        parseColor(t.getDiagnosticTooltipBriefMsg()));
-    scheme.setColor(
-        GhostColorScheme.DIAGNOSTIC_TOOLTIP_DETAILED_MSG,
-        parseColor(t.getDiagnosticTooltipDetailedMsg()));
-    scheme.setColor(
-        GhostColorScheme.DIAGNOSTIC_TOOLTIP_ACTION, parseColor(t.getDiagnosticTooltipAction()));
-    scheme.setColor(GhostColorScheme.STICKY_SCROLL_DIVIDER, parseColor(t.getStickyScrollDivider()));
-    scheme.setColor(GhostColorScheme.STRIKETHROUGH, parseColor(t.getStrikeThrough()));
-    scheme.setColor(GhostColorScheme.SIDE_BLOCK_LINE, parseColor(t.getSideBlockLine()));
-    scheme.setColor(
-        GhostColorScheme.COMPLETION_WND_TEXT_PRIMARY, parseColor(t.getCompletionWndTextPrimary()));
-    scheme.setColor(
-        GhostColorScheme.COMPLETION_WND_TEXT_SECONDARY,
-        parseColor(t.getCompletionWndTextSecondary()));
-    scheme.setColor(
-        GhostColorScheme.COMPLETION_WND_ITEM_CURRENT, parseColor(t.getCompletionWndItemCurrent()));
-    scheme.setColor(
-        GhostColorScheme.COMPLETION_WND_TEXT_MATCHED, parseColor(t.getCompletionWndTextMatched()));
-    scheme.setColor(GhostColorScheme.SIGNATURE_BACKGROUND, parseColor(t.getSignatureBackground()));
-    scheme.setColor(GhostColorScheme.SIGNATURE_BORDER, parseColor(t.getSignatureBorder()));
-    scheme.setColor(GhostColorScheme.SIGNATURE_TEXT_NORMAL, parseColor(t.getSignatureTextNormal()));
-    scheme.setColor(
-        GhostColorScheme.SIGNATURE_TEXT_HIGHLIGHTED_PARAMETER,
-        parseColor(t.getSignatureTextHighlightedParameter()));
-    scheme.setColor(GhostColorScheme.HOVER_BACKGROUND, parseColor(t.getHoverBackground()));
-    scheme.setColor(GhostColorScheme.HOVER_BORDER, parseColor(t.getHoverBorder()));
-    scheme.setColor(GhostColorScheme.HOVER_TEXT_NORMAL, parseColor(t.getHoverTextNormal()));
-    scheme.setColor(
-        GhostColorScheme.HOVER_TEXT_HIGHLIGHTED, parseColor(t.getHoverTextHighlighted()));
-    scheme.setColor(
-        GhostColorScheme.TEXT_ACTION_WINDOW_BACKGROUND,
-        parseColor(t.getTextActionWindowBackground()));
-    scheme.setColor(
-        GhostColorScheme.TEXT_ACTION_WINDOW_ICON_COLOR,
-        parseColor(t.getTextActionWindowIconColor()));
-    scheme.setColor(GhostColorScheme.MINIMAP_BACKGROUND, parseColor(t.getMinimapBackground()));
-    scheme.setColor(GhostColorScheme.MINIMAP_VIEWPORT, parseColor(t.getMinimapViewport()));
-    scheme.setColor(
-        GhostColorScheme.MINIMAP_VIEWPORT_BORDER, parseColor(t.getMinimapViewportBorder()));
-    scheme.setColor(GhostColorScheme.BRACKET1, parseColor(t.getBracketlevelmatch1()));
-    scheme.setColor(GhostColorScheme.BRACKET2, parseColor(t.getBracketlevelmatch2()));
-    scheme.setColor(GhostColorScheme.BRACKET3, parseColor(t.getBracketlevelmatch3()));
-    scheme.setColor(GhostColorScheme.BRACKET4, parseColor(t.getBracketlevelmatch4()));
-    scheme.setColor(GhostColorScheme.BRACKET5, parseColor(t.getBracketlevelmatch5()));
-    scheme.setColor(GhostColorScheme.BRACKET6, parseColor(t.getBracketlevelmatch6()));
-
-    setSampleCode(0);
-    editorPreview.setHighlightCurrentLine(true);
-    editorPreview.invalidate();
-  }
-
-  private void applyWidgetTheme(GhostTheme theme) {
-    if (widgetRoot == null) return;
-    WidgetTheme w = theme.getWidget();
-    MaterialTheme m = theme.getMaterial3();
-
-    int surface = color(w.getSurface(), m != null ? m.getSurface() : null);
-    int accent = color(w.getAccent(), m != null ? m.getPrimary() : null);
-    int text = color(w.getText(), m != null ? m.getOnSurface() : null);
-    int bg = color(w.getBackground(), m != null ? m.getBackground() : null);
-    int hint = color(w.getHint(), m != null ? m.getOnSurfaceVariant() : null);
-    int imageTint = color(w.getImageTint(), m != null ? m.getOnSurface() : null);
-    int onSurface = color(null, m != null ? m.getOnSurface() : null);
-
-    boolean hasBackground = hasThemeBackground(theme);
-    int container = hasBackground ? surface : color(null, m != null ? m.getPrimary() : null);
-    if (container == Color.TRANSPARENT) container = surface;
-
-    if (bg != Color.TRANSPARENT) widgetRoot.setBackgroundColor(bg);
-
-    if (binding != null && binding.tabLayout != null) {
-      int tabSelected = selectedTabColor(w, accent);
-      int tabUnselected = unselectedTabColor(w, hint, text);
-      binding.tabLayout.setBackgroundColor(container);
-      binding.tabLayout.setSelectedTabIndicatorColor(tabSelected);
-      binding.tabLayout.setTabTextColors(tabUnselected, tabSelected);
-    }
-
-    applyWidgetRecursively(widgetRoot, container, accent, text, hint, imageTint, onSurface);
-  }
-
-  /** A theme counts as having a background when it defines an image or a visible background colour. */
-  private boolean hasThemeBackground(GhostTheme theme) {
-    WidgetTheme widget = theme.getWidget();
-    ActivityTheme activity = theme.getActivity();
-    String imagePath = widget != null ? widget.getImagepath() : null;
-    if (isNotEmpty(imagePath)) return true;
-    return hasVisibleColor(widget != null ? widget.getBackground() : null)
-        || hasVisibleColor(activity != null ? activity.getBackground() : null);
-  }
-
-  private boolean hasVisibleColor(String value) {
-    return isNotEmpty(value) && Color.alpha(parseColor(value)) != 0;
-  }
-
-  private static boolean isNotEmpty(String value) {
-    return value != null && !value.isEmpty();
-  }
-
-  private void applyWidgetRecursively(
-      View v, int surface, int accent, int text, int hint, int imageTint, int onSurface) {
-    if (v instanceof MaterialSwitch) {
-      ((MaterialSwitch) v)
-          .setButtonTintList(ColorStateList.valueOf(accent));
-      ((MaterialSwitch) v).setThumbTintList(null);
-    } else if (v instanceof MaterialCheckBox) {
-      ((MaterialCheckBox) v)
-          .setButtonTintList(ColorStateList.valueOf(accent));
-    } else if (v instanceof Slider) {
-      ((Slider) v)
-          .setThumbTintList(ColorStateList.valueOf(accent));
-      ((Slider) v)
-          .setTickTintList(ColorStateList.valueOf(accent));
-    } else if (v instanceof MaterialToolbar) {
-      ((MaterialToolbar) v).setBackgroundColor(surface);
-      ((MaterialToolbar) v).setTitleTextColor(text);
-    } else if (v instanceof FloatingActionButton) {
-      FloatingActionButton fab = (FloatingActionButton) v;
-      WidgetTheme w = appliedTheme != null ? appliedTheme.getWidget() : null;
-      if (w != null) {
-        if (w.getFabBackground() != null) {
-          fab.setBackgroundTintList(ColorStateList.valueOf(parseColor(w.getFabBackground())));
-        }
-        if (w.getFabIcon() != null) {
-          fab.setColorFilter(parseColor(w.getFabIcon()));
-        } else {
-          fab.setColorFilter(imageTint);
-        }
-      }
-    } else if (v instanceof TabLayout) {
-      TabLayout tabLayout = (TabLayout) v;
-      WidgetTheme w = appliedTheme != null ? appliedTheme.getWidget() : null;
-      int tabSelected = selectedTabColor(w, accent);
-      tabLayout.setBackgroundColor(surface);
-      tabLayout.setSelectedTabIndicatorColor(tabSelected);
-      tabLayout.setTabTextColors(unselectedTabColor(w, hint, text), tabSelected);
-      // TabLayout keeps its labels in internal TextViews; recursing would overwrite the tab colours.
+    if (!state.key.equals(ThemeStorePreviewViewModel.keyOf(current()))) {
       return;
-    } else if (v instanceof BottomNavigationView) {
-      ((BottomNavigationView) v)
-          .setBackgroundColor(surface);
-    } else if (v instanceof TextInputLayout) {
-      ((TextInputLayout) v).setBoxStrokeColor(accent);
-    } else if (v instanceof MaterialButton) {
-      ((MaterialButton) v)
-          .setBackgroundTintList(ColorStateList.valueOf(accent));
-      ((MaterialButton) v).setTextColor(onSurface);
-    } else if (v instanceof TextView) {
-      ((TextView) v).setTextColor(text);
     }
-
-    if (v instanceof ViewGroup) {
-      for (int i = 0; i < ((ViewGroup) v).getChildCount(); i++) {
-        applyWidgetRecursively(
-            ((ViewGroup) v).getChildAt(i), surface, accent, text, hint, imageTint, onSurface);
-      }
-    }
-  }
-
-  private void applyBackground(GhostTheme theme, File themeFile) {
-    WidgetTheme widget = theme.getWidget();
-    ActivityTheme activity = theme.getActivity();
-    String imagePath = widget != null ? widget.getImagepath() : null;
-
-    int bgColor = Color.TRANSPARENT;
-    if (activity != null && activity.getBackground() != null) {
-      bgColor = parseColor(activity.getBackground());
-    }
-    View root = getView();
-    if (root != null) {
-      root.setBackgroundColor(bgColor);
-    }
-
-    boolean hasImage = imagePath != null && !imagePath.isEmpty();
-    ViewChilder bgMedia = binding.ivBackgroundImage;
-    if (bgMedia != null) {
-      bgMedia.setVisibility(hasImage ? View.VISIBLE : View.GONE);
-      if (hasImage) {
-        String loadPath = ThemeMediaPath.resolve(themeFile.getAbsolutePath(), imagePath);
-        float blur = widget.getBlursize();
-        bgMedia.load(loadPath != null ? loadPath : imagePath, blur);
+    boolean ready = state.state == ThemeStorePreviewViewModel.STATE_READY && state.data != null;
+    boolean failed = state.state == ThemeStorePreviewViewModel.STATE_ERROR;
+    ui.previewCanvas.setData(ready ? state.data : null);
+    ui.statusPanel.setVisibility(ready ? View.GONE : View.VISIBLE);
+    ui.previewProgress.setVisibility(failed ? View.GONE : View.VISIBLE);
+    ui.retryButton.setVisibility(failed ? View.VISIBLE : View.GONE);
+    if (failed) {
+      ui.statusText.setText(R.string.theme_preview_failed);
+    } else if (!ready) {
+      if (state.progress > 0) {
+        ui.previewProgress.setIndeterminate(false);
+        ui.previewProgress.setProgressCompat(state.progress, true);
+        ui.statusText.setText(getString(R.string.theme_preview_downloading_percent, state.progress));
       } else {
-        bgMedia.clear();
+        ui.previewProgress.setIndeterminate(true);
+        ui.statusText.setText(R.string.theme_preview_downloading);
       }
     }
+    ui.badgeRow.setVisibility(ready ? View.VISIBLE : View.INVISIBLE);
+    if (ready) {
+      ui.modeBadge.setText(
+          state.data.dark ? R.string.theme_preview_badge_dark : R.string.theme_preview_badge_light);
+      ui.wallpaperBadge.setVisibility(state.data.wallpaper != null ? View.VISIBLE : View.GONE);
+    }
+    renderApply();
   }
 
-  private void installTheme(View root) {
-    if (!themeReady || appliedThemeFile == null || !appliedThemeFile.exists()) {
-      GhostToast.makeText(requireContext(), R.string.themes_download_failed, GhostToast.LENGTH_SHORT).show();
+  private void renderApply() {
+    if (ui == null || viewModel == null) {
       return;
     }
-    try {
-      String name = theme.name() + ".gth";
-      File themesDir = new File(Environment.getExternalStorageDirectory(), "ghostide/themes");
-      themesDir.mkdirs();
-      String dirName = theme.name().replaceAll("[\\\\/:*?\"<>|]", "_").trim();
-      if (dirName.isEmpty()) dirName = "theme";
-      File dir = new File(themesDir, dirName);
-      dir.mkdirs();
-      File target = new File(dir, name);
-      FileUtils.copy(appliedThemeFile.getAbsolutePath(), target.getAbsolutePath());
-      copyBackground(appliedThemeFile, target);
-      new ThemeManager(requireContext()).setThemeFromFile(target.getAbsolutePath());
-      GhostToast.makeText(requireContext(), R.string.themes_applied, GhostToast.LENGTH_SHORT).show();
-      EventBus.getDefault().post(new ThemeInstalledEvent());
-      themeApplied = true;
-      dismiss();
-    } catch (Exception e) {
-      GhostToast.makeText(requireContext(), R.string.themes_download_failed, GhostToast.LENGTH_SHORT).show();
-    }
+    ThemeStorePreviewViewModel.PreviewState state = viewModel.getPreview().getValue();
+    boolean ready =
+        state != null
+            && state.state == ThemeStorePreviewViewModel.STATE_READY
+            && state.key.equals(ThemeStorePreviewViewModel.keyOf(current()));
+    boolean busy = Boolean.TRUE.equals(viewModel.getInstalling().getValue());
+    boolean active = viewModel.isActive(current());
+    int label =
+        busy
+            ? R.string.theme_preview_applying
+            : active ? R.string.theme_preview_active : R.string.theme_preview_apply;
+    ui.applyButton.setText(label);
+    ui.applyButton.setEnabled(ready && !busy && !active);
   }
 
-  private void copyBackground(File srcThemeFile, File targetThemeFile) {
-    try {
-      String json = FileIOUtils.readFile2String(srcThemeFile);
-      JsonObject root = JsonParser.parseString(json).getAsJsonObject();
-      if (!root.has("widget")) return;
-      JsonObject widget = root.getAsJsonObject("widget");
-      if (!widget.has("imagepath")) return;
-      String imagepath = widget.get("imagepath").getAsString();
-      if (imagepath == null || imagepath.isEmpty()) return;
-      if (imagepath.startsWith("http")
-          || imagepath.startsWith("content:")
-          || imagepath.startsWith("file:")) {
-        return;
-      }
-      String bgName;
-      if (imagepath.startsWith("/")) {
-        bgName = new File(imagepath).getName();
-      } else {
-        String clean = imagepath;
-        while (clean.startsWith("../")) clean = clean.substring(3);
-        if (clean.startsWith("./")) clean = clean.substring(2);
-        bgName = new File(clean).getName();
-      }
-      File srcBg = new File(srcThemeFile.getParentFile(), bgName);
-      if (srcBg.exists()) {
-        File targetBg = new File(targetThemeFile.getParentFile(), bgName);
-        FileUtils.copy(srcBg.getAbsolutePath(), targetBg.getAbsolutePath());
-      }
-    } catch (Exception ignored) {
-    }
-  }
-
-  private void applyPreviewLanguage(String path) {
-    LanguageManager.resolveAsync(
-        getContext(),
-        path,
-        language -> {
-          if (language != null && editorPreview != null) {
-            editorPreview.setEditorLanguage(language);
-          }
-        });
-  }
-
-  /** تِم سراسری TextMate را به تِم فعال اپ برمی گرداند تا پیش‌نمایش روی ادیتورهای اصلی نماند. */
-  private void restoreAppTheme() {
-    if (themeApplied) {
+  private void renderDescription(@Nullable String text) {
+    if (ui == null) {
       return;
     }
-    try {
-      GhostTheme appTheme = new ThemeManager(requireContext()).getTheme();
-      if (appTheme != null && appTheme.getEditor() != null) {
-        GhostColorScheme.syncRegistryTo(appTheme.getEditor());
-      }
-    } catch (Exception ignored) {
+    boolean empty = TextUtils.isEmpty(text);
+    ui.previewDescriptionLabel.setVisibility(empty ? View.GONE : View.VISIBLE);
+    ui.descriptionScroll.setVisibility(empty ? View.GONE : View.VISIBLE);
+    if (!empty) {
+      MarkwonHelper.setMarkdown(ui.previewDescription, text);
+      ui.descriptionScroll.scrollTo(0, 0);
     }
   }
 
-  private void setSampleCode(int position) {
-    String code;
-    switch (position) {
-      case 0:
-        code =
-            "public class Item {\n"
-                + "    private String name;\n"
-                + "    private int value;\n"
-                + "\n"
-                + "    public Item(String name, int value) {\n"
-                + "        this.name = name;\n"
-                + "        this.value = value;\n"
-                + "    }\n"
-                + "\n"
-                + "    public void print() {\n"
-                + "        System.out.println(name + \": \" + value);\n"
-                + "    }\n"
-                + "}";
-        applyPreviewLanguage("Sample.java");
-        break;
-      case 1:
-        code =
-            "<!DOCTYPE html>\n"
-                + "<html>\n"
-                + "<head><title>Sample</title></head>\n"
-                + "<body><h1>Hello</h1><p>World</p></body>\n"
-                + "</html>";
-        applyPreviewLanguage("sample.html");
-        break;
-      case 2:
-        code =
-            "function greet(name) {\n"
-                + "    return `Hello, ${name}!`;\n"
-                + "}\n"
-                + "const result = greet('User');\n"
-                + "console.log(result);";
-        applyPreviewLanguage("app.js");
-        break;
-      default:
-        code = "#include <iostream>\n" + "using namespace std;\n" + "int main() { return 0; }";
-        applyPreviewLanguage("main.cpp");
-        break;
+  private void onInstallResult(@Nullable ThemeStorePreviewViewModel.InstallResult result) {
+    if (result == null || ui == null) {
+      return;
     }
-    editorPreview.setText(code);
+    viewModel.consumeInstallResult();
+    if (!result.success) {
+      GhostToast.makeText(
+              requireContext(), R.string.themes_download_failed, GhostToast.LENGTH_SHORT)
+          .show();
+      renderApply();
+      return;
+    }
+    GhostToast.makeText(requireContext(), R.string.themes_applied, GhostToast.LENGTH_SHORT).show();
+    dismissAllowingStateLoss();
   }
 
   @Override
   public void onDestroyView() {
-    restoreAppTheme();
-    if (binding != null && binding.ivBackgroundImage != null) {
-      binding.ivBackgroundImage.clear();
+    if (ui != null) {
+      ui.previewCanvas.setData(null);
     }
-    binding = null;
+    ui = null;
     super.onDestroyView();
-  }
-
-  private int selectedTabColor(WidgetTheme w, int accent) {
-    int color = w != null ? parseColor(w.getTabSelected()) : Color.TRANSPARENT;
-    return color == Color.TRANSPARENT ? accent : color;
-  }
-
-  private int unselectedTabColor(WidgetTheme w, int hint, int text) {
-    int color = w != null ? parseColor(w.getTabUnselected()) : Color.TRANSPARENT;
-    if (color == Color.TRANSPARENT) color = hint != Color.TRANSPARENT ? hint : text;
-    return color;
-  }
-
-  private int color(String direct, String fallback) {
-    if (direct != null) {
-      int c = parseColor(direct);
-      if (c != Color.TRANSPARENT) return c;
-    }
-    if (fallback != null) return parseColor(fallback);
-    return Color.TRANSPARENT;
-  }
-
-  private int parseColor(String color) {
-    if (color == null) return Color.TRANSPARENT;
-    try {
-      return Color.parseColor(color);
-    } catch (Exception e) {
-      return Color.TRANSPARENT;
-    }
   }
 }

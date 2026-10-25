@@ -102,7 +102,12 @@ public class ThemeStoreFragment extends Fragment {
 
   private void onThemeClick(ThemeItem theme, int position) {
     if (theme == null) return;
-    ThemeStorePreviewSheet.newInstance(theme)
-        .show(requireActivity().getSupportFragmentManager(), "store_theme_preview");
+    List<ThemeItem> shown = viewModel.getThemes().getValue();
+    int index = shown != null ? shown.indexOf(theme) : -1;
+    ThemeStorePreviewSheet sheet =
+        index >= 0
+            ? ThemeStorePreviewSheet.newInstance(shown, index)
+            : ThemeStorePreviewSheet.newInstance(theme);
+    sheet.show(requireActivity().getSupportFragmentManager(), "store_theme_preview");
   }
 }

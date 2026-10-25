@@ -5,21 +5,27 @@ import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewParent;
 import androidx.annotation.ColorInt;
 import androidx.annotation.Nullable;
 import androidx.appcompat.content.res.AppCompatResources;
+import androidx.core.graphics.ColorUtils;
 import androidx.core.graphics.drawable.DrawableCompat;
+import androidx.viewpager2.widget.ViewPager2;
 import com.example.liquidglass.LiquidGlassChipGroup;
 import com.example.liquidglass.LiquidGlassView;
+import ir.hanzodev1375.components.childern.ViewChilder;
 import ir.hanzodev1375.components.colors.AccentPalette;
 import ir.hanzodev1375.components.sheet.customitemsheet.ui.FabGlass;
 import ir.hanzodev1375.components.sheet.customitemsheet.ui.GlassCompat;
 import ir.hanzodev1375.components.utils.ComponentsPrefs;
 import ir.theme.M3Theme;
+import java.util.ArrayList;
 
 /**
  * Shared plumbing for the Liquid Glass compat views in this package.
@@ -229,6 +235,90 @@ public final class Glass {
   public static View resolveBackdrop(@Nullable Context context) {
     Activity activity = findActivity(context);
     return activity == null ? null : activity.findViewById(android.R.id.content);
+  }
+
+  /**
+   * The wallpaper layer drawn behind the ViewPager2 that hosts {@code view}, if there is one.
+   *
+   * <p>A glass view inside a ViewPager2 page cannot sample its page: the page root is transparent,
+   * and the library's lens shader keeps only the captured RGB and returns an opaque result, so the
+   * transparent capture turns into a near-black panel. It cannot sample an ancestor of the pager
+   * either: that capture re-records the sibling pages, whose own glass captures the same ancestor
+   * again. The wallpaper layer is what is really visible behind the page and it holds no glass, so
+   * it is the one safe live backdrop.
+   *
+   * <p>Only views drawn before the pager's branch (lower child index) are considered, at every
+   * level up to the window root.
+   *
+   * @return a visible, laid-out {@link ViewChilder} behind the pager, or null when {@code view} is
+   *     not inside a ViewPager2 or the pager sits over a plain background.
+   */
+  @Nullable
+  public static View findWallpaperBehindPager(@Nullable View view) {
+    View pager = findPagerAncestor(view);
+    if (pager == null) {
+      return null;
+    }
+    View child = pager;
+    ViewParent parent = pager.getParent();
+    while (parent instanceof ViewGroup) {
+      ViewGroup group = (ViewGroup) parent;
+      int end = group.indexOfChild(child);
+      for (int i = 0; i < end; i++) {
+        View candidate = group.getChildAt(i);
+        if (candidate instanceof ViewChilder
+            && candidate.getVisibility() == View.VISIBLE
+            && candidate.getWidth() > 0
+            && candidate.getHeight() > 0) {
+          return candidate;
+        }
+      }
+      child = group;
+      parent = group.getParent();
+    }
+    return null;
+  }
+
+  /** The closest {@link ViewPager2} that contains {@code view}, or null. */
+  @Nullable
+  public static View findPagerAncestor(@Nullable View view) {
+    ViewParent parent = view != null ? view.getParent() : null;
+    while (parent instanceof View) {
+      if (parent instanceof ViewPager2) {
+        return (View) parent;
+      }
+      parent = parent.getParent();
+    }
+    return null;
+  }
+
+  /**
+   * The flat colour painted behind {@code view}: the plain colour backgrounds of all its ancestors
+   * (window decor first) composited in drawing order. Non-colour backgrounds are skipped.
+   *
+   * @return the composited colour, {@link Color#TRANSPARENT} when no ancestor paints a colour.
+   */
+  @ColorInt
+  public static int colorBehind(@Nullable View view) {
+    ArrayList<View> chain = new ArrayList<>();
+    ViewParent parent = view != null ? view.getParent() : null;
+    while (parent instanceof View) {
+      chain.add((View) parent);
+      parent = parent.getParent();
+    }
+    int result = Color.TRANSPARENT;
+    for (int i = chain.size() - 1; i >= 0; i--) {
+      Drawable background = chain.get(i).getBackground();
+      if (background instanceof ColorDrawable) {
+        ColorDrawable colorDrawable = (ColorDrawable) background;
+        int color = colorDrawable.getColor();
+        int alpha = Color.alpha(color) * colorDrawable.getAlpha() / 255;
+        if (alpha > 0) {
+          result = ColorUtils.compositeColors(ColorUtils.setAlphaComponent(color, alpha), result);
+        }
+      }
+    }
+    return result;
   }
 
   /**

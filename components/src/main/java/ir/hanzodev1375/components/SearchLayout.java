@@ -3,6 +3,8 @@ package ir.hanzodev1375.components;
 import android.app.Activity;
 import android.content.Context;
 import android.content.ContextWrapper;
+import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.transition.TransitionManager;
@@ -20,10 +22,12 @@ import android.widget.ImageView;
 import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.graphics.ColorUtils;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager2.widget.ViewPager2;
 import com.example.liquidglass.GlassMaterial;
 import com.google.android.material.transition.platform.MaterialSharedAxis;
+import ir.hanzodev1375.components.glass.Glass;
 import ir.hanzodev1375.components.sheet.customitemsheet.ui.GlassCompat;
 import ir.hanzodev1375.components.utils.ComponentsPrefs;
 import ir.theme.M3Theme;
@@ -37,6 +41,17 @@ public class SearchLayout extends FrameLayout {
   private OnSearchListener onSearchListener;
   private OnTextChangedListener onTextChangedListener;
   ComponentsPrefs setting;
+  private static final float GLASS_CORNER_DP = 26f;
+  @Nullable private SearchGlass glass;
+  @Nullable private GradientDrawable backdropFill;
+  private boolean backdropListenerRegistered;
+  private boolean themeRefreshPending;
+  private final ViewTreeObserver.OnGlobalLayoutListener backdropLayoutListener =
+      () -> {
+        if (updateBackdrop()) {
+          removeBackdropListener();
+        }
+      };
 
   public SearchLayout(@NonNull Context context) {
     super(context);
@@ -68,9 +83,9 @@ public class SearchLayout extends FrameLayout {
     Activity activity = resolveActivity(getContext());
     if (activity == null) return;
 
-    GlassCompat glass = new GlassCompat(activity);
+    SearchGlass glass = new SearchGlass(activity);
     float density = getResources().getDisplayMetrics().density;
-    glass.setCornerRadius(26f * density);
+    glass.setCornerRadius(GLASS_CORNER_DP * density);
     glass.setRefractionHeight(48f);
     glass.setBevelWidth(8f);
     glass.setMaterial(GlassMaterial.REGULAR);
@@ -83,48 +98,116 @@ public class SearchLayout extends FrameLayout {
         0,
         new FrameLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-
-    attachBackdropSource(glass, activity);
-  }
-
-  private void attachBackdropSource(GlassCompat glass, Activity activity) {
-    if (isAttachedToWindow()) {
-      View backdrop = findBackdrop(activity);
-      if (backdrop != null) {
-        glass.setBackdropSource(backdrop);
-        return;
-      }
-    }
-    getViewTreeObserver()
-        .addOnGlobalLayoutListener(
-            new ViewTreeObserver.OnGlobalLayoutListener() {
-              @Override
-              public void onGlobalLayout() {
-                if (!isAttachedToWindow()) return;
-                View backdrop = findBackdrop(activity);
-                if (backdrop == null) return;
-                getViewTreeObserver().removeOnGlobalLayoutListener(this);
-                glass.setBackdropSource(backdrop);
-              }
-            });
+    this.glass = glass;
+    glass.onThemeRefresh = this::scheduleThemeRefresh;
   }
 
   /**
-   * Resolves the view the glass panel samples.
-   *
-   * <p>It must be the page this bar lives on, never the Activity's content view. The library
-   * re-draws the whole backdrop tree synchronously from {@code onDraw} and only hides glass views
-   * that share the glass's parent, so a backdrop that contains the ViewPager2 re-draws every
-   * sibling page — and each of those pages' own glass bars captures the window again, recursively.
-   * With the store's offscreen page limit that turns into a visible stall, and the panel paints a
-   * sample of where the page was a frame ago instead of what is behind it now.
+   * A theme pass refreshes the glass before the activity repaints its window background, so the
+   * backdrop is re-resolved after the current message, once the new background is in place.
    */
-  private View findBackdrop(Activity activity) {
-    View page = findPageRoot();
-    if (page != null) {
-      return page;
+  private void scheduleThemeRefresh() {
+    if (themeRefreshPending || !isAttachedToWindow()) return;
+    themeRefreshPending = true;
+    post(
+        () -> {
+          themeRefreshPending = false;
+          updateBackdrop();
+        });
+  }
+
+  @Override
+  protected void onAttachedToWindow() {
+    super.onAttachedToWindow();
+    if (glass == null) return;
+    // The wallpaper layer and the page only have their final size after the first layout pass
+    // of the new window, so the backdrop is resolved there and again on every re-attach (pages
+    // are detached and re-attached by ViewPager2/RecyclerView).
+    if (!backdropListenerRegistered) {
+      getViewTreeObserver().addOnGlobalLayoutListener(backdropLayoutListener);
+      backdropListenerRegistered = true;
     }
-    return activity.findViewById(android.R.id.content);
+  }
+
+  @Override
+  protected void onDetachedFromWindow() {
+    removeBackdropListener();
+    super.onDetachedFromWindow();
+  }
+
+  private void removeBackdropListener() {
+    if (!backdropListenerRegistered) return;
+    ViewTreeObserver observer = getViewTreeObserver();
+    if (observer.isAlive()) {
+      observer.removeOnGlobalLayoutListener(backdropLayoutListener);
+    }
+    backdropListenerRegistered = false;
+  }
+
+  /**
+   * Points the glass at what is really painted behind this bar.
+   *
+   * <ul>
+   *   <li>Outside a ViewPager2: the host Activity's content view (unchanged behaviour).
+   *   <li>Inside a page over a wallpaper: the wallpaper layer behind the pager, see {@link
+   *       Glass#findWallpaperBehindPager(View)}.
+   *   <li>Inside a page over a plain background: this bar itself, painted with that background
+   *       colour. The page root is transparent, and the lens shader turns a transparent capture
+   *       into an opaque near-black panel, so the colour that is visible behind the page has to be
+   *       part of the capture. It is clipped to the bar, so it adds no overdraw outside it.
+   * </ul>
+   *
+   * @return true when a backdrop was resolved and no further layout pass needs to retry.
+   */
+  private boolean updateBackdrop() {
+    SearchGlass glass = this.glass;
+    if (glass == null || !isAttachedToWindow()) return false;
+    if (!Glass.isGlassEnabled(getContext())) {
+      setBackdropFill(Color.TRANSPARENT);
+      return true;
+    }
+    if (findPageRoot() == null) {
+      View content = Glass.resolveBackdrop(getContext());
+      if (content == null) return false;
+      setBackdropFill(Color.TRANSPARENT);
+      glass.setBackdropSource(content);
+      return true;
+    }
+    View wallpaper = Glass.findWallpaperBehindPager(this);
+    if (wallpaper != null) {
+      setBackdropFill(Color.TRANSPARENT);
+      glass.setBackdropSource(wallpaper);
+      return true;
+    }
+    int behind = Glass.colorBehind(this);
+    if (Color.alpha(behind) == 0) {
+      // Nothing opaque is painted behind the page (translucent window): there is nothing to
+      // refract, so the bar uses the opaque Material surface instead of a black lens.
+      setBackdropFill(Color.TRANSPARENT);
+      Glass.applyFallback(glass);
+      return true;
+    }
+    setBackdropFill(ColorUtils.setAlphaComponent(behind, 255));
+    glass.setBackdropSource(this);
+    glass.invalidate();
+    return true;
+  }
+
+  private void setBackdropFill(int color) {
+    if (Color.alpha(color) == 0) {
+      if (getBackground() == backdropFill && backdropFill != null) {
+        setBackground(null);
+      }
+      return;
+    }
+    if (backdropFill == null) {
+      backdropFill = new GradientDrawable();
+      backdropFill.setCornerRadius(GLASS_CORNER_DP * getResources().getDisplayMetrics().density);
+    }
+    backdropFill.setColor(color);
+    if (getBackground() != backdropFill) {
+      setBackground(backdropFill);
+    }
   }
 
   /**
@@ -145,6 +228,25 @@ public class SearchLayout extends FrameLayout {
       parent = (ViewGroup) grandParent;
     }
     return null;
+  }
+
+  /** The bar's glass panel; re-resolves the backdrop whenever the theme pass refreshes it. */
+  private static final class SearchGlass extends GlassCompat {
+
+    @Nullable Runnable onThemeRefresh;
+
+    SearchGlass(Context context) {
+      super(context);
+    }
+
+    @Override
+    public void refresh() {
+      super.refresh();
+      Runnable callback = onThemeRefresh;
+      if (callback != null) {
+        callback.run();
+      }
+    }
   }
 
   private static Activity resolveActivity(Context context) {

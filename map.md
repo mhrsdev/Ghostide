@@ -515,6 +515,8 @@ Directory structure:
     │           │       │       │   ├── SplitPaneContainerLayout.java
     │           │       │       │   └── SplitPreviewView.java
     │           │       │       ├── store/
+    │           │       │       │   ├── ThemePreviewCanvas.java
+    │           │       │       │   ├── ThemePreviewData.java
     │           │       │       │   ├── ThemeStoreFragment.java
     │           │       │       │   ├── ThemeStorePreviewSheet.java
     │           │       │       │   └── ThemeStorePreviewViewModel.java
@@ -820,10 +822,8 @@ Directory structure:
     │               │   ├── sheet_terminal.xml
     │               │   ├── sheet_theme_store_preview.xml
     │               │   ├── sysmbol_item.xml
-    │               │   ├── view_floating_action_toolbar.xml
-    │               │   └── widget_theme_preview_sample.xml
+    │               │   └── view_floating_action_toolbar.xml
     │               ├── menu/
-    │               │   ├── bottom_nav_preview.xml
     │               │   ├── menu_history.xml
     │               │   ├── menu_main.xml
     │               │   ├── menu_settings.xml

@@ -895,4 +895,26 @@
     <string name="plugin_manager_add">نصب پلاگین از فایل .gpl</string>
     <string name="plugin_manager_back">بازگشت</string>
     <string name="plugin_manager_setup_paused">پلاگین‌ها متوقف هستند. برای اجرای راه‌اندازی روشنشان کنید.</string>
+    <!-- Store theme preview (marketplace) -->
+    <string name="theme_preview_close">بستن پیش‌نمایش</string>
+    <string name="theme_preview_previous">تم قبلی</string>
+    <string name="theme_preview_next">تم بعدی</string>
+    <string name="theme_preview_about">درباره‌ی این تم</string>
+    <string name="theme_preview_apply">اعمال تم</string>
+    <string name="theme_preview_applying">در حال اعمال…</string>
+    <string name="theme_preview_active">تم فعلی</string>
+    <string name="theme_preview_retry">تلاش دوباره</string>
+    <string name="theme_preview_failed">این تم بارگذاری نشد</string>
+    <string name="theme_preview_downloading">در حال دریافت تم…</string>
+    <string name="theme_preview_downloading_percent">در حال دریافت تم… %1$d%%</string>
+    <string name="theme_preview_badge_dark">تیره</string>
+    <string name="theme_preview_badge_light">روشن</string>
+    <string name="theme_preview_badge_wallpaper">والپیپر</string>
+    <string name="theme_preview_canvas_description">پیش‌نمایش تم %1$s: ویرایشگر، کنترل‌ها و پالت رنگ</string>
+    <string name="theme_preview_sample_title">Greeter.java</string>
+    <string name="theme_preview_sample_run">اجرا</string>
+    <string name="theme_preview_sample_debug">دیباگ</string>
+    <string name="theme_preview_sample_tab_code">کد</string>
+    <string name="theme_preview_sample_tab_files">فایل‌ها</string>
+    <string name="theme_preview_sample_tab_terminal">ترمینال</string>
 </resources>

@@ -181,6 +181,23 @@ public class ThemeManager {
     notifyChanged(old, true);
   }
 
+  /**
+   * Parses a theme file's JSON exactly as {@link #setThemeFromFile(String)} would apply it (merged
+   * with the default theme, {@code @section.key} references resolved), without touching the
+   * active theme, the preferences or the theme cache.
+   *
+   * @param json the raw content of a {@code .gth} file.
+   * @return the parsed theme; never null.
+   * @throws RuntimeException when {@code json} is not a valid theme object.
+   */
+  public GhostTheme parseDetached(String json) {
+    GhostTheme theme = gson.fromJson(mergeWithDefault(json), GhostTheme.class);
+    if (theme == null) {
+      throw new IllegalArgumentException("empty theme");
+    }
+    return theme;
+  }
+
   private String mergeWithDefault(String loadedJson) {
     JsonObject defaultObj = JsonParser.parseString(getDefaultThemeJson()).getAsJsonObject();
     JsonObject loadedObj = JsonParser.parseString(loadedJson).getAsJsonObject();

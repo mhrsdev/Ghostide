@@ -899,4 +899,26 @@
     <string name="plugin_manager_add">Install a plugin from a .gpl file</string>
     <string name="plugin_manager_back">Navigate up</string>
     <string name="plugin_manager_setup_paused">Plugins are paused. Turn them on to run setup.</string>
+    <!-- Store theme preview (marketplace) -->
+    <string name="theme_preview_close">Close preview</string>
+    <string name="theme_preview_previous">Previous theme</string>
+    <string name="theme_preview_next">Next theme</string>
+    <string name="theme_preview_about">About this theme</string>
+    <string name="theme_preview_apply">Apply theme</string>
+    <string name="theme_preview_applying">Applying…</string>
+    <string name="theme_preview_active">Current theme</string>
+    <string name="theme_preview_retry">Try again</string>
+    <string name="theme_preview_failed">This theme could not be loaded</string>
+    <string name="theme_preview_downloading">Downloading theme…</string>
+    <string name="theme_preview_downloading_percent">Downloading theme… %1$d%%</string>
+    <string name="theme_preview_badge_dark">Dark</string>
+    <string name="theme_preview_badge_light">Light</string>
+    <string name="theme_preview_badge_wallpaper">Wallpaper</string>
+    <string name="theme_preview_canvas_description">Preview of the %1$s theme: editor, controls and colour palette</string>
+    <string name="theme_preview_sample_title">Greeter.java</string>
+    <string name="theme_preview_sample_run">Run</string>
+    <string name="theme_preview_sample_debug">Debug</string>
+    <string name="theme_preview_sample_tab_code">Code</string>
+    <string name="theme_preview_sample_tab_files">Files</string>
+    <string name="theme_preview_sample_tab_terminal">Terminal</string>
 </resources>
