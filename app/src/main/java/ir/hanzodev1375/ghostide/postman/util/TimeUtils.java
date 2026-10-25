@@ -1,20 +1,33 @@
 package ir.hanzodev1375.ghostide.postman.util;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import android.content.Context;
+import android.text.format.DateUtils;
+import ir.hanzodev1375.ghostide.R;
 import java.util.Locale;
 
 public class TimeUtils {
 
-    public static String relativeTime(long timestampMillis) {
-        long diff = System.currentTimeMillis() - timestampMillis;
-        if (diff < 0) diff = 0;
-        if (diff < 60_000L) return "just now";
-        if (diff < 3_600_000L) return (diff / 60_000L) + "m ago";
-        if (diff < 86_400_000L) return (diff / 3_600_000L) + "h ago";
-        if (diff < 7L * 86_400_000L) return (diff / 86_400_000L) + "d ago";
-        SimpleDateFormat sdf = new SimpleDateFormat("MMM d", Locale.getDefault());
-        return sdf.format(new Date(timestampMillis));
+    /**
+     * A short, localized "how long ago" label: "Just now" under a minute, then relative minutes,
+     * hours and days, and a plain date after a week.
+     */
+    public static String relativeTime(Context context, long timestampMillis) {
+        long now = System.currentTimeMillis();
+        if (now - timestampMillis < DateUtils.MINUTE_IN_MILLIS) {
+            return context.getString(R.string.postman_just_now);
+        }
+        if (now - timestampMillis >= DateUtils.WEEK_IN_MILLIS) {
+            return DateUtils.formatDateTime(
+                    context,
+                    timestampMillis,
+                    DateUtils.FORMAT_SHOW_DATE | DateUtils.FORMAT_ABBREV_MONTH);
+        }
+        return DateUtils.getRelativeTimeSpanString(
+                        timestampMillis,
+                        now,
+                        DateUtils.MINUTE_IN_MILLIS,
+                        DateUtils.FORMAT_ABBREV_RELATIVE)
+                .toString();
     }
 
     public static String formatSize(long bytes) {

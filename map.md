@@ -405,9 +405,11 @@ Directory structure:
     │           │       │       │   ├── network/
     │           │       │       │   │   └── HttpEngine.java
     │           │       │       │   └── util/
+    │           │       │       │       ├── AuthHeaders.java
     │           │       │       │       ├── ColorUtils.java
     │           │       │       │       ├── JsonUtils.java
     │           │       │       │       ├── PrefsManager.java
+    │           │       │       │       ├── ResponseFormatter.java
     │           │       │       │       ├── SimpleTextWatcher.java
     │           │       │       │       ├── TimeUtils.java
     │           │       │       │       └── UiUtils.java
@@ -843,6 +845,7 @@ Directory structure:
     │               │   ├── defaults.xml
     │               │   ├── filemanager_styles.xml
     │               │   ├── popup_anim_styles.xml
+    │               │   ├── postman_dimens.xml
     │               │   ├── strings.xml
     │               │   ├── themes.xml
     │               │   ├── themes_red.xml

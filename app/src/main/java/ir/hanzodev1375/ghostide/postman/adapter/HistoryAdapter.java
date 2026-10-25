@@ -1,17 +1,20 @@
 package ir.hanzodev1375.ghostide.postman.adapter;
 
-import android.content.res.ColorStateList;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.listitem.ListItemViewHolder;
+import ir.hanzodev1375.ghostide.R;
 import ir.hanzodev1375.ghostide.databinding.ItemHistoryPostmanBinding;
 import java.util.List;
 import ir.hanzodev1375.ghostide.postman.model.HistoryItem;
 import ir.hanzodev1375.ghostide.postman.util.TimeUtils;
 import ir.hanzodev1375.ghostide.postman.util.UiUtils;
+import ir.hanzodev1375.ghostide.utils.LocaleDirection;
 import ir.theme.M3Theme;
 
 public class HistoryAdapter extends RecyclerView.Adapter<HistoryAdapter.ViewHolder> {
@@ -35,13 +38,27 @@ public class HistoryAdapter extends RecyclerView.Adapter<HistoryAdapter.ViewHold
   public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
     ItemHistoryPostmanBinding binding =
         ItemHistoryPostmanBinding.inflate(LayoutInflater.from(parent.getContext()), parent, false);
+    if (LocaleDirection.isRtl(parent.getContext())) {
+      LocaleDirection.mirrorRow(binding.rowContent);
+      LocaleDirection.mirrorRow(binding.metaRow);
+      binding.urlText.setGravity(Gravity.RIGHT);
+      binding.metaRow.setLayoutParams(rightAligned(binding.metaRow.getLayoutParams()));
+    }
     return new ViewHolder(binding);
+  }
+
+  static ViewGroup.LayoutParams rightAligned(ViewGroup.LayoutParams params) {
+    if (params instanceof android.widget.LinearLayout.LayoutParams) {
+      ((android.widget.LinearLayout.LayoutParams) params).gravity = Gravity.RIGHT;
+    }
+    return params;
   }
 
   @Override
   public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-    holder.bind(items.get(position));
     M3Theme.listCard(holder.itemView);
+    holder.bind(position, getItemCount());
+    holder.bind(items.get(position));
   }
 
   @Override
@@ -49,39 +66,45 @@ public class HistoryAdapter extends RecyclerView.Adapter<HistoryAdapter.ViewHold
     return items.size();
   }
 
-  class ViewHolder extends RecyclerView.ViewHolder {
+  class ViewHolder extends ListItemViewHolder {
     private final ItemHistoryPostmanBinding binding;
-    
 
     ViewHolder(ItemHistoryPostmanBinding binding) {
       super(binding.getRoot());
       this.binding = binding;
+      binding.rowCard.setOnClickListener(
+          v -> {
+            int pos = getBindingAdapterPosition();
+            if (pos != RecyclerView.NO_POSITION) listener.onItemClick(items.get(pos));
+          });
+      binding.deleteButton.setOnClickListener(
+          v -> {
+            int pos = getBindingAdapterPosition();
+            if (pos != RecyclerView.NO_POSITION) listener.onDeleteClick(items.get(pos));
+          });
     }
 
     void bind(HistoryItem item) {
+      android.content.Context context = binding.getRoot().getContext();
       binding.methodBadge.setText(item.method);
-      int methodColor = UiUtils.methodColor(binding.getRoot().getContext(), item.method);
-      binding.methodBadge.setBackgroundTintList(ColorStateList.valueOf(methodColor));
+      UiUtils.tonalPill(binding.methodBadge, UiUtils.methodColor(context, item.method));
 
       binding.urlText.setText(item.url);
 
       if (item.statusCode > 0) {
         binding.statusChip.setText(String.valueOf(item.statusCode));
-        int statusColor = UiUtils.statusColor(binding.getRoot().getContext(), item.statusCode);
-        binding.statusChip.setBackgroundTintList(ColorStateList.valueOf(statusColor));
+        UiUtils.tonalPill(binding.statusChip, UiUtils.statusColor(context, item.statusCode));
       } else {
-        binding.statusChip.setText("failed");
-        binding.statusChip.setBackgroundTintList(
-            ColorStateList.valueOf(UiUtils.statusColor(binding.getRoot().getContext(), 500)));
+        binding.statusChip.setText(R.string.postman_status_failed);
+        UiUtils.tonalPill(binding.statusChip, UiUtils.errorColor(context));
       }
 
       String meta =
-          TimeUtils.formatDuration(item.timeMs) + " · " + TimeUtils.relativeTime(item.timestamp);
+          TimeUtils.formatDuration(item.timeMs)
+              + " · "
+              + TimeUtils.relativeTime(context, item.timestamp);
       binding.metaText.setText(meta);
-
-      binding.getRoot().setOnClickListener(v -> listener.onItemClick(item));
-      binding.deleteButton.setOnClickListener(v -> listener.onDeleteClick(item));
+      binding.deleteButton.setImageTintList(UiUtils.mutedTint());
     }
-    
   }
 }

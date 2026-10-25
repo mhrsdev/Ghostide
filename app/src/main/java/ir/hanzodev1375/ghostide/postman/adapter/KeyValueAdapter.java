@@ -9,6 +9,7 @@ import java.util.List;
 import ir.hanzodev1375.ghostide.databinding.ItemKeyValueBinding;
 import ir.hanzodev1375.ghostide.postman.model.KeyValueItem;
 import ir.hanzodev1375.ghostide.postman.util.SimpleTextWatcher;
+import ir.hanzodev1375.ghostide.postman.util.UiUtils;
 import ir.theme.M3Theme;
 
 /**
@@ -16,6 +17,8 @@ import ir.theme.M3Theme;
  * lists — the hints are the only thing that differ.
  */
 public class KeyValueAdapter extends RecyclerView.Adapter<KeyValueAdapter.ViewHolder> {
+
+  private static final float DISABLED_ROW_ALPHA = 0.45f;
 
   public interface OnChangeListener {
     void onChanged();
@@ -83,6 +86,7 @@ public class KeyValueAdapter extends RecyclerView.Adapter<KeyValueAdapter.ViewHo
             int pos = getBindingAdapterPosition();
             if (pos != RecyclerView.NO_POSITION) {
               items.get(pos).setEnabled(isChecked);
+              showEnabled(isChecked);
               if (listener != null) listener.onChanged();
             }
           });
@@ -95,6 +99,8 @@ public class KeyValueAdapter extends RecyclerView.Adapter<KeyValueAdapter.ViewHo
       binding.keyInput.setText(item.getKey());
       binding.valueInput.setText(item.getValue());
       binding.enabledCheckbox.setChecked(item.isEnabled());
+      showEnabled(item.isEnabled());
+      binding.deleteButton.setImageTintList(UiUtils.mutedTint());
 
       keyWatcher =
           new SimpleTextWatcher(
@@ -111,6 +117,12 @@ public class KeyValueAdapter extends RecyclerView.Adapter<KeyValueAdapter.ViewHo
 
       binding.keyInput.addTextChangedListener(keyWatcher);
       binding.valueInput.addTextChangedListener(valueWatcher);
+    }
+
+    private void showEnabled(boolean enabled) {
+      float alpha = enabled ? 1f : DISABLED_ROW_ALPHA;
+      binding.keyInputLayout.setAlpha(alpha);
+      binding.valueInputLayout.setAlpha(alpha);
     }
   }
 }

@@ -1,6 +1,5 @@
 package ir.hanzodev1375.ghostide.postman.util;
 
-import android.content.Context;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.style.ForegroundColorSpan;
@@ -19,7 +18,7 @@ import com.google.gson.JsonSyntaxException;
  */
 public class JsonUtils {
 
-    private static final Gson PRETTY_GSON = new GsonBuilder().setPrettyPrinting().setLenient().create();
+    private static final Gson PRETTY_GSON = new GsonBuilder().setPrettyPrinting().setLenient().disableHtmlEscaping().create();
 
     public static boolean looksLikeJson(String text) {
         if (text == null) return false;
@@ -51,7 +50,7 @@ public class JsonUtils {
      * Falls back gracefully (returns plain text) for anything that isn't
      * actually JSON-shaped.
      */
-    public static CharSequence highlight(Context context, String prettyJson, int keyColor, int stringColor, int numberColor) {
+    public static CharSequence highlight(String prettyJson, int keyColor, int stringColor, int numberColor) {
         SpannableString spannable = new SpannableString(prettyJson);
         int length = prettyJson.length();
         int i = 0;

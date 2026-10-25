@@ -1,107 +1,112 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ir.hanzodev1375.components.sheet.customitemsheet.ui.GlassCompat xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.listitem.ListItemLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginStart="16dp"
-    android:layout_marginEnd="16dp"
-    android:layout_marginTop="6dp"
-    android:layout_marginBottom="6dp"
-    android:clickable="true"
-    android:focusable="true"
-    android:foreground="?attr/selectableItemBackground"
-    app:cornerRadius="24dp"
-    app:glassMaterial="regular"
-    app:refractionHeight="66dp"
-    app:bevelWidth="14dp"
-    app:dispersionStrength="0.12"
-    app:sensorHighlight="false"
-    app:adaptiveTint="true"
-    app:backdropSourceId="@id/contentFrame">
+    android:theme="@style/ThemeOverlay.Ghost.FileRow">
 
-    <LinearLayout
+    <com.google.android.material.listitem.ListItemCardView
+        android:id="@+id/rowCard"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:paddingStart="20dp"
-        android:paddingEnd="12dp"
-        android:paddingTop="14dp"
-        android:paddingBottom="14dp">
+        android:clickable="true"
+        android:focusable="true"
+        app:contentPaddingBottom="0dp"
+        app:contentPaddingLeft="0dp"
+        app:contentPaddingRight="0dp"
+        app:contentPaddingTop="0dp">
 
         <LinearLayout
+            android:id="@+id/rowContent"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:minHeight="64dp"
             android:orientation="horizontal"
-            android:gravity="center_vertical">
+            android:paddingStart="14dp"
+            android:paddingTop="10dp"
+            android:paddingEnd="2dp"
+            android:paddingBottom="10dp">
 
             <TextView
                 android:id="@+id/methodBadge"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:background="@drawable/bg_chip_rounded"
-                android:paddingStart="10dp"
-                android:paddingEnd="10dp"
+                android:fontFamily="monospace"
+                android:gravity="center"
+                android:maxLines="1"
+                android:minWidth="@dimen/postman_badge_min_width"
+                android:paddingStart="8dp"
                 android:paddingTop="4dp"
+                android:paddingEnd="8dp"
                 android:paddingBottom="4dp"
                 android:textSize="11sp"
                 android:textStyle="bold"
-                android:minWidth="58dp"
-                android:gravity="center"
                 tools:text="POST" />
 
-            <TextView
-                android:id="@+id/urlText"
+            <LinearLayout
+                android:id="@+id/textColumn"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:layout_marginStart="12dp"
-                android:maxLines="1"
-                android:ellipsize="end"
-                android:textColor="?attr/colorOnSurface"
-                android:textSize="15sp"
-                tools:text="https://api.example.com/v1/users/me" />
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/urlText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="middle"
+                    android:fontFamily="monospace"
+                    android:singleLine="true"
+                    android:textSize="13sp"
+                    tools:text="https://api.example.com/v1/users/me" />
+
+                <LinearLayout
+                    android:id="@+id/metaRow"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="5dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/statusChip"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_chip_rounded"
+                        android:fontFamily="monospace"
+                        android:maxLines="1"
+                        android:paddingStart="8dp"
+                        android:paddingTop="1dp"
+                        android:paddingEnd="8dp"
+                        android:paddingBottom="1dp"
+                        android:textSize="11sp"
+                        android:textStyle="bold"
+                        tools:text="200" />
+
+                    <TextView
+                        android:id="@+id/metaText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:alpha="0.7"
+                        android:maxLines="1"
+                        android:textSize="12sp"
+                        tools:text="128 ms · 2 min ago" />
+                </LinearLayout>
+            </LinearLayout>
 
             <ImageButton
                 android:id="@+id/deleteButton"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/ic_delete"
-                android:tint="?attr/colorOnSurfaceVariant"
-                android:padding="7dp"
-                android:contentDescription="@string/action_delete" />
+                android:contentDescription="@string/action_delete"
+                android:padding="13dp"
+                android:src="@drawable/ic_delete" />
         </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:layout_marginTop="8dp"
-            android:layout_marginStart="70dp">
-
-            <TextView
-                android:id="@+id/statusChip"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:background="@drawable/bg_chip_rounded"
-                android:paddingStart="8dp"
-                android:paddingEnd="8dp"
-                android:paddingTop="2dp"
-                android:paddingBottom="2dp"
-                android:textSize="11sp"
-                tools:text="200 OK" />
-
-            <TextView
-                android:id="@+id/metaText"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:textColor="?attr/colorOnSurfaceVariant"
-                android:textSize="12sp"
-                tools:text="128 ms · 2m ago" />
-        </LinearLayout>
-    </LinearLayout>
-
-</ir.hanzodev1375.components.sheet.customitemsheet.ui.GlassCompat>
+    </com.google.android.material.listitem.ListItemCardView>
+</com.google.android.material.listitem.ListItemLayout>

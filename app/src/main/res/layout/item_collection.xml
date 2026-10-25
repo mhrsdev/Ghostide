@@ -1,76 +1,77 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ir.hanzodev1375.components.sheet.customitemsheet.ui.GlassCompat xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.listitem.ListItemLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginStart="16dp"
-    android:layout_marginEnd="16dp"
-    android:layout_marginTop="6dp"
-    android:layout_marginBottom="6dp"
-    android:clickable="true"
-    android:focusable="true"
-    android:foreground="?attr/selectableItemBackground"
-    app:cornerRadius="24dp"
-    app:glassMaterial="regular"
-    app:refractionHeight="66dp"
-    app:bevelWidth="14dp"
-    app:dispersionStrength="0.12"
-    app:sensorHighlight="false"
-    app:adaptiveTint="true"
-    app:backdropSourceId="@id/contentFrame">
+    android:theme="@style/ThemeOverlay.Ghost.FileRow">
 
-    <LinearLayout
+    <com.google.android.material.listitem.ListItemCardView
+        android:id="@+id/rowCard"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:padding="16dp">
-
-        <ImageView
-            android:layout_width="28dp"
-            android:layout_height="28dp"
-            android:src="@drawable/ic_folder"
-            android:tint="?attr/colorPrimary"
-            android:contentDescription="@null" />
+        android:clickable="true"
+        android:focusable="true"
+        app:contentPaddingBottom="0dp"
+        app:contentPaddingLeft="0dp"
+        app:contentPaddingRight="0dp"
+        app:contentPaddingTop="0dp">
 
         <LinearLayout
-            android:layout_width="0dp"
+            android:id="@+id/rowContent"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:layout_marginStart="14dp"
-            android:orientation="vertical">
+            android:gravity="center_vertical"
+            android:minHeight="64dp"
+            android:orientation="horizontal"
+            android:paddingStart="14dp"
+            android:paddingTop="10dp"
+            android:paddingEnd="2dp"
+            android:paddingBottom="10dp">
 
-            <TextView
-                android:id="@+id/nameText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textColor="?attr/colorOnSurface"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:maxLines="1"
-                android:ellipsize="end"
-                tools:text="Payments API" />
+            <ImageView
+                android:id="@+id/folderIcon"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:importantForAccessibility="no"
+                android:padding="9dp"
+                android:src="@drawable/ic_folder" />
 
-            <TextView
-                android:id="@+id/countText"
-                android:layout_width="match_parent"
+            <LinearLayout
+                android:id="@+id/textColumn"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:textColor="?attr/colorOnSurfaceVariant"
-                android:textSize="13sp"
-                tools:text="4 requests" />
+                android:layout_marginStart="14dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/nameText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
+                    tools:text="Payments API" />
+
+                <TextView
+                    android:id="@+id/countText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:alpha="0.7"
+                    android:textSize="12sp"
+                    tools:text="4 requests" />
+            </LinearLayout>
+
+            <ImageButton
+                android:id="@+id/deleteButton"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/action_delete"
+                android:padding="13dp"
+                android:src="@drawable/ic_delete" />
         </LinearLayout>
-
-        <ImageButton
-            android:id="@+id/deleteButton"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/ic_delete"
-            android:tint="?attr/colorOnSurfaceVariant"
-            android:padding="7dp"
-            android:contentDescription="@string/action_delete" />
-    </LinearLayout>
-
-</ir.hanzodev1375.components.sheet.customitemsheet.ui.GlassCompat>
+    </com.google.android.material.listitem.ListItemCardView>
+</com.google.android.material.listitem.ListItemLayout>

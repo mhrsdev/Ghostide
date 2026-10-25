@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <dimen name="postman_sheet_peek">88dp</dimen>
+    <dimen name="postman_response_body_height">420dp</dimen>
+    <dimen name="postman_sheet_corner">28dp</dimen>
+    <dimen name="postman_badge_min_width">64dp</dimen>
+
+</resources>
