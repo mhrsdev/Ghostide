@@ -6,6 +6,8 @@ import android.content.Context;
 import android.content.res.ColorStateList;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -288,9 +290,20 @@ public class ThemePreviewSheet extends BaseBlurBottomSheet {
               }
               boolean success = applied;
               String message = appliedMsg;
-              requireActivity()
-                  .runOnUiThread(
+              new Handler(Looper.getMainLooper())
+                  .post(
                       () -> {
+                        int res =
+                            success ? R.string.themes_applied : R.string.themes_download_failed;
+                        Toast.makeText(
+                                context.getApplicationContext(),
+                                message != null ? message : context.getString(res),
+                                Toast.LENGTH_SHORT)
+                            .show();
+                        if (success) {
+                          EventBus.getDefault().post(new ThemeInstalledEvent());
+                        }
+                        if (!isAdded() || getView() == null) return;
                         progressContainer
                             .animate()
                             .alpha(0f)
@@ -305,16 +318,6 @@ public class ThemePreviewSheet extends BaseBlurBottomSheet {
                             .start();
                         install.setEnabled(true);
                         install.setVisibility(View.VISIBLE);
-                        int res =
-                            success ? R.string.themes_applied : R.string.themes_download_failed;
-                        Toast.makeText(
-                                context,
-                                message != null ? message : context.getString(res),
-                                Toast.LENGTH_SHORT)
-                            .show();
-                          if(success) {
-                          	EventBus.getDefault().post(new ThemeInstalledEvent());
-                          }  
                       });
             })
         .start();

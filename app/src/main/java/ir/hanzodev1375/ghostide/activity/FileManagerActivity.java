@@ -2249,7 +2249,7 @@ public class FileManagerActivity extends BaseCompat
                         () -> {
                           GhostToast.makeText(
                                   FileManagerActivity.this,
-                                  R.string.ftp_download_error + ": " + e.getMessage(),
+                                  getString(R.string.ftp_download_error) + ": " + e.getMessage(),
                                   GhostToast.LENGTH_LONG)
                               .show();
                         });

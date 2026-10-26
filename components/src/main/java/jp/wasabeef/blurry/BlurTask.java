@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import android.view.View;
 
 import java.lang.ref.WeakReference;
@@ -27,6 +28,8 @@ import java.util.concurrent.Executors;
  */
 
 class BlurTask {
+
+  private static final String TAG = "BlurTask";
 
   public interface Callback {
     void done(Bitmap bitmap);
@@ -62,14 +65,20 @@ class BlurTask {
       @Override
       public void run() {
         Context context = contextWeakRef.get();
-        if (callback != null) {
-          new Handler(Looper.getMainLooper()).post(new Runnable() {
-            @Override
-            public void run() {
-              callback.done(Blur.of(context, bitmap, factor));
-            }
-          });
+        if (context == null || callback == null) return;
+        final Bitmap blurred;
+        try {
+          blurred = Blur.of(context, bitmap, factor);
+        } catch (RuntimeException e) {
+          Log.w(TAG, "blur failed; the source bitmap was probably released", e);
+          return;
         }
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+          @Override
+          public void run() {
+            callback.done(blurred);
+          }
+        });
       }
     });
   }

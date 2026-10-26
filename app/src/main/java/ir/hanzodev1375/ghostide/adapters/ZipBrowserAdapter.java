@@ -221,8 +221,9 @@ public class ZipBrowserAdapter extends RecyclerView.Adapter<ZipBrowserAdapter.Vi
             RecyclerView.ViewHolder vh = recyclerView.getChildViewHolder(v);
             if (!(vh instanceof ViewHolder)) return null;
             int pos = vh.getBindingAdapterPosition();
-            if (pos == RecyclerView.NO_POSITION) return null;
+            if (pos == RecyclerView.NO_POSITION || pos >= items.size()) return null;
             final int p = pos;
+            final long selectionKey = getItemId(p);
             return new ItemDetails<Long>() {
               @Override
               public int getPosition() {
@@ -232,7 +233,7 @@ public class ZipBrowserAdapter extends RecyclerView.Adapter<ZipBrowserAdapter.Vi
               @Nullable
               @Override
               public Long getSelectionKey() {
-                return getItemId(p);
+                return selectionKey;
               }
             };
           }

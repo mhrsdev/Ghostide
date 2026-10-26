@@ -1,5 +1,6 @@
 package ir.hanzodev1375.ghostide.utils;
 
+import android.app.Activity;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
@@ -13,6 +14,7 @@ import com.github.junrar.Archive;
 import com.github.junrar.exception.UnsupportedRarV5Exception;
 import com.github.junrar.rarfile.FileHeader;
 import com.google.android.material.textfield.TextInputEditText;
+import ir.hanzodev1375.components.glass.Glass;
 import ir.hanzodev1375.components.sheet.customitemsheet.ui.DialogCompat;
 import ir.hanzodev1375.components.views.GhostToast;
 import ir.hanzodev1375.ghostide.R;
@@ -28,6 +30,7 @@ import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -52,6 +55,7 @@ public final class ArchiveExtractUtil {
 
   private static final ExecutorService executor = Executors.newFixedThreadPool(2);
   private static final Handler mainHandler = new Handler(Looper.getMainLooper());
+  private static final long HOST_CHECK_INTERVAL_MS = 250L;
   private static AlertDialog progressDialog;
   private static ProgressBar progressBar;
   private static TextView tvFileName, tvPercent, tvDetails;
@@ -255,9 +259,13 @@ public final class ArchiveExtractUtil {
                 () -> {
                   dismissProgressDialog();
                   if (!isCancelled.get()) {
+                    boolean hostGone = isHostGone(context);
                     GhostToast.makeText(
-                            context, R.string.zip_extracted_ok, GhostToast.LENGTH_SHORT)
+                            hostGone ? context.getApplicationContext() : context,
+                            R.string.zip_extracted_ok,
+                            GhostToast.LENGTH_SHORT)
                         .show();
+                    if (hostGone) return;
                     if (onSuccess != null) onSuccess.run();
                     if (context instanceof FileManagerActivity) {
                       ((FileManagerActivity) context).refreshFileList();
@@ -272,7 +280,7 @@ public final class ArchiveExtractUtil {
                   if (!isCancelled.get()) {
                     String msg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
                     GhostToast.makeText(
-                            context,
+                            isHostGone(context) ? context.getApplicationContext() : context,
                             context.getString(R.string.zip_error_prefix, msg),
                             GhostToast.LENGTH_LONG)
                         .show();
@@ -503,6 +511,10 @@ public final class ArchiveExtractUtil {
     final String[] result = new String[1];
     mainHandler.post(
         () -> {
+          if (isHostGone(context)) {
+            latch.countDown();
+            return;
+          }
           View view = LayoutInflater.from(context).inflate(R.layout.dialog_archive_password, null);
           TextInputEditText etPassword = view.findViewById(R.id.et_archive_password);
           TextView tvMsg = view.findViewById(R.id.tv_password_msg);
@@ -528,7 +540,9 @@ public final class ArchiveExtractUtil {
               .show();
         });
     try {
-      latch.await();
+      while (!latch.await(HOST_CHECK_INTERVAL_MS, TimeUnit.MILLISECONDS)) {
+        if (isHostGone(context)) return null;
+      }
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       return null;
@@ -540,6 +554,7 @@ public final class ArchiveExtractUtil {
       Context context, String title, Runnable onCancel) {
     mainHandler.post(
         () -> {
+          if (isHostGone(context)) return;
           View view = LayoutInflater.from(context).inflate(R.layout.dialog_zip_progress, null);
           progressBar = view.findViewById(R.id.progressBar);
           tvFileName = view.findViewById(R.id.tvZipFileName);
@@ -574,10 +589,28 @@ public final class ArchiveExtractUtil {
     tvFileName.setText(fileName);
   }
 
+  /**
+   * Dismisses the progress dialog and drops every static reference to it and its views, so the
+   * hosting Activity is not retained after the operation. A dialog whose Activity was already
+   * destroyed (for example by a rotation during extraction) lost its window together with the
+   * Activity; dismissing it would throw, so it is only forgotten.
+   */
   private static void dismissProgressDialog() {
-    if (progressDialog != null && progressDialog.isShowing()) {
-      progressDialog.dismiss();
-      progressDialog = null;
-    }
+    AlertDialog dialog = progressDialog;
+    progressDialog = null;
+    progressBar = null;
+    tvFileName = null;
+    tvPercent = null;
+    tvDetails = null;
+    if (dialog == null || !dialog.isShowing()) return;
+    Activity owner = Glass.findActivity(dialog.getContext());
+    if (owner != null && owner.isDestroyed()) return;
+    dialog.dismiss();
+  }
+
+  /** True when {@code context} belongs to an Activity that is finishing or already destroyed. */
+  private static boolean isHostGone(Context context) {
+    Activity activity = Glass.findActivity(context);
+    return activity != null && (activity.isFinishing() || activity.isDestroyed());
   }
 }

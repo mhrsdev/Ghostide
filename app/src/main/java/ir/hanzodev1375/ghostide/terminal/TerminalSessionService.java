@@ -77,7 +77,6 @@ public class TerminalSessionService extends Service {
 
         @Override
         public void onTitleChanged(TerminalSession session) {
-          updateNotification();
           if (uiListener != null) uiListener.onTitleChanged(session);
         }
 
@@ -180,6 +179,11 @@ public class TerminalSessionService extends Service {
     stopSelf();
   }
 
+  /**
+   * Re-posts the foreground notification. It shows only the number of sessions, so it is called
+   * only when that number changes; title changes, which a shell emits on every prompt, would post
+   * an identical notification each time and run into the system's notification rate limit.
+   */
   private void updateNotification() {
     if (sessions.isEmpty()) return;
     NotificationManager nm = getSystemService(NotificationManager.class);

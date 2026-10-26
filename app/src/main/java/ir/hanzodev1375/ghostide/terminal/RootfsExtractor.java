@@ -2,6 +2,7 @@ package ir.hanzodev1375.ghostide.terminal;
 
 import android.content.Context;
 import android.os.CancellationSignal;
+import android.os.SystemClock;
 import ir.hanzodev1375.ghostide.R;
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -10,6 +11,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.commons.compress.compressors.xz.XZCompressorInputStream;
@@ -30,6 +32,7 @@ public final class RootfsExtractor {
 
   private static final File SYSTEM_TAR = new File("/system/bin/tar");
   private static final long PROGRESS_POLL_INTERVAL_MS = 400;
+  private static final long PROGRESS_WALK_PAUSE_FACTOR = 2;
 
   private RootfsExtractor() {}
 
@@ -101,18 +104,30 @@ public final class RootfsExtractor {
     }
   }
 
+  /**
+   * Starts the daemon thread that reports how many entries exist below {@code destDir}. Every count
+   * walks the whole tree, which grows to tens of thousands of entries, so the pause after a count
+   * is at least {@link #PROGRESS_WALK_PAUSE_FACTOR} times as long as the count itself: the walk
+   * never takes more than a third of a core (and of the storage) away from tar.
+   */
   private static Thread startProgressPolling(
       File destDir, AtomicBoolean extracting, ProgressListener listener) {
     Thread t =
         new Thread(
             () -> {
+              long pauseMs = PROGRESS_POLL_INTERVAL_MS;
               while (extracting.get()) {
                 try {
-                  Thread.sleep(PROGRESS_POLL_INTERVAL_MS);
+                  Thread.sleep(pauseMs);
                 } catch (InterruptedException e) {
                   return;
                 }
-                if (listener != null) listener.onProgress(countEntries(destDir));
+                if (listener == null) continue;
+                long started = SystemClock.elapsedRealtime();
+                int count = countEntries(destDir);
+                long walkMs = SystemClock.elapsedRealtime() - started;
+                listener.onProgress(count);
+                pauseMs = Math.max(PROGRESS_POLL_INTERVAL_MS, walkMs * PROGRESS_WALK_PAUSE_FACTOR);
               }
             },
             "rootfs-extract-progress");
@@ -121,13 +136,16 @@ public final class RootfsExtractor {
     return t;
   }
 
+  /** Counts the entries below {@code dir}; symbolic links are counted but never followed. */
   private static int countEntries(File dir) {
     File[] children = dir.listFiles();
     if (children == null) return 0;
     int count = 0;
     for (File child : children) {
       count++;
-      if (child.isDirectory()) count += countEntries(child);
+      if (child.isDirectory() && !Files.isSymbolicLink(child.toPath())) {
+        count += countEntries(child);
+      }
     }
     return count;
   }

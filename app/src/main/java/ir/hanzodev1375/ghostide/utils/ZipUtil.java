@@ -1,5 +1,6 @@
 package ir.hanzodev1375.ghostide.utils;
 
+import android.app.Activity;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
@@ -15,6 +16,7 @@ import androidx.appcompat.app.AlertDialog;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
+import ir.hanzodev1375.components.glass.Glass;
 import ir.hanzodev1375.components.sheet.customitemsheet.ui.DialogCompat;
 import ir.hanzodev1375.components.views.GhostToast;
 import ir.hanzodev1375.ghostide.R;
@@ -84,6 +86,7 @@ public class ZipUtil {
   }
 
   private static void showProgressDialog(Context context, long totalBytes) {
+    if (isHostGone(context)) return;
     View view = LayoutInflater.from(context).inflate(R.layout.dialog_zip_progress, null);
     progressBar = view.findViewById(R.id.progressBar);
     tvFileName = view.findViewById(R.id.tvZipFileName);
@@ -126,11 +129,29 @@ public class ZipUtil {
     }
   }
 
+  /**
+   * Dismisses the progress dialog and drops every static reference to it and its views, so the
+   * hosting Activity is not retained after the operation. A dialog whose Activity was already
+   * destroyed (for example by a rotation while zipping) lost its window together with the
+   * Activity; dismissing it would throw, so it is only forgotten.
+   */
   private static void dismissProgressDialog() {
-    if (progressDialog != null && progressDialog.isShowing()) {
-      progressDialog.dismiss();
-      progressDialog = null;
-    }
+    AlertDialog dialog = progressDialog;
+    progressDialog = null;
+    progressBar = null;
+    tvFileName = null;
+    tvPercent = null;
+    tvDetails = null;
+    if (dialog == null || !dialog.isShowing()) return;
+    Activity owner = Glass.findActivity(dialog.getContext());
+    if (owner != null && owner.isDestroyed()) return;
+    dialog.dismiss();
+  }
+
+  /** True when {@code context} belongs to an Activity that is finishing or already destroyed. */
+  private static boolean isHostGone(Context context) {
+    Activity activity = Glass.findActivity(context);
+    return activity != null && (activity.isFinishing() || activity.isDestroyed());
   }
 
   private static void zipFilesWithProgress(
@@ -216,6 +237,14 @@ public class ZipUtil {
             mainHandler.post(
                 () -> {
                   dismissProgressDialog();
+                  if (isHostGone(context)) {
+                    GhostToast.makeText(
+                            context.getApplicationContext(),
+                            R.string.zip_created_success,
+                            GhostToast.LENGTH_LONG)
+                        .show();
+                    return;
+                  }
                   if (onSuccess != null) onSuccess.run();
                   if (context instanceof FileManagerActivity) {
                     ((FileManagerActivity) context).refreshFileList();
@@ -227,7 +256,7 @@ public class ZipUtil {
                 () -> {
                   dismissProgressDialog();
                   GhostToast.makeText(
-                          context,
+                          isHostGone(context) ? context.getApplicationContext() : context,
                           context.getString(R.string.zip_error) + " " + e.getMessage(),
                           GhostToast.LENGTH_LONG)
                       .show();

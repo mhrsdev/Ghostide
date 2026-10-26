@@ -4,6 +4,8 @@ import android.content.Context;
 import android.content.res.ColorStateList;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -230,16 +232,19 @@ public class WebProjectPreviewSheet extends BaseBlurBottomSheet {
               }
               boolean success = ok;
               String message = msg;
-              requireActivity()
-                  .runOnUiThread(
+              new Handler(Looper.getMainLooper())
+                  .post(
                       () -> {
+                        Toast.makeText(
+                                context.getApplicationContext(), message, Toast.LENGTH_SHORT)
+                            .show();
+                        if (!isAdded() || getView() == null) return;
                         progressContainer.animate().alpha(0f).setDuration(400).start();
                         progressContainer.setVisibility(View.GONE);
                         install.setEnabled(true);
                         install.setVisibility(View.VISIBLE);
-                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
                         if (success) {
-                          dismiss();
+                          dismissAllowingStateLoss();
                         }
                       });
             })

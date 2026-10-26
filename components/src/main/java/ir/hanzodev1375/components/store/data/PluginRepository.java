@@ -5,6 +5,7 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
+import androidx.annotation.NonNull;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -17,14 +18,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import ir.hanzodev1375.components.store.api.PluginStoreApi;
 import ir.hanzodev1375.components.store.event.PluginProgressEvent;
 import ir.hanzodev1375.components.store.model.PluginDoc;
 import ir.hanzodev1375.components.store.model.PluginItem;
+import okhttp3.Call;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -50,8 +50,6 @@ public class PluginRepository {
 
     void onError(String message);
   }
-
-  private final ExecutorService ioExecutor = Executors.newSingleThreadExecutor();
 
   public void fetchPlugins(Callback<List<PluginItem>> callback) {
     if (callback == null) return;
@@ -138,22 +136,38 @@ public class PluginRepository {
       postError(callback, "no gpl url");
       return;
     }
-    ioExecutor.execute(
-        () -> {
-          Request request =
-              new Request.Builder().url(toGithubRawUrl(item.gplfile())).head().build();
-          try (Response response = CLIENT.newCall(request).execute()) {
-            long length = response.header("Content-Length") != null
-                ? Long.parseLong(response.header("Content-Length"))
-                : -1L;
-            if (length < 0 && response.body() != null) {
-              length = response.body().contentLength();
-            }
-            postSuccess(callback, length);
-          } catch (Exception e) {
-            postError(callback, e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage());
-          }
-        });
+    Request request;
+    try {
+      request = new Request.Builder().url(toGithubRawUrl(item.gplfile())).head().build();
+    } catch (IllegalArgumentException e) {
+      postError(callback, e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage());
+      return;
+    }
+    CLIENT
+        .newCall(request)
+        .enqueue(
+            new okhttp3.Callback() {
+              @Override
+              public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                postError(
+                    callback,
+                    e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage());
+              }
+
+              @Override
+              public void onResponse(@NonNull Call call, @NonNull Response response) {
+                try (Response closing = response) {
+                  String header = closing.header("Content-Length");
+                  long length = header != null ? Long.parseLong(header.trim()) : -1L;
+                  if (length < 0 && closing.body() != null) {
+                    length = closing.body().contentLength();
+                  }
+                  postSuccess(callback, length);
+                } catch (NumberFormatException e) {
+                  postError(callback, "bad Content-Length");
+                }
+              }
+            });
   }
 
   /** Copies the stream to {@code out} while posting {@link PluginProgressEvent} updates. */

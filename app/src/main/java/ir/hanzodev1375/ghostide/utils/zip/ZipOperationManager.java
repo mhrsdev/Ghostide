@@ -19,6 +19,7 @@ public class ZipOperationManager {
 
   private final ExecutorService executor = Executors.newSingleThreadExecutor();
   private final Handler mainHandler = new Handler(Looper.getMainLooper());
+  private volatile boolean shutDown;
 
   public interface Callback {
     void onSuccess(String message);
@@ -68,7 +69,7 @@ public class ZipOperationManager {
                   entry.contains("/") ? entry.substring(entry.lastIndexOf('/') + 1) : entry;
               final int p = percent;
               final String n = name;
-              mainHandler.post(() -> cb.onProgress(p, n));
+              deliver(() -> cb.onProgress(p, n));
             }
             post(cb, true, total + " File extracted");
           } catch (ZipException e) {
@@ -91,7 +92,7 @@ public class ZipOperationManager {
               int percent = (int) (((i + 1) / (float) total) * 100);
               final int p = percent;
               final String n = headers.get(i).getFileName();
-              mainHandler.post(() -> cb.onProgress(p, n));
+              deliver(() -> cb.onProgress(p, n));
             }
             post(cb, true, "All files extracted");
           } catch (ZipException e) {
@@ -198,22 +199,36 @@ public class ZipOperationManager {
                     totalCompressed,
                     ratio,
                     zip.isEncrypted());
-            mainHandler.post(() -> cb.onInfo(info));
+            deliver(() -> cb.onInfo(info));
           } catch (ZipException e) {
-            mainHandler.post(() -> cb.onError(e.getMessage()));
+            deliver(() -> cb.onError(e.getMessage()));
           }
         });
   }
 
   private void post(Callback cb, boolean success, String msg) {
-    mainHandler.post(
+    deliver(
         () -> {
           if (success) cb.onSuccess(msg);
           else cb.onError(msg);
         });
   }
 
+  /**
+   * Lets the operations already requested finish (an archive is never left half rewritten), then
+   * ends the worker. Every result that has not been delivered yet, including results of operations
+   * that finish after this call, is dropped so no callback reaches a destroyed screen.
+   */
   public void shutdown() {
-    executor.shutdownNow();
+    shutDown = true;
+    executor.shutdown();
+    mainHandler.removeCallbacksAndMessages(null);
+  }
+
+  private void deliver(Runnable callback) {
+    mainHandler.post(
+        () -> {
+          if (!shutDown) callback.run();
+        });
   }
 }

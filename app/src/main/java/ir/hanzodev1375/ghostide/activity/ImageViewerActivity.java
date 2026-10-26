@@ -2,6 +2,7 @@ package ir.hanzodev1375.ghostide.activity;
 
 import android.app.WallpaperManager;
 import android.content.ContentValues;
+import android.content.Context;
 import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
@@ -36,6 +37,7 @@ import ir.hanzodev1375.components.sheet.customitemsheet.ui.GlassCompat;
 import ir.hanzodev1375.components.views.GhostToast;
 import ir.hanzodev1375.ghostide.R;
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.FutureTarget;
 import com.bumptech.glide.request.target.CustomTarget;
 import com.bumptech.glide.request.transition.Transition;
 import ir.hanzodev1375.ghostide.adapters.ImagePagerAdapter;
@@ -53,6 +55,8 @@ import jp.wasabeef.blurry.Blurry;
 import ir.hanzodev1375.components.sheet.customitemsheet.ui.DialogCompat;
 
 public class ImageViewerActivity extends BaseCompat implements ImageViewerFragment.Host {
+
+  private static final String TAG = "ImageViewerActivity";
 
   public static final String EXTRA_IMAGE_URIS = "extra_image_uris";
   public static final String EXTRA_CURRENT_INDEX = "extra_current_index";
@@ -376,7 +380,8 @@ public class ImageViewerActivity extends BaseCompat implements ImageViewerFragme
                 BitmapFactory.decodeFile(file.getAbsolutePath(), options);
                 width = options.outWidth;
                 height = options.outHeight;
-              } catch (Exception ignored) {
+              } catch (RuntimeException e) {
+                Log.w(TAG, "could not read image bounds", e);
               }
               String resolution =
                   width > 0 && height > 0 ? width + "×" + height : "-";
@@ -392,12 +397,14 @@ public class ImageViewerActivity extends BaseCompat implements ImageViewerFragme
                       file.getAbsolutePath(),
                       modified);
               runOnUiThread(
-                  () ->
-                      new DialogCompat(this)
-                          .setTitle(R.string.viewer_info)
-                          .setMessage(message)
-                          .setPositiveButton(android.R.string.ok, null)
-                          .show());
+                  () -> {
+                    if (isFinishing() || isDestroyed()) return;
+                    new DialogCompat(this)
+                        .setTitle(R.string.viewer_info)
+                        .setMessage(message)
+                        .setPositiveButton(android.R.string.ok, null)
+                        .show();
+                  });
             })
         .start();
   }
@@ -414,28 +421,46 @@ public class ImageViewerActivity extends BaseCompat implements ImageViewerFragme
     return null;
   }
 
+  /**
+   * Returns {@code bitmap} rotated by the user's rotation for {@code position}, or {@code bitmap}
+   * itself when there is none. The source is never recycled: it belongs to Glide.
+   */
   private Bitmap rotateIfNeeded(Bitmap bitmap, int position) {
     int degrees = getRotation(position);
     if (degrees == 0 || bitmap == null) return bitmap;
     Matrix matrix = new Matrix();
     matrix.postRotate(degrees);
-    Bitmap rotated =
-        Bitmap.createBitmap(
-            bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
-    if (rotated != bitmap) bitmap.recycle();
-    return rotated;
+    return Bitmap.createBitmap(
+        bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+  }
+
+  /**
+   * Shows {@code text} from a worker thread. When this Activity was destroyed meanwhile the
+   * application context is used, because a toast bound to a destroyed window is never seen.
+   */
+  private void toastFromWorker(CharSequence text) {
+    runOnUiThread(
+        () ->
+            GhostToast.makeText(
+                    isDestroyed() ? getApplicationContext() : this,
+                    text,
+                    GhostToast.LENGTH_SHORT)
+                .show());
   }
 
   private void saveCurrentImage() {
     if (uriList.isEmpty()) return;
     Uri imageUri = uriList.get(viewPager.getCurrentItem());
     int position = viewPager.getCurrentItem();
+    Context appContext = getApplicationContext();
     new Thread(
             () -> {
+              FutureTarget<Bitmap> target =
+                  Glide.with(appContext).asBitmap().load(imageUri).submit();
               try {
-                Bitmap bitmap = Glide.with(this).asBitmap().load(imageUri).submit().get();
-                if (bitmap == null) return;
-                bitmap = rotateIfNeeded(bitmap, position);
+                Bitmap source = target.get();
+                if (source == null) return;
+                Bitmap bitmap = rotateIfNeeded(source, position);
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                   ContentValues values = new ContentValues();
                   values.put(
@@ -451,16 +476,9 @@ public class ImageViewerActivity extends BaseCompat implements ImageViewerFragme
                     try (OutputStream oss = getContentResolver().openOutputStream(saveUri)) {
                       bitmap.compress(Bitmap.CompressFormat.JPEG, 90, oss);
                     }
-                    runOnUiThread(
-                        () ->
-                            GhostToast.makeText(
-                                    this, "Saved to Gallery", GhostToast.LENGTH_SHORT)
-                                .show());
+                    toastFromWorker("Saved to Gallery");
                   } else {
-                    runOnUiThread(
-                        () ->
-                            GhostToast.makeText(this, "Save failed", GhostToast.LENGTH_SHORT)
-                                .show());
+                    toastFromWorker("Save failed");
                   }
                 } else {
                   File dir =
@@ -469,28 +487,22 @@ public class ImageViewerActivity extends BaseCompat implements ImageViewerFragme
                               Environment.DIRECTORY_PICTURES),
                           "ImageViewer");
                   if (!dir.exists() && !dir.mkdirs()) {
-                    runOnUiThread(
-                        () ->
-                            GhostToast.makeText(this, "Save failed", GhostToast.LENGTH_SHORT)
-                                .show());
+                    toastFromWorker("Save failed");
+                    if (bitmap != source) bitmap.recycle();
                     return;
                   }
                   File outFile = new File(dir, "img_" + System.currentTimeMillis() + ".jpg");
                   try (FileOutputStream fos = new FileOutputStream(outFile)) {
                     bitmap.compress(Bitmap.CompressFormat.JPEG, 90, fos);
                   }
-                  runOnUiThread(
-                      () ->
-                          GhostToast.makeText(this, "Saved to Gallery", GhostToast.LENGTH_SHORT)
-                              .show());
+                  toastFromWorker("Saved to Gallery");
                 }
-                bitmap.recycle();
+                if (bitmap != source) bitmap.recycle();
               } catch (Exception e) {
-                e.printStackTrace();
-                runOnUiThread(
-                    () ->
-                        GhostToast.makeText(this, "Error saving", GhostToast.LENGTH_SHORT)
-                            .show());
+                Log.e(TAG, "saving the image failed", e);
+                toastFromWorker("Error saving");
+              } finally {
+                Glide.with(appContext).clear(target);
               }
             })
         .start();
@@ -552,27 +564,26 @@ public class ImageViewerActivity extends BaseCompat implements ImageViewerFragme
     Uri imageUri = uriList.get(viewPager.getCurrentItem());
     int position = viewPager.getCurrentItem();
 
+    Context appContext = getApplicationContext();
     new Thread(
             () -> {
+              FutureTarget<Bitmap> target =
+                  Glide.with(appContext).asBitmap().load(imageUri).submit();
               try {
-                Bitmap bitmap = Glide.with(this).asBitmap().load(imageUri).submit().get();
-                if (bitmap == null) return;
-                bitmap = rotateIfNeeded(bitmap, position);
+                Bitmap source = target.get();
+                if (source == null) return;
+                Bitmap bitmap = rotateIfNeeded(source, position);
 
-                WallpaperManager wm = WallpaperManager.getInstance(this);
+                WallpaperManager wm = WallpaperManager.getInstance(appContext);
                 wm.setBitmap(bitmap, null, true, flags);
-                bitmap.recycle();
+                if (bitmap != source) bitmap.recycle();
 
-                runOnUiThread(
-                    () ->
-                        GhostToast.makeText(this, R.string.wallpaper_set_success, GhostToast.LENGTH_SHORT)
-                            .show());
+                toastFromWorker(appContext.getString(R.string.wallpaper_set_success));
               } catch (Exception e) {
-                e.printStackTrace();
-                runOnUiThread(
-                    () ->
-                        GhostToast.makeText(this, R.string.wallpaper_set_failed, GhostToast.LENGTH_SHORT)
-                            .show());
+                Log.e(TAG, "setting the wallpaper failed", e);
+                toastFromWorker(appContext.getString(R.string.wallpaper_set_failed));
+              } finally {
+                Glide.with(appContext).clear(target);
               }
             })
         .start();

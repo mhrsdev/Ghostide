@@ -294,6 +294,12 @@ public class PluginDetailSheet extends BaseBlurBottomSheet {
   @Override
   public void onDestroyView() {
     installButton = null;
+    iconView = null;
+    nameView = null;
+    devView = null;
+    sizeView = null;
+    sourceView = null;
+    noteView = null;
     super.onDestroyView();
   }
 

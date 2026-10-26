@@ -1,5 +1,6 @@
 package ir.hanzodev1375.ghostide.helper;
 
+import android.util.Log;
 import android.view.View;
 import ir.hanzodev1375.components.RenameDialogFragment;
 import ir.hanzodev1375.components.sheet.customitemsheet.ui.DialogCompat;
@@ -28,6 +29,8 @@ import net.lingala.zip4j.ZipFile;
  */
 public class ZipModeHelper {
 
+  private static final String TAG = "ZipModeHelper";
+
   public interface SelectionChangedListener {
     void onSelectionChanged(int count);
   }
@@ -37,6 +40,7 @@ public class ZipModeHelper {
   private final FileViewModel viewModel;
   private final FileManagerAdapter fileAdapter;
 
+  private final ZipOperationManager zipOperations = new ZipOperationManager();
   private ZipBrowserAdapter zipAdapter;
   private SelectionChangedListener selectionChangedListener;
 
@@ -61,9 +65,13 @@ public class ZipModeHelper {
     this.selectionChangedListener = listener;
   }
 
-  /** Releases the zip adapter's background thread; call it from the host's onDestroy. */
+  /**
+   * Releases the zip adapter's and the zip operations' background threads and drops their pending
+   * results; call it from the host's onDestroy.
+   */
   public void release() {
     if (zipAdapter != null) zipAdapter.release();
+    zipOperations.shutdown();
   }
 
   /** راه‌اندازی آداپتر zip و شنونده‌های آن. */
@@ -219,7 +227,7 @@ public class ZipModeHelper {
         .setPositiveButton(
             activity.getString(R.string.ok),
             (d, w) ->
-                new ZipOperationManager()
+                zipOperations
                     .deleteEntries(
                         currentZipFilePath,
                         entryPaths,
@@ -255,7 +263,7 @@ public class ZipModeHelper {
     for (ZipEntryModel e : zipClipboard) entryPaths.add(e.getEntryPath());
     String sourceZip = zipClipboardSource;
     boolean cut = zipClipboardCut;
-    new ZipOperationManager()
+    zipOperations
         .extractMultiple(
             currentZipFilePath,
             entryPaths,
@@ -275,7 +283,7 @@ public class ZipModeHelper {
                 resetZipClipboard();
                 activity.clearPasteAvailable();
                 if (cut && sourceZip != null && sourceZip.equals(currentZipFilePath)) {
-                  new ZipOperationManager()
+                  zipOperations
                       .deleteEntries(
                           sourceZip,
                           entryPaths,
@@ -333,7 +341,7 @@ public class ZipModeHelper {
         anchor,
         items,
         (index, title) -> {
-          ZipOperationManager zipOp = new ZipOperationManager();
+          ZipOperationManager zipOp = zipOperations;
           String destDefault = new File(currentZipFilePath).getParent();
           switch (index) {
             case 0 -> confirmDeleteEntry(item, zipOp);
@@ -502,6 +510,7 @@ public class ZipModeHelper {
                 zipFile.extractFile(entry.getEntryPath(), cacheDir.getAbsolutePath(), entry.getName());
                 activity.runOnUiThread(
                     () -> {
+                      if (activity.isFinishing() || activity.isDestroyed()) return;
                       if (entry.isEncrypted()) {
                         GhostToast.makeText(activity, "File Has Encrypted", GhostToast.LENGTH_LONG)
                             .show();
@@ -510,11 +519,13 @@ public class ZipModeHelper {
                       }
                     });
               } catch (Exception e) {
+                Log.e(TAG, "extracting " + entry.getEntryPath() + " failed", e);
                 activity.runOnUiThread(
-                    () ->
-                        GhostToast.makeText(
-                                activity, "Error to UnZip", GhostToast.LENGTH_SHORT)
-                            .show());
+                    () -> {
+                      if (activity.isFinishing() || activity.isDestroyed()) return;
+                      GhostToast.makeText(activity, "Error to UnZip", GhostToast.LENGTH_SHORT)
+                          .show();
+                    });
               }
             })
         .start();
