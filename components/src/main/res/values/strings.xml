@@ -149,4 +149,11 @@
   <string name="search_replace_confirm_message">Replace matches in %1$d file(s). This cannot be undone.</string>
   <string name="search_replace_done">%1$d matches replaced</string>
   <string name="search_replace_none">No matches to replace</string>
+  <!-- ui-system audit: hard-coded UI text and accessibility labels -->
+  <string name="ui_webview_close">Close</string>
+  <string name="ui_webview_site_icon">Site icon</string>
+  <string name="ui_webview_loading">Loading…</string>
+  <string name="ui_webview_collapse">Collapse</string>
+  <string name="ui_webview_options">Options</string>
+  <string name="ui_search_clear">Clear search</string>
 </resources>

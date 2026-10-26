@@ -34,7 +34,7 @@
             android:padding="6dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@drawable/ic_close_24"
-            android:contentDescription="بستن" />
+            android:contentDescription="@string/ui_webview_close" />
 
         <ImageView
             android:id="@+id/iv_icon"
@@ -44,7 +44,7 @@
             android:padding="4dp"
             android:scaleType="fitCenter"
             android:src="@drawable/ic_public_24"
-            android:contentDescription="آیکون سایت" />
+            android:contentDescription="@string/ui_webview_site_icon" />
 
         <TextView
             android:id="@+id/tv_header_text"
@@ -55,7 +55,7 @@
             android:textSize="14sp"
             android:singleLine="true"
             android:ellipsize="end"
-            android:text="در حال بارگذاری..." />
+            android:text="@string/ui_webview_loading" />
 
         <ImageButton
             android:id="@+id/btn_dropdown"
@@ -64,7 +64,7 @@
             android:padding="6dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@drawable/ic_expand_more_24"
-            android:contentDescription="جمع کردن" />
+            android:contentDescription="@string/ui_webview_collapse" />
 
         <ImageButton
             android:id="@+id/btn_menu"
@@ -73,7 +73,7 @@
             android:padding="6dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@drawable/ic_more_vert_24"
-            android:contentDescription="گزینه‌ها" />
+            android:contentDescription="@string/ui_webview_options" />
 
     </LinearLayout>
 

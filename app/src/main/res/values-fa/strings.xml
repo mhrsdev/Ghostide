@@ -983,4 +983,27 @@
         <item quantity="one">%d درخواست</item>
         <item quantity="other">%d درخواست</item>
     </plurals>
+    <!-- ui-system audit: hard-coded UI text and accessibility labels -->
+    <string name="ui_command_palette_hint">یک فرمان بنویسید</string>
+    <string name="ui_command_palette_empty">فرمانی پیدا نشد</string>
+    <string name="ui_outline_empty">نمادی در دسترس نیست</string>
+    <string name="ui_lsp_status_connected">متصل</string>
+    <string name="ui_lsp_status_connecting">در حال اتصال…</string>
+    <string name="ui_lsp_status_disconnected">قطع</string>
+    <string name="ui_lsp_status_idle">غیرفعال</string>
+    <string name="ui_cd_run">اجرا</string>
+    <string name="ui_cd_close_preview">بستن پیش‌نمایش</string>
+    <string name="ui_cd_clear_bookmarks">پاک کردن نشانک‌ها</string>
+    <string name="ui_cd_clear_history">پاک کردن تاریخچه</string>
+    <string name="ui_cd_image_settings">تنظیمات تصویر</string>
+    <string name="ui_cd_gallery">گالری</string>
+    <string name="ui_cd_next_image">تصویر بعدی</string>
+    <string name="ui_cd_image_info">اطلاعات تصویر</string>
+    <string name="ui_cd_rotate">چرخاندن</string>
+    <string name="ui_cd_zoom">بزرگ‌نمایی</string>
+    <string name="ui_cd_save_image">ذخیره تصویر</string>
+    <string name="ui_cd_share_image">اشتراک‌گذاری تصویر</string>
+    <string name="ui_cd_edit">ویرایش</string>
+    <string name="ui_cd_clear">پاک کردن</string>
+    <string name="ui_cd_browse">انتخاب فایل</string>
 </resources>

@@ -1134,19 +1134,21 @@ public class EditorActivity extends BaseCompat
     switch (status) {
       case CONNECTED:
         binding.editorStatusBar.setStatusIndicator(
-            EditorStatusBar.StatusIndicator.CONNECTED, "Connected");
+            EditorStatusBar.StatusIndicator.CONNECTED, getString(R.string.ui_lsp_status_connected));
         break;
       case CONNECTING:
         binding.editorStatusBar.setStatusIndicator(
-            EditorStatusBar.StatusIndicator.CONNECTING, "Connecting…");
+            EditorStatusBar.StatusIndicator.CONNECTING,
+            getString(R.string.ui_lsp_status_connecting));
         break;
       case DISCONNECTED:
         binding.editorStatusBar.setStatusIndicator(
-            EditorStatusBar.StatusIndicator.ERROR, "Disconnected");
+            EditorStatusBar.StatusIndicator.ERROR, getString(R.string.ui_lsp_status_disconnected));
         break;
       case IDLE:
       default:
-        binding.editorStatusBar.setStatusIndicator(EditorStatusBar.StatusIndicator.IDLE, "Idle");
+        binding.editorStatusBar.setStatusIndicator(
+            EditorStatusBar.StatusIndicator.IDLE, getString(R.string.ui_lsp_status_idle));
         break;
     }
     refreshBreadcrumbs();

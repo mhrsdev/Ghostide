@@ -8,6 +8,7 @@ import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.util.AttributeSet;
 import android.view.Gravity;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -44,6 +45,8 @@ public class ButtonCompat extends LiquidGlassButton {
 
   private static final float ERROR_TINT_STRENGTH = 0.35f;
 
+  private static final float DISABLED_CONTENT_ALPHA = 0.38f;
+
   private static final int MATERIAL_LABEL_LARGE =
       com.google.android.material.R.style.TextAppearance_Material3_LabelLarge;
 
@@ -76,6 +79,7 @@ public class ButtonCompat extends LiquidGlassButton {
     setEnableAdaptiveTint(true);
     setPressScale(0.96f);
     refresh();
+    applyEnabledContentAlpha();
   }
 
   /** Re-applies the glass material, or the Material 3 button when glass is turned off. */
@@ -194,6 +198,29 @@ public class ButtonCompat extends LiquidGlassButton {
     }
     iconView.setImageDrawable(drawable);
     iconView.setVisibility(VISIBLE);
+    applyEnabledContentAlpha();
+  }
+
+  /**
+   * {@link com.example.liquidglass.LiquidGlassView} handles touches without looking at the enabled
+   * flag and calls {@link #performClick()} on every release, so a disabled button would still run
+   * its click listener. A disabled button swallows the touch without press feedback, like {@code
+   * LiquidGlassChip} does.
+   */
+  @Override
+  public boolean onTouchEvent(MotionEvent event) {
+    if (!isEnabled()) {
+      return isClickable();
+    }
+    return super.onTouchEvent(event);
+  }
+
+  @Override
+  public boolean performClick() {
+    if (!isEnabled()) {
+      return false;
+    }
+    return super.performClick();
   }
 
   @Override
@@ -201,6 +228,22 @@ public class ButtonCompat extends LiquidGlassButton {
     super.setEnabled(enabled);
     if (materialButton != null) {
       materialButton.setEnabled(enabled);
+    }
+    applyEnabledContentAlpha();
+  }
+
+  /**
+   * Fades the glass label and icon to the Material 3 disabled content opacity. The Material
+   * fallback button draws its own disabled state, and its label lives in that button.
+   */
+  private void applyEnabledContentAlpha() {
+    float alpha = isEnabled() ? 1f : DISABLED_CONTENT_ALPHA;
+    TextView labelView = getTextView();
+    if (labelView != null) {
+      labelView.setAlpha(alpha);
+    }
+    if (iconView != null) {
+      iconView.setAlpha(alpha);
     }
   }
 

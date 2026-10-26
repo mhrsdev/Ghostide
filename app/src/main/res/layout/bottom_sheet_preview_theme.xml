@@ -51,6 +51,7 @@
          android:layout_width="wrap_content"
          android:src="@drawable/ic_close"
          android:layout_margin="16dp"
+         android:contentDescription="@string/ui_cd_close_preview"
          android:id="@+id/fabClose"
          android:layout_gravity="bottom|end" />
 

@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import ir.hanzodev1375.ghostide.codeeditors.langs.lsp.model.BreadcrumbItem;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import ir.hanzodev1375.ghostide.R;
 import ir.theme.M3Theme;
@@ -27,10 +28,34 @@ public class BreadcrumbAdapter extends RecyclerView.Adapter<BreadcrumbAdapter.Vi
     this.listener = listener;
   }
 
+  /**
+   * Replaces the shown path. The editor re-publishes the path on every LSP status poll, so an
+   * identical path is ignored instead of rebinding (and re-theming) the whole bar each time.
+   */
   public void setItems(List<BreadcrumbItem> newItems) {
+    if (sameItems(newItems)) return;
     items.clear();
     if (newItems != null) items.addAll(newItems);
     notifyDataSetChanged();
+  }
+
+  private boolean sameItems(List<BreadcrumbItem> newItems) {
+    int newSize = newItems != null ? newItems.size() : 0;
+    if (newSize != items.size()) return false;
+    for (int i = 0; i < newSize; i++) {
+      BreadcrumbItem a = items.get(i);
+      BreadcrumbItem b = newItems.get(i);
+      if (a == b) continue;
+      if (a == null
+          || b == null
+          || a.getLine() != b.getLine()
+          || a.getColumn() != b.getColumn()
+          || a.getKind() != b.getKind()
+          || !Objects.equals(a.getName(), b.getName())) {
+        return false;
+      }
+    }
+    return true;
   }
 
   @NonNull

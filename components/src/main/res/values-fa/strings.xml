@@ -136,4 +136,24 @@
   <string name="search_replace_confirm_message">موارد در %1$d فایل جایگزین می‌شوند. این عمل برگشت‌پذیر نیست.</string>
   <string name="search_replace_done">%1$d مورد جایگزین شد</string>
   <string name="search_replace_none">موردی برای جایگزینی نیست</string>
+  <!-- ui-system audit: hard-coded UI text and accessibility labels -->
+  <string name="sync_bar_icon">نماد وضعیت همگام‌سازی</string>
+  <string name="sync_copy_error">کپی خطا</string>
+  <string name="sync_error_copied">خطا در کلیپ‌بورد کپی شد</string>
+  <string name="sync_dismiss">بستن</string>
+  <string name="pluginstore_size">حجم</string>
+  <string name="pluginstore_size_unknown">نامشخص</string>
+  <string name="pluginstore_source">سورس</string>
+  <string name="pluginstore_source_available">موجود</string>
+  <string name="pluginstore_source_missing">موجود نیست</string>
+  <string name="pluginstore_description">توضیحات</string>
+  <string name="pluginstore_by_dev">از %s</string>
+  <string name="pluginstore_no_gpl">این افزونه بسته قابل نصب ندارد</string>
+  <string name="pluginstore_open_source">متن‌باز</string>
+  <string name="ui_webview_close">بستن</string>
+  <string name="ui_webview_site_icon">آیکون سایت</string>
+  <string name="ui_webview_loading">در حال بارگذاری…</string>
+  <string name="ui_webview_collapse">جمع کردن</string>
+  <string name="ui_webview_options">گزینه‌ها</string>
+  <string name="ui_search_clear">پاک کردن جستجو</string>
 </resources>

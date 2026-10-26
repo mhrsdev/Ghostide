@@ -29,7 +29,7 @@
          android:layout_marginEnd="12dp"
          android:scaleType="centerInside"
          android:src="@drawable/ic_close"
-         android:contentDescription="Clear"
+         android:contentDescription="@string/ui_cd_clear"
          android:tint="?colorOnSurface"
          android:id="@+id/clearIcon" />
 
@@ -38,7 +38,7 @@
          android:layout_width="24dp"
          android:scaleType="centerInside"
          android:src="@drawable/ic_folder_open"
-         android:contentDescription="Browse"
+         android:contentDescription="@string/ui_cd_browse"
          android:tint="?colorOnSurface"
          android:id="@+id/browseIcon" />
 

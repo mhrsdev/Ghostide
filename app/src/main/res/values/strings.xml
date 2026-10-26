@@ -987,4 +987,27 @@
         <item quantity="one">%d request</item>
         <item quantity="other">%d requests</item>
     </plurals>
+    <!-- ui-system audit: hard-coded UI text and accessibility labels -->
+    <string name="ui_command_palette_hint">Type a command</string>
+    <string name="ui_command_palette_empty">No commands found</string>
+    <string name="ui_outline_empty">No symbols available</string>
+    <string name="ui_lsp_status_connected">Connected</string>
+    <string name="ui_lsp_status_connecting">Connecting…</string>
+    <string name="ui_lsp_status_disconnected">Disconnected</string>
+    <string name="ui_lsp_status_idle">Idle</string>
+    <string name="ui_cd_run">Run</string>
+    <string name="ui_cd_close_preview">Close preview</string>
+    <string name="ui_cd_clear_bookmarks">Clear bookmarks</string>
+    <string name="ui_cd_clear_history">Clear history</string>
+    <string name="ui_cd_image_settings">Image settings</string>
+    <string name="ui_cd_gallery">Gallery</string>
+    <string name="ui_cd_next_image">Next image</string>
+    <string name="ui_cd_image_info">Image info</string>
+    <string name="ui_cd_rotate">Rotate</string>
+    <string name="ui_cd_zoom">Zoom</string>
+    <string name="ui_cd_save_image">Save image</string>
+    <string name="ui_cd_share_image">Share image</string>
+    <string name="ui_cd_edit">Edit</string>
+    <string name="ui_cd_clear">Clear</string>
+    <string name="ui_cd_browse">Browse</string>
 </resources>

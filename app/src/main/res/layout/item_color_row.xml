@@ -26,7 +26,7 @@
          android:layout_width="24dp"
          android:scaleType="centerInside"
          android:src="@drawable/ic_edit"
-         android:contentDescription="Edit"
+         android:contentDescription="@string/ui_cd_edit"
          android:tint="?colorOnSurface"
          android:id="@+id/editIcon" />
 

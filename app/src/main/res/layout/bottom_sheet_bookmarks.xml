@@ -42,7 +42,7 @@
             android:background="?attr/selectableItemBackgroundBorderless"
             android:tint="?colorOnSurface"
             android:id="@+id/btnClearBookmarks"
-            android:contentDescription="Clear bookmarks" />
+            android:contentDescription="@string/ui_cd_clear_bookmarks" />
 
     </LinearLayout>
 

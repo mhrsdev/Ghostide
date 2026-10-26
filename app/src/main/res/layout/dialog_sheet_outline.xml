@@ -20,7 +20,7 @@
         android:paddingBottom="10dp"
         android:maxLines="1"
         android:ellipsize="middle"
-        android:text="Outline"
+        android:text="@string/outline_title"
         android:textSize="17sp"
         android:textStyle="bold" />
 
@@ -68,7 +68,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
-                android:text="No symbols available"
+                android:text="@string/ui_outline_empty"
                 android:textSize="14sp" />
 
         </LinearLayout>

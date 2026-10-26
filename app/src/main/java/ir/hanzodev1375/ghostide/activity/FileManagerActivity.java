@@ -144,6 +144,8 @@ public class FileManagerActivity extends BaseCompat
 
   private static final String SUMMARY_SEPARATOR = "  ·  ";
   private static final int SHOW_BACKGROUND_ALPHA = 128;
+
+  private static final int PASTE_AVAILABLE_FALLBACK = 0xFF00FF00;
   private static final char RIGHT_TO_LEFT_MARK = '\u200F';
   private static final int LIST_END_GAP_DP = 16;
 
@@ -904,7 +906,13 @@ public class FileManagerActivity extends BaseCompat
   }
 
   public void markPasteAvailable() {
-    if (btnPaste != null) btnPaste.setColorFilter(0xff00ff00);
+    if (btnPaste != null) btnPaste.setColorFilter(pasteAvailableColor());
+  }
+
+  /** Accent that marks the paste action as ready: the theme primary, as on the other accents. */
+  private static int pasteAvailableColor() {
+    Integer primary = M3Theme.primary();
+    return primary != null ? primary : PASTE_AVAILABLE_FALLBACK;
   }
 
   public void clearPasteAvailable() {
@@ -938,7 +946,7 @@ public class FileManagerActivity extends BaseCompat
             pendingClipboard = new ArrayList<>(selected);
             isCutOperation = false;
             adapter.clearSelection();
-            btnPaste.setColorFilter(0xff00ff00);
+            btnPaste.setColorFilter(pasteAvailableColor());
             showSelectionPanel();
             selectionCount.setText("0");
           }
@@ -955,7 +963,7 @@ public class FileManagerActivity extends BaseCompat
             pendingClipboard = new ArrayList<>(selected);
             isCutOperation = true;
             adapter.clearSelection();
-            btnPaste.setColorFilter(0xff00ff00);
+            btnPaste.setColorFilter(pasteAvailableColor());
             showSelectionPanel();
             selectionCount.setText("0");
           }

@@ -713,7 +713,15 @@ public final class M3Theme {
     }
   }
 
+  /**
+   * Tints an image button's icon from the theme. A theme that leaves out one of the needed colours
+   * (a partial imported {@code .gth}) leaves the current tint untouched instead of crashing while
+   * the colour array is unboxed.
+   */
   public static void imageButton(ImageButton button) {
+    if (onSurface() == null || onSurfaceVariant() == null || primary() == null) {
+      return;
+    }
     ColorStateList buttons =
         new ColorStateList(
             new int[][] {
@@ -722,7 +730,7 @@ public final class M3Theme {
               new int[] {-android.R.attr.state_enabled},
               new int[] {}
             },
-            new int[] {onSurface(), onPrimary(), onSurfaceVariant(), primary()});
+            new int[] {onSurface(), primary(), onSurfaceVariant(), primary()});
     button.setImageTintList(buttons);
   }
 
@@ -739,15 +747,15 @@ public final class M3Theme {
           fallback(color(m3() != null ? m3().getPrimaryContainer() : null), primary);
       Integer onContainer = fallback(onPrimaryContainer, onPrimary);
       if (container != null) {
-        b.setBackgroundTintList(ColorStateList.valueOf(container));
+        b.setBackgroundTintList(disabledAware(container, DISABLED_CONTAINER_ALPHA));
         try {
-          b.setStrokeColor(ColorStateList.valueOf(container));
+          b.setStrokeColor(disabledAware(container, DISABLED_CONTAINER_ALPHA));
         } catch (Throwable ignored) {
         }
       }
       if (onContainer != null) {
-        b.setTextColor(onContainer);
-        b.setIconTint(ColorStateList.valueOf(onContainer));
+        b.setTextColor(disabledAware(onContainer, DISABLED_CONTENT_ALPHA));
+        b.setIconTint(disabledAware(onContainer, DISABLED_CONTENT_ALPHA));
         try {
           b.setRippleColor(ColorStateList.valueOf(surfaceAlpha(onContainer)));
         } catch (Throwable ignored) {
@@ -766,13 +774,13 @@ public final class M3Theme {
       b.setBackgroundTintList(ColorStateList.valueOf(Color.TRANSPARENT));
       if (stroke != null) {
         try {
-          b.setStrokeColor(ColorStateList.valueOf(stroke));
+          b.setStrokeColor(disabledAware(stroke, DISABLED_CONTAINER_ALPHA));
         } catch (Throwable ignored) {
         }
       }
       if (text != null) {
-        b.setTextColor(text);
-        b.setIconTint(ColorStateList.valueOf(text));
+        b.setTextColor(disabledAware(text, DISABLED_CONTENT_ALPHA));
+        b.setIconTint(disabledAware(text, DISABLED_CONTENT_ALPHA));
       }
       Integer ripple = fallback(color(m3() != null ? m3().getOnSurface() : null), text);
       if (ripple != null) {
@@ -786,7 +794,7 @@ public final class M3Theme {
 
     boolean filled = b.getStrokeWidth() <= 0;
     if (filled && primary != null) {
-      b.setBackgroundTintList(ColorStateList.valueOf(primary));
+      b.setBackgroundTintList(disabledAware(primary, DISABLED_CONTAINER_ALPHA));
     }
     if (!filled && primary != null) {
       try {
@@ -795,8 +803,8 @@ public final class M3Theme {
       }
     }
     if (onPrimary != null) {
-      b.setTextColor(onPrimary);
-      b.setIconTint(ColorStateList.valueOf(onPrimary));
+      b.setTextColor(disabledAware(onPrimary, DISABLED_CONTENT_ALPHA));
+      b.setIconTint(disabledAware(onPrimary, DISABLED_CONTENT_ALPHA));
     }
     if (onPrimaryContainer != null) {
       try {
@@ -804,6 +812,30 @@ public final class M3Theme {
       } catch (Throwable ignored) {
       }
     }
+  }
+
+  /**
+   * Material 3 disabled opacity of a component's container (12%) and of its content (38%), both
+   * applied to {@code onSurface}.
+   */
+  private static final float DISABLED_CONTAINER_ALPHA = 0.12f;
+
+  private static final float DISABLED_CONTENT_ALPHA = 0.38f;
+
+  /**
+   * A colour list that shows {@code enabledColor} normally and {@code onSurface} at {@code
+   * disabledAlpha} while the view is disabled, so a disabled control no longer looks tappable.
+   * Falls back to a single colour when the theme has no {@code onSurface}.
+   */
+  private static ColorStateList disabledAware(@ColorInt int enabledColor, float disabledAlpha) {
+    Integer onSurface = color(m3() != null ? m3().getOnSurface() : null);
+    if (onSurface == null) {
+      return ColorStateList.valueOf(enabledColor);
+    }
+    int disabledColor = ColorUtils.setAlphaComponent(onSurface, Math.round(disabledAlpha * 255));
+    return new ColorStateList(
+        new int[][] {new int[] {-android.R.attr.state_enabled}, new int[] {}},
+        new int[] {disabledColor, enabledColor});
   }
 
   public static void toggleGroup(MaterialButtonToggleGroup group) {
@@ -886,7 +918,6 @@ public final class M3Theme {
       try {
         int enabledStroke = primary;
         int focusedStroke = primary;
-        int errorStroke = error;
         int disabledStroke = outlineVariant;
         ColorStateList strokeColors =
             new ColorStateList(
@@ -896,7 +927,7 @@ public final class M3Theme {
                   new int[] {-android.R.attr.state_enabled},
                   new int[] {}
                 },
-                new int[] {focusedStroke, errorStroke, disabledStroke, enabledStroke});
+                new int[] {focusedStroke, enabledStroke, disabledStroke, enabledStroke});
         input.setBoxStrokeColorStateList(strokeColors);
       } catch (Throwable ignored) {
       }
@@ -906,7 +937,6 @@ public final class M3Theme {
       try {
         int enabledHint = onSurfaceVariant;
         int focusedHint = primary;
-        int errorHint = error;
         int disabledHint = disabled != null ? disabled : onSurfaceVariant;
         ColorStateList hintColors =
             new ColorStateList(
@@ -916,7 +946,7 @@ public final class M3Theme {
                   new int[] {-android.R.attr.state_enabled},
                   new int[] {}
                 },
-                new int[] {focusedHint, errorHint, disabledHint, enabledHint});
+                new int[] {focusedHint, enabledHint, disabledHint, enabledHint});
         input.setDefaultHintTextColor(hintColors);
       } catch (Throwable ignored) {
       }

@@ -55,6 +55,10 @@ public class NavAdapter extends RecyclerView.Adapter<NavAdapter.ViewHolder> {
 
     if (position == getItemCount() - 1) {
       holder.nav_icon.setVisibility(View.GONE);
+      holder.itemView.setOnClickListener(null);
+      holder.itemView.setOnLongClickListener(null);
+      holder.itemView.setClickable(false);
+      holder.itemView.setLongClickable(false);
     } else {
       holder.itemView.setOnClickListener(
           v -> {

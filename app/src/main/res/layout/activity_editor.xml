@@ -146,6 +146,7 @@
         android:layout_marginEnd="16dp"
         android:outlineProvider="none"
         app:fabSize="mini"
+        android:contentDescription="@string/ui_cd_run"
         android:id="@+id/fabineditor"
         android:layout_gravity="end|bottom" />
 

@@ -42,7 +42,7 @@
             android:background="?attr/selectableItemBackgroundBorderless"
             android:tint="?colorOnSurface"
             android:id="@+id/btnClearHistory"
-            android:contentDescription="Clear history" />
+            android:contentDescription="@string/ui_cd_clear_history" />
 
     </LinearLayout>
 
