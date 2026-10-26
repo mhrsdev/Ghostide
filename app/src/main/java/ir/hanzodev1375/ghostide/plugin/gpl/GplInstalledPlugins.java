@@ -27,6 +27,33 @@ public final class GplInstalledPlugins {
     return dir;
   }
 
+  /**
+   * File name of the installed package for {@code pluginId}: {@code <id>.gpl}, with the id passed
+   * through {@link #safePathSegment(String)} so a manifest id can never place the package outside
+   * {@link #installDir(Context)}.
+   */
+  public static String packageFileName(String pluginId) {
+    return safePathSegment(pluginId) + GPL_EXTENSION;
+  }
+
+  /**
+   * Turns an untrusted plugin id into a single path segment. Ids that are already a plain segment
+   * (every reverse-domain id) are returned unchanged, so existing files and caches keep their
+   * names; {@code '/'} and NUL become {@code '_'}, and the special names {@code "."} and {@code
+   * ".."} have their dots replaced.
+   *
+   * @param pluginId id read from a package manifest; {@code null} becomes {@code "null"}, as the
+   *     former string concatenation produced
+   * @return a name that resolves to a direct child of the directory it is joined to
+   */
+  public static String safePathSegment(String pluginId) {
+    String segment = String.valueOf(pluginId).replace('/', '_').replace('\0', '_');
+    if (".".equals(segment) || "..".equals(segment)) {
+      return segment.replace('.', '_');
+    }
+    return segment;
+  }
+
   public static List<File> listInstalled(Context context) {
     File[] files = installDir(context).listFiles((dir, name) -> name.endsWith(GPL_EXTENSION));
     if (files == null) {

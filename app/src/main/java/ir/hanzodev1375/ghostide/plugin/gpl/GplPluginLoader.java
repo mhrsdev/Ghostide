@@ -82,7 +82,10 @@ public final class GplPluginLoader {
               appContext.getApplicationInfo().nativeLibraryDir,
               appContext.getClassLoader());
     } else {
-      File optDir = new File(appContext.getCodeCacheDir(), "gpl/" + manifest.id());
+      File optDir =
+          new File(
+              appContext.getCodeCacheDir(),
+              "gpl/" + GplInstalledPlugins.safePathSegment(manifest.id()));
       if (!optDir.exists() && !optDir.mkdirs()) {
         throw new IOException("Could not create dex cache dir " + optDir);
       }

@@ -38,7 +38,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 public final class PluginActivationController {
 
   private static final String TAG = "PluginActivation";
-  private static final String GPL_EXTENSION = ".gpl";
 
   /** What the controller needs from the plugin runtime; implemented by {@code GplPluginLoader}. */
   public interface Runtime {
@@ -413,7 +412,9 @@ public final class PluginActivationController {
     @Nullable
     public File findInstalled(String pluginId) {
       File conventional =
-          new File(GplInstalledPlugins.installDir(appContext), pluginId + GPL_EXTENSION);
+          new File(
+              GplInstalledPlugins.installDir(appContext),
+              GplInstalledPlugins.packageFileName(pluginId));
       if (conventional.isFile()) {
         GplManifest manifest = GplManifestReader.read(conventional);
         if (manifest != null && manifest.id().equals(pluginId)) {

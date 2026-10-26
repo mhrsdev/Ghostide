@@ -678,7 +678,7 @@ public class PluginManagerActivity extends BaseCompat
       if (manifest == null) {
         throw new IOException("Could not read plugin manifest from " + uri);
       }
-      File installedFile = new File(installDir, manifest.id() + GPL_EXTENSION);
+      File installedFile = new File(installDir, GplInstalledPlugins.packageFileName(manifest.id()));
       boolean fresh = !installedFile.exists();
       if (!tempFile.renameTo(installedFile)) {
         copyFile(tempFile, installedFile);

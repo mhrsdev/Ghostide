@@ -81,7 +81,9 @@ public class GplPluginInstallerHost {
         return;
       }
       File installed =
-          new File(GplInstalledPlugins.installDir(context), manifest.id() + GPL_EXTENSION);
+          new File(
+              GplInstalledPlugins.installDir(context),
+              GplInstalledPlugins.packageFileName(manifest.id()));
       boolean fresh = !installed.exists();
       if (!installed.getAbsolutePath().equals(downloaded.getAbsolutePath())) {
         if (installed.exists() && !installed.delete()) {
