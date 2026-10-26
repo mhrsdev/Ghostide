@@ -4,6 +4,8 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
+import android.view.ViewGroup;
+import androidx.core.graphics.Insets;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.ColorUtils;
 import androidx.core.view.ViewCompat;
@@ -53,24 +55,7 @@ public class StoreActivity extends BaseCompat {
     setupBackgroundBlur(findViewById(R.id.backgroundIconStore), appBarLayout, storeContent);
     tintContentForBackground(appBarLayout, storeContent);
 
-    View appBar = findViewById(R.id.appBarLayout);
-    ViewCompat.setOnApplyWindowInsetsListener(
-        appBar,
-        (v, insets) -> {
-          int top = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top;
-          v.setPadding(0, top, 0, 0);
-          return insets;
-        });
-    ViewCompat.setOnApplyWindowInsetsListener(
-        bottomNav,
-        (v, insets) -> {
-          int bottom = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom;
-          // Margin, not padding: padding would stretch the glass panel and leave a large
-          // empty area under the icons, and it would wipe the padding that keeps the end
-          // tabs clear of the bar's corner curve.
-          ((TabBarCompat) v).applySystemBottomInset(bottom);
-          return insets;
-        });
+    applyWindowInsets(root, appBarLayout, storeContent);
 
     ViewPagerAdapter adapter =
         new ViewPagerAdapter(this, new PluginStoreFragment(), new ThemeStoreFragment());
@@ -88,6 +73,59 @@ public class StoreActivity extends BaseCompat {
 
     setupTabBar();
     M3Theme.applyTopLevel(root);
+  }
+
+  /**
+   * Applies the system bar and display cutout insets once, from the root. The app bar is padded by
+   * the status bar, the content column by the side insets, and the floating tab bar is lifted by
+   * the navigation bar through its margin (padding would stretch the glass panel and wipe the
+   * padding that keeps the end tabs clear of its corner curve). The insets are consumed at the tab bar: its Material
+   * fallback navigation view would otherwise pad itself by the navigation bar a second time and
+   * grow an empty band under the tabs. The content column always ends above the tab bar so the
+   * lists never scroll underneath it.
+   */
+  private void applyWindowInsets(View root, View appBarLayout, View storeContent) {
+    ViewGroup.MarginLayoutParams barParams =
+        (ViewGroup.MarginLayoutParams) bottomNav.getLayoutParams();
+    int barBaseStart = barParams.getMarginStart();
+    int barBaseEnd = barParams.getMarginEnd();
+    ViewCompat.setOnApplyWindowInsetsListener(
+        root,
+        (v, insets) -> {
+          Insets bars =
+              insets.getInsets(
+                  WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
+          appBarLayout.setPadding(0, bars.top, 0, 0);
+          storeContent.setPadding(bars.left, 0, bars.right, 0);
+          return insets;
+        });
+    ViewCompat.setOnApplyWindowInsetsListener(
+        bottomNav,
+        (v, insets) -> {
+          Insets bars =
+              insets.getInsets(
+                  WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
+          ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) v.getLayoutParams();
+          params.setMarginStart(barBaseStart + bars.left);
+          params.setMarginEnd(barBaseEnd + bars.right);
+          v.setLayoutParams(params);
+          ((TabBarCompat) v).applySystemBottomInset(bars.bottom);
+          return WindowInsetsCompat.CONSUMED;
+        });
+    bottomNav.addOnLayoutChangeListener(
+        (v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) ->
+            keepContentAboveTabBar(storeContent));
+  }
+
+  private void keepContentAboveTabBar(View storeContent) {
+    ViewGroup.MarginLayoutParams bar = (ViewGroup.MarginLayoutParams) bottomNav.getLayoutParams();
+    int reserved = bottomNav.getHeight() + bar.bottomMargin;
+    ViewGroup.MarginLayoutParams content =
+        (ViewGroup.MarginLayoutParams) storeContent.getLayoutParams();
+    if (content.bottomMargin != reserved) {
+      content.bottomMargin = reserved;
+      storeContent.setLayoutParams(content);
+    }
   }
 
   @Override

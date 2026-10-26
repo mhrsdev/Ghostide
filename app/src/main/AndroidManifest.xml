@@ -204,14 +204,18 @@
             android:windowSoftInputMode="adjustResize" />
 
         <activity android:name=".activity.ErrorManagerActivity" />
-        <activity android:name=".activity.WebViewActivity" />
+        <activity
+            android:name=".activity.WebViewActivity"
+            android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".terminal.activity.TerminalActivity"
             android:windowSoftInputMode="adjustResize" />
         <activity
             android:name="ir.theme.themeeditor.ThemeEditorActivity"
             android:windowSoftInputMode="adjustResize" />
-        <activity android:name=".activity.AiChatActivity" />
+        <activity
+            android:name=".activity.AiChatActivity"
+            android:windowSoftInputMode="adjustResize" />
         <activity android:name=".activity.StoreActivity" />
         <activity
             android:name=".plugin.PluginSettingsActivity"

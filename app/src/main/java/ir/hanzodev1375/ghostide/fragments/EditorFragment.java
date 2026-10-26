@@ -698,15 +698,23 @@ public class EditorFragment extends Fragment {
     diagnosticsListener = null;
   }
 
+  /**
+   * Keeps the focused editor above the keyboard. The host activity already pads the whole editor
+   * area by the system bars and display cutout, so only the part of the keyboard that rises above
+   * that padding is added here; adding the navigation bar again would leave an empty band above
+   * the keyboard and below the last line.
+   */
   void applyImeInsets(@NonNull final View target) {
     ViewCompat.setOnApplyWindowInsetsListener(
         target,
         (v, insets) -> {
           Insets imeInsets = insets.getInsets(WindowInsetsCompat.Type.ime());
-          Insets navInsets = insets.getInsets(WindowInsetsCompat.Type.navigationBars());
+          Insets hostInsets =
+              insets.getInsets(
+                  WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
           boolean thisEditorIsFocused = editor != null && editor.hasFocus();
           int bottomInset =
-              thisEditorIsFocused ? Math.max(imeInsets.bottom, navInsets.bottom) : navInsets.bottom;
+              thisEditorIsFocused ? Math.max(0, imeInsets.bottom - hostInsets.bottom) : 0;
           v.setPadding(v.getPaddingLeft(), v.getPaddingTop(), v.getPaddingRight(), bottomInset);
           return insets;
         });

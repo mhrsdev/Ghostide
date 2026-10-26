@@ -221,22 +221,22 @@ public class ImageViewerActivity extends BaseCompat implements ImageViewerFragme
     WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
     getWindow().setNavigationBarColor(Color.TRANSPARENT);
     getWindow().setStatusBarColor(Color.TRANSPARENT);
+    int topBarBaseStart = bind.topBar.getPaddingStart();
+    int topBarBaseEnd = bind.topBar.getPaddingEnd();
     ViewCompat.setOnApplyWindowInsetsListener(
         bind.getRoot(),
         (v, insets) -> {
-          Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+          Insets bars =
+              insets.getInsets(
+                  WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
           Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
           topBar.setPadding(
-              topBar.getPaddingLeft(),
+              topBarBaseStart + bars.left,
               bars.top + dp(12),
-              topBar.getPaddingRight(),
+              topBarBaseEnd + bars.right,
               topBar.getPaddingBottom());
           int bottomInset = Math.max(bars.bottom, ime.bottom);
-          bottomBar.setPadding(
-              bottomBar.getPaddingLeft(),
-              bottomBar.getPaddingTop(),
-              bottomBar.getPaddingRight(),
-              bottomInset + dp(16));
+          bottomBar.setPadding(bars.left, bottomBar.getPaddingTop(), bars.right, bottomInset + dp(16));
           return insets;
         });
   }

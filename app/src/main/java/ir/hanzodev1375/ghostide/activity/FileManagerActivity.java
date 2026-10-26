@@ -145,6 +145,7 @@ public class FileManagerActivity extends BaseCompat
   private static final String SUMMARY_SEPARATOR = "  ·  ";
   private static final int SHOW_BACKGROUND_ALPHA = 128;
   private static final char RIGHT_TO_LEFT_MARK = '\u200F';
+  private static final int LIST_END_GAP_DP = 16;
 
   private ActivityFilemanagerBinding bind;
   private FileViewModel viewModel;
@@ -186,6 +187,7 @@ public class FileManagerActivity extends BaseCompat
   private final ExecutorService ftpExecutor = Executors.newSingleThreadExecutor();
   private String currentDir;
   private int systemBarsBottomInset = 0;
+  private int fabBaseBottomMargin = 0;
   private MusicPlayerBottomSheetFragment musicBottomSheet;
   private boolean pendingAnimation = false;
   private boolean snapArmed = false;
@@ -582,6 +584,8 @@ public class FileManagerActivity extends BaseCompat
   }
 
   private void setupSearchLayoutInsets() {
+    int searchBaseMargin =
+        ((ViewGroup.MarginLayoutParams) bind.ser.getLayoutParams()).getMarginStart();
     bind.fab.post(
         () -> {
           ViewCompat.setOnApplyWindowInsetsListener(
@@ -596,9 +600,15 @@ public class FileManagerActivity extends BaseCompat
                   targetBottomMargin =
                       fabBottomMargin + (int) (8 * getResources().getDisplayMetrics().density);
                 }
+                Insets sides =
+                    insets.getInsets(
+                        WindowInsetsCompat.Type.systemBars()
+                            | WindowInsetsCompat.Type.displayCutout());
                 ViewGroup.MarginLayoutParams params =
                     (ViewGroup.MarginLayoutParams) view.getLayoutParams();
                 params.bottomMargin = targetBottomMargin;
+                params.setMarginStart(searchBaseMargin + sides.left);
+                params.setMarginEnd(searchBaseMargin + sides.right);
                 view.setLayoutParams(params);
                 return insets;
               });
@@ -1096,42 +1106,87 @@ public class FileManagerActivity extends BaseCompat
     container.addView(glass);
   }
 
+  /**
+   * Applies the system bar and display cutout insets once, on the coordinator. The header is padded
+   * by the status bar, the content column by the side insets (landscape navigation bar and
+   * cutout), and the floating views (FAB, music preview, download bar) keep their XML margins on
+   * top of the insets. The selection panel is a {@code FloatingToolbarLayout} that applies its own
+   * system window margins, so it is left alone here.
+   */
   private void setupInsets() {
+    ViewGroup.MarginLayoutParams fabParams =
+        (ViewGroup.MarginLayoutParams) bind.fab.getLayoutParams();
+    fabBaseBottomMargin = fabParams.bottomMargin;
+    int fabBaseEnd = fabParams.getMarginEnd();
+    ViewGroup.MarginLayoutParams musicParams =
+        (ViewGroup.MarginLayoutParams) bind.musicPreview.getLayoutParams();
+    int musicBaseStart = musicParams.getMarginStart();
+    int musicBaseEnd = musicParams.getMarginEnd();
+    ViewGroup.MarginLayoutParams downloaderParams =
+        (ViewGroup.MarginLayoutParams) bind.downloader.getLayoutParams();
+    int downloaderBaseBottom = downloaderParams.bottomMargin;
     ViewCompat.setOnApplyWindowInsetsListener(
         bind.coordinator,
         (view, insets) -> {
-          Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+          Insets systemBars =
+              insets.getInsets(
+                  WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
           int imeBottom = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom;
           systemBarsBottomInset = systemBars.bottom;
+          bind.contentContainer.setPadding(systemBars.left, 0, systemBars.right, 0);
           bind.headtop.setPadding(0, systemBars.top, 0, 0);
           bind.musicPreview.setPadding(
               bind.musicPreview.getPaddingLeft(),
               bind.musicPreview.getPaddingTop(),
               bind.musicPreview.getPaddingRight(),
               systemBars.bottom);
+          ViewGroup.MarginLayoutParams music =
+              (ViewGroup.MarginLayoutParams) bind.musicPreview.getLayoutParams();
+          music.setMarginStart(musicBaseStart + systemBars.left);
+          music.setMarginEnd(musicBaseEnd + systemBars.right);
+          bind.musicPreview.setLayoutParams(music);
+          ViewGroup.MarginLayoutParams downloader =
+              (ViewGroup.MarginLayoutParams) bind.downloader.getLayoutParams();
+          downloader.bottomMargin = downloaderBaseBottom + systemBars.bottom;
+          downloader.setMarginStart(systemBars.left);
+          downloader.setMarginEnd(systemBars.right);
+          bind.downloader.setLayoutParams(downloader);
+          ViewGroup.MarginLayoutParams fab =
+              (ViewGroup.MarginLayoutParams) bind.fab.getLayoutParams();
+          fab.setMarginEnd(fabBaseEnd + systemBars.right);
+          bind.fab.setLayoutParams(fab);
+          updateFabBottomMargin();
           bind.fab.post(
               () -> {
-                int fabSpace = bind.fab.getHeight() + 48;
-                int extraBottom = (imeBottom > 0) ? imeBottom : 0;
+                int fabSpace = bind.fab.getHeight() + fabBaseBottomMargin + dp(LIST_END_GAP_DP);
                 bind.rvfiles.setPadding(
                     bind.rvfiles.getPaddingLeft(),
                     bind.rvfiles.getPaddingTop(),
                     bind.rvfiles.getPaddingRight(),
-                    systemBars.bottom + fabSpace + extraBottom);
+                    Math.max(systemBars.bottom, imeBottom) + fabSpace);
                 updateFabBottomMargin();
               });
           return insets;
         });
   }
 
+  /**
+   * Keeps the FAB its XML distance above whatever is below it: the navigation bar, or the music
+   * preview when it is shown. The preview already contains the navigation bar inset in its own
+   * bottom padding, so the inset is not added a second time in that case.
+   */
   private void updateFabBottomMargin() {
     ViewGroup.MarginLayoutParams fabParams =
         (ViewGroup.MarginLayoutParams) bind.fab.getLayoutParams();
-    fabParams.bottomMargin =
-        systemBarsBottomInset
-            + (bind.musicPreview.getVisibility() == View.VISIBLE
-                ? bind.musicPreview.getHeight()
-                : 0);
+    int below;
+    if (bind.musicPreview.getVisibility() == View.VISIBLE) {
+      ViewGroup.MarginLayoutParams music =
+          (ViewGroup.MarginLayoutParams) bind.musicPreview.getLayoutParams();
+      below = bind.musicPreview.getHeight() + music.bottomMargin;
+    } else {
+      below = systemBarsBottomInset;
+    }
+    fabParams.bottomMargin = below + fabBaseBottomMargin;
     bind.fab.setLayoutParams(fabParams);
   }
 

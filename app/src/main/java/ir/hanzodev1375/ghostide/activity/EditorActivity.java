@@ -26,6 +26,7 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import ir.hanzodev1375.components.views.GhostToast;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
+import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
@@ -127,6 +128,12 @@ public class EditorActivity extends BaseCompat
   private EditorPaneFragment activePane = null;
   private PluginPopupController pluginPopupController;
   private static final long LSP_STATUS_POLL_INTERVAL_MS = 1500;
+  private static final int OVERLAY_GAP_DP = 8;
+  private static final int OVERLAY_EDGE_DP = 16;
+  private static final int STATUS_PILL_EDGE_DP = 8;
+  private static final int STATUS_PILL_HEIGHT_DP = 36;
+  private static final int FAB_EDGE_DP = 16;
+  private static final int FAB_LIFT_DP = 23;
   private final Handler lspStatusHandler = new Handler(Looper.getMainLooper());
   private BreadcrumbAdapter breadcrumbAdapter;
   private Disposable editorHostRegistration;
@@ -301,47 +308,74 @@ public class EditorActivity extends BaseCompat
     }
   }
 
+  /**
+   * Single owner of the window insets for the editor screen. The content column is padded by the
+   * system bars and display cutout on every side, so the editor fragments below it only add the
+   * part of the keyboard that rises above that padding (see {@code EditorFragment}). The floating
+   * overlays (run button, symbol bar, search bar and status pill) sit on the coordinator and are
+   * moved with margins so they clear the navigation bar, the keyboard and the side insets in
+   * landscape without changing their size.
+   */
   private WindowInsetsCompat applyWindowInsets(View v, WindowInsetsCompat insets) {
-    int statusBarHeight = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top;
-    int navBarHeight = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom;
+    Insets bars =
+        insets.getInsets(
+            WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
     int imeHeight = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom;
-    if (navBarHeight == 0) {
-      navBarHeight = insets.getInsets(WindowInsetsCompat.Type.systemBars()).bottom;
+    boolean imeVisible = imeHeight > 0;
+
+    binding.mainContent.setPadding(bars.left, bars.top, bars.right, bars.bottom);
+
+    int gapPx = dp(OVERLAY_GAP_DP);
+    int overlayBottom = imeVisible ? imeHeight + gapPx : bars.bottom + dp(OVERLAY_EDGE_DP);
+    boolean willShowEditorStatusBar = !imeVisible && !binding.editorSearch.isShowing;
+
+    int fabBottom;
+    if (imeVisible) {
+      fabBottom = overlayBottom + symbolBarHeight() + gapPx;
+    } else {
+      fabBottom = bars.bottom + dp(FAB_LIFT_DP);
+      if (willShowEditorStatusBar) {
+        fabBottom += dp(STATUS_PILL_HEIGHT_DP) + gapPx;
+      }
     }
-
-    if (binding.mainContent != null) {
-      binding.mainContent.setPadding(0, statusBarHeight, 0, navBarHeight);
-    }
-
-    int gapPx = dp(8);
-    int editorStatusBarHeightPx = dp(36);
-    boolean willShowEditorStatusBar = imeHeight <= 0 && !binding.editorSearch.isShowing;
-
     CoordinatorLayout.LayoutParams fabParams =
         (CoordinatorLayout.LayoutParams) binding.fabineditor.getLayoutParams();
-    int newFabMargin = navBarHeight + dp(20) + 9;
-    if (imeHeight > 0) newFabMargin += imeHeight;
-    newFabMargin += willShowEditorStatusBar ? (editorStatusBarHeightPx + gapPx) : 0;
-    fabParams.bottomMargin = newFabMargin;
+    fabParams.bottomMargin = fabBottom;
+    fabParams.setMarginEnd(dp(FAB_EDGE_DP) + bars.right);
     binding.fabineditor.setLayoutParams(fabParams);
 
-    CoordinatorLayout.LayoutParams searchParams =
-        (CoordinatorLayout.LayoutParams) binding.editorSearch.getLayoutParams();
-    searchParams.bottomMargin = imeHeight > 0 ? imeHeight + gapPx : dp(16);
-    binding.editorSearch.setLayoutParams(searchParams);
-
-    CoordinatorLayout.LayoutParams symbolParams =
-        (CoordinatorLayout.LayoutParams) binding.symbolBarContainer.getLayoutParams();
-    symbolParams.bottomMargin = imeHeight > 0 ? imeHeight + gapPx : dp(16);
-    binding.symbolBarContainer.setLayoutParams(symbolParams);
-
-    CoordinatorLayout.LayoutParams statusBarParams =
-        (CoordinatorLayout.LayoutParams) binding.editorStatusBar.getLayoutParams();
-    statusBarParams.bottomMargin =
-        imeHeight > 0 ? navBarHeight + imeHeight + gapPx : navBarHeight + dp(16);
-    binding.editorStatusBar.setLayoutParams(statusBarParams);
+    placeOverlay(binding.editorSearch, overlayBottom, dp(OVERLAY_EDGE_DP), bars);
+    placeOverlay(binding.symbolBarContainer, overlayBottom, dp(OVERLAY_EDGE_DP), bars);
+    placeOverlay(binding.editorStatusBar, overlayBottom, dp(STATUS_PILL_EDGE_DP), bars);
 
     return insets;
+  }
+
+  private static void placeOverlay(View overlay, int bottom, int edge, Insets bars) {
+    CoordinatorLayout.LayoutParams params =
+        (CoordinatorLayout.LayoutParams) overlay.getLayoutParams();
+    params.bottomMargin = bottom;
+    params.setMarginStart(edge + bars.left);
+    params.setMarginEnd(edge + bars.right);
+    overlay.setLayoutParams(params);
+  }
+
+  /**
+   * Height of the symbol bar, which is shown together with the keyboard. It may still be hidden
+   * when the keyboard insets arrive, so it is measured on demand until it has been laid out.
+   */
+  private int symbolBarHeight() {
+    View bar = binding.symbolBarContainer;
+    if (bar.getHeight() > 0) {
+      return bar.getHeight();
+    }
+    int width = binding.getRoot().getWidth();
+    int widthSpec =
+        width > 0
+            ? View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.AT_MOST)
+            : View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED);
+    bar.measure(widthSpec, View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
+    return bar.getMeasuredHeight();
   }
 
   private int dp(int value) {

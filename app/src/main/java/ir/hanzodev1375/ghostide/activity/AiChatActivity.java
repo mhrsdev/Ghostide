@@ -21,6 +21,9 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -128,6 +131,7 @@ public class AiChatActivity extends BaseCompat {
     child = findViewById(R.id.backgroundIconSetting);
     booticon = findViewById(R.id.booticon);
     setupBackgroundBlur(child, findViewById(R.id.rootAi), findViewById(R.id.appbar));
+    applyWindowInsets(toolbar, findViewById(R.id.rootAi));
     applyGlassToUi();
     setupProviderDropdown();
     setupChatRecyclerView();
@@ -161,6 +165,27 @@ public class AiChatActivity extends BaseCompat {
     btnAttach.setBackgroundTintList(ColorStateList.valueOf(Color.TRANSPARENT));
     btnAttach.setIconTint(ColorStateList.valueOf(M3Theme.onSurface()));
     M3Theme.imageView(booticon);
+  }
+
+  /**
+   * The app bar fits the status bar itself ({@code fitsSystemWindows}); everything else is applied
+   * here, once, from the root. The chat column is padded by the side insets and by whichever is
+   * taller at the bottom, the navigation bar or the keyboard, so the input row always sits right
+   * above the keyboard. The toolbar only gets the side insets, so its buttons stay clear of a
+   * landscape navigation bar or cutout.
+   */
+  private void applyWindowInsets(Toolbar toolbar, View chatColumn) {
+    ViewCompat.setOnApplyWindowInsetsListener(
+        findViewById(R.id.aiChatRoot),
+        (v, insets) -> {
+          Insets bars =
+              insets.getInsets(
+                  WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
+          int imeBottom = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom;
+          toolbar.setPadding(bars.left, 0, bars.right, 0);
+          chatColumn.setPadding(bars.left, 0, bars.right, Math.max(bars.bottom, imeBottom));
+          return insets;
+        });
   }
 
   private void setupBackPressed() {
