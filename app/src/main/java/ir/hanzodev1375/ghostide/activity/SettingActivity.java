@@ -57,6 +57,8 @@ public class SettingActivity extends BaseCompat {
   private static final int WARM_UP_ROWS = 48;
   private static final int WARM_UP_BATCH = 3;
   private static final long FILTER_DELAY_MS = 200L;
+  private static final int SEARCH_BOTTOM_GAP_DP = 4;
+  private static final int LIST_END_CLEARANCE_DP = 80;
   private static final String STATE_SEARCH_VISIBLE = "settings_search_visible";
   private static final String STATE_PRE_SEARCH_EXPANDED = "settings_pre_search_expanded";
 
@@ -183,21 +185,7 @@ public class SettingActivity extends BaseCompat {
     getOnBackPressedDispatcher().addCallback(this, closeSearchOnBack);
 
     View root = findViewById(R.id.settingRoot);
-    ViewCompat.setOnApplyWindowInsetsListener(
-        root,
-        (v, insets) -> {
-          Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-          Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
-          findViewById(R.id.appbar).setPadding(0, systemBars.top, 0, 0);
-          int bottomInset = Math.max(systemBars.bottom, ime.bottom);
-          ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) ser.getLayoutParams();
-          lp.bottomMargin = bottomInset + (int) (4 * getResources().getDisplayMetrics().density);
-          ser.setLayoutParams(lp);
-          NestedScrollView scrollView = findViewById(R.id.scrollView);
-          scrollView.setPadding(
-              0, 0, 0, bottomInset + (int) (80 * getResources().getDisplayMetrics().density));
-          return insets;
-        });
+    setupInsets(root);
 
     ser.setOnTextChangedListener(
         (item) -> {
@@ -219,6 +207,41 @@ public class SettingActivity extends BaseCompat {
 
     M3Theme.applyTopLevel(root);
     themeSearchEmptyView();
+  }
+
+  /**
+   * Applies the system bar, display cutout and keyboard insets once, at the root: the app bar
+   * background runs under the status bar while the toolbar sits below it, the cards and the
+   * floating search bar clear the side bars, and both the list end and the search bar clear the
+   * taller of the navigation bar or the keyboard. The insets are consumed so no child applies them
+   * a second time.
+   */
+  private void setupInsets(View root) {
+    View appbar = findViewById(R.id.appbar);
+    NestedScrollView scrollView = findViewById(R.id.scrollView);
+    ViewGroup.MarginLayoutParams searchParams =
+        (ViewGroup.MarginLayoutParams) ser.getLayoutParams();
+    int searchLeft = searchParams.leftMargin;
+    int searchRight = searchParams.rightMargin;
+    float density = getResources().getDisplayMetrics().density;
+    int searchGap = Math.round(SEARCH_BOTTOM_GAP_DP * density);
+    int listEndGap = Math.round(LIST_END_CLEARANCE_DP * density);
+    ViewCompat.setOnApplyWindowInsetsListener(
+        root,
+        (v, insets) -> {
+          Insets bars =
+              insets.getInsets(
+                  WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
+          Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
+          int bottomInset = Math.max(bars.bottom, ime.bottom);
+          appbar.setPadding(bars.left, bars.top, bars.right, 0);
+          searchParams.leftMargin = searchLeft + bars.left;
+          searchParams.rightMargin = searchRight + bars.right;
+          searchParams.bottomMargin = bottomInset + searchGap;
+          ser.setLayoutParams(searchParams);
+          scrollView.setPadding(bars.left, 0, bars.right, bottomInset + listEndGap);
+          return WindowInsetsCompat.CONSUMED;
+        });
   }
 
   private void setupSection(

@@ -8,6 +8,7 @@ import android.os.Looper;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
+import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import ir.hanzodev1375.components.glsl.GLSLShaderView;
@@ -45,12 +46,20 @@ public class SplashActivity extends BaseCompat {
     TextView version = findViewById(R.id.splashVersion);
     version.setText(versionName());
     View brand = findViewById(R.id.splashBrand);
+    int brandLeft = brand.getPaddingLeft();
+    int brandRight = brand.getPaddingRight();
     int brandBottom = brand.getPaddingBottom();
     ViewCompat.setOnApplyWindowInsetsListener(
         brand,
         (v, insets) -> {
-          int nav = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom;
-          v.setPadding(v.getPaddingLeft(), v.getPaddingTop(), v.getPaddingRight(), brandBottom + nav);
+          Insets safe =
+              insets.getInsets(
+                  WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
+          v.setPadding(
+              brandLeft + safe.left,
+              v.getPaddingTop(),
+              brandRight + safe.right,
+              brandBottom + safe.bottom);
           return insets;
         });
     brand.setAlpha(0f);

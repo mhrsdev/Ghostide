@@ -137,19 +137,27 @@ public class OnboardingActivity extends BaseCompat {
     }
   }
 
+  /**
+   * The pages clear the status bar and, in landscape, the side bars and the display cutout; the
+   * navigation row clears the navigation bar. The background stays full screen. The insets are
+   * consumed here so the pages do not apply them again.
+   */
   private void applyEdgeToEdgeInsets() {
+    FrameLayout bar = bind.bottomBar;
+    int barBottom = bar.getPaddingBottom();
     ViewCompat.setOnApplyWindowInsetsListener(
         bind.getRoot(),
         (v, insets) -> {
-          Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-          bind.contentContainer.setPadding(0, bars.top, 0, 0);
-          FrameLayout bar = bind.bottomBar;
+          Insets bars =
+              insets.getInsets(
+                  WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
+          bind.contentContainer.setPadding(bars.left, bars.top, bars.right, 0);
           bar.setPadding(
               bar.getPaddingLeft(),
               bar.getPaddingTop(),
               bar.getPaddingRight(),
-              bars.bottom + dp(16));
-          return insets;
+              barBottom + bars.bottom);
+          return WindowInsetsCompat.CONSUMED;
         });
   }
 

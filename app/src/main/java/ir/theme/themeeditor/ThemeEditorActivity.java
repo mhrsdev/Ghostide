@@ -58,7 +58,6 @@ import ir.hanzodev1375.ghostide.R;
 import ir.hanzodev1375.ghostide.activity.BaseCompat;
 import ir.hanzodev1375.ghostide.activity.EditorActivity;
 import ir.hanzodev1375.ghostide.codeeditors.colorrender.ColorPickerBottomSheetDialog;
-import ir.hanzodev1375.ghostide.codeeditors.setting.PreferencesUtils;
 import ir.hanzodev1375.ghostide.utils.ObjectUtil;
 import ir.theme.ActivityTheme;
 import ir.theme.EditorTheme;
@@ -67,7 +66,6 @@ import ir.theme.M3Theme;
 import ir.theme.MaterialTheme;
 import ir.theme.ThemeManager;
 import ir.theme.ThemeMediaPath;
-import ir.theme.ThemeUtils;
 import ir.theme.WidgetTheme;
 import ir.theme.internal.ThemeRefResolver;
 
@@ -307,45 +305,8 @@ public class ThemeEditorActivity extends BaseCompat {
     if (background == null || appbar == null) return;
     View rootLayout = findViewById(R.id.rootLayout);
     View recycler = findViewById(R.id.recyclerView);
-    PreferencesUtils setting = new PreferencesUtils(this);
-    boolean hasBg = setting.isShowBackground();
-
-    boolean hasImage = false;
-    if (hasBg) {
-      ThemeUtils themeUtil = new ThemeUtils(new ThemeManager(this));
-      var th = themeUtil.getTheme();
-      hasImage =
-          th != null
-              && th.getWidget() != null
-              && th.getWidget().getImagepath() != null
-              && !th.getWidget().getImagepath().isEmpty();
-    }
-
-    if (rootLayout != null) {
-      rootLayout.setFitsSystemWindows(!hasImage);
-      rootLayout.requestApplyInsets();
-    }
-
-    if (hasImage) {
-      ViewCompat.setOnApplyWindowInsetsListener(
-          appbar,
-          (v, insets) -> {
-            Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(v.getPaddingLeft(), bars.top, v.getPaddingRight(), v.getPaddingBottom());
-            return insets;
-          });
-      if (recycler != null) {
-        ViewCompat.setOnApplyWindowInsetsListener(
-            recycler,
-            (v, insets) -> {
-              Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-              v.setPadding(v.getPaddingLeft(), v.getPaddingTop(), v.getPaddingRight(), bars.bottom);
-              return insets;
-            });
-      }
-    } else {
-      ViewCompat.setOnApplyWindowInsetsListener(appbar, null);
-      if (recycler != null) ViewCompat.setOnApplyWindowInsetsListener(recycler, null);
+    if (rootLayout != null && recycler != null) {
+      applyWindowInsets(rootLayout, appbar, findViewById(R.id.rootTheme), recycler);
     }
 
     setupBackgroundBlur(
@@ -354,6 +315,35 @@ public class ThemeEditorActivity extends BaseCompat {
         findViewById(R.id.rootTheme),
         findViewById(R.id.tabLayout),
         findViewById(R.id.appbar));
+  }
+
+  /**
+   * Applies the system bar, display cutout and keyboard insets once, at the root, the same way with
+   * or without a background image: the app bar background runs under the status bar while its
+   * toolbar and tabs sit below it, the list clears the side bars, and its last row clears the
+   * taller of the navigation bar or the keyboard. The insets are consumed so no child applies them
+   * a second time.
+   */
+  private void applyWindowInsets(View root, View appbar, View content, View list) {
+    int listBottom = list.getPaddingBottom();
+    ViewCompat.setOnApplyWindowInsetsListener(
+        root,
+        (v, insets) -> {
+          Insets bars =
+              insets.getInsets(
+                  WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
+          Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
+          int bottom = Math.max(bars.bottom, ime.bottom);
+          appbar.setPadding(bars.left, bars.top, bars.right, 0);
+          content.setPadding(bars.left, 0, bars.right, 0);
+          list.setPadding(
+              list.getPaddingLeft(),
+              list.getPaddingTop(),
+              list.getPaddingRight(),
+              listBottom + bottom);
+          return WindowInsetsCompat.CONSUMED;
+        });
+    ViewCompat.requestApplyInsets(root);
   }
 
   private void applyPreviewStyle() {

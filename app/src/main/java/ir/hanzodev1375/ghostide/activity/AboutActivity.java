@@ -27,7 +27,6 @@ import android.widget.TextView;
 import androidx.annotation.StringRes;
 import androidx.core.content.pm.PackageInfoCompat;
 import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -71,14 +70,7 @@ public class AboutActivity extends BaseCompat {
     setupBackgroundBlur();
 
     View root = findViewById(R.id.root_scroll);
-    ViewCompat.setOnApplyWindowInsetsListener(
-        root,
-        (v, insets) -> {
-          int top = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top;
-          int bottom = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom;
-          v.setPadding(v.getPaddingLeft(), top, v.getPaddingRight(), bottom);
-          return insets;
-        });
+    applySafeAreaPadding(root, false);
 
     contributorList = findViewById(R.id.rv_contributors);
     contributorStatus = findViewById(R.id.tv_contributors_status);

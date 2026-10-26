@@ -42,6 +42,7 @@ public class PluginScreenActivity extends BaseCompat {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_plugin_screen);
     setupBackgroundBlur();
+    applySafeAreaPadding(findViewById(R.id.plugin_screen_container), true);
 
     String screenId = getIntent().getStringExtra(EXTRA_SCREEN_ID);
     ExtensionRegistration<PluginScreen> registration = findScreen(screenId);

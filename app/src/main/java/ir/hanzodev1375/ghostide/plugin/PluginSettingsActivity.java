@@ -5,8 +5,6 @@ import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.appbar.MaterialToolbar;
@@ -60,21 +58,7 @@ public class PluginSettingsActivity extends BaseCompat {
     }
     fab.setOnClickListener(v -> refreshPlugins());
 
-    View root = findViewById(R.id.pluginSettingsRoot);
-    ViewCompat.setOnApplyWindowInsetsListener(
-        toolbar,
-        (v, insets) -> {
-          int top = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top;
-          v.setPadding(0, top, 0, 0);
-          return insets;
-        });
-    ViewCompat.setOnApplyWindowInsetsListener(
-        root,
-        (v, insets) -> {
-          int bottom = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom;
-          v.setPadding(0, 0, 0, bottom);
-          return insets;
-        });
+    applySafeAreaPadding(findViewById(R.id.pluginSettingsRoot), false);
 
     refreshPlugins();
   }

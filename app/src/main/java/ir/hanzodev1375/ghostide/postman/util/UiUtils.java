@@ -158,19 +158,25 @@ public class UiUtils {
   /**
    * Edge-to-edge insets for the history and collection list screens: the app bar clears the status
    * bar, the list scrolls under the navigation bar but its last row (and the optional FAB) stays
-   * above it, and side insets keep rows clear of cutouts in landscape.
+   * above it, and side insets keep the toolbar, the rows and the FAB clear of side bars and
+   * cutouts in landscape.
    */
   public static void applyListInsets(
       View appBar, View contentFrame, View list, View emptyState, @Nullable View fab) {
     int listBottom = list.getPaddingBottom();
-    int fabBottom =
+    ViewGroup.MarginLayoutParams fabParams =
         fab != null && fab.getLayoutParams() instanceof ViewGroup.MarginLayoutParams
-            ? ((ViewGroup.MarginLayoutParams) fab.getLayoutParams()).bottomMargin
-            : 0;
+            ? (ViewGroup.MarginLayoutParams) fab.getLayoutParams()
+            : null;
+    int fabLeft = fabParams != null ? fabParams.leftMargin : 0;
+    int fabRight = fabParams != null ? fabParams.rightMargin : 0;
+    int fabBottom = fabParams != null ? fabParams.bottomMargin : 0;
     ViewCompat.setOnApplyWindowInsetsListener(
         appBar,
         (v, insets) -> {
-          Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+          Insets bars =
+              insets.getInsets(
+                  WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
           v.setPadding(bars.left, bars.top, bars.right, v.getPaddingBottom());
           return insets;
         });
@@ -186,10 +192,11 @@ public class UiUtils {
               listBottom + bars.bottom);
           emptyState.setPadding(
               emptyState.getPaddingLeft(), 0, emptyState.getPaddingRight(), bars.bottom);
-          if (fab != null && fab.getLayoutParams() instanceof ViewGroup.MarginLayoutParams) {
-            ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) fab.getLayoutParams();
-            lp.bottomMargin = fabBottom + bars.bottom;
-            fab.setLayoutParams(lp);
+          if (fabParams != null) {
+            fabParams.leftMargin = fabLeft + bars.left;
+            fabParams.rightMargin = fabRight + bars.right;
+            fabParams.bottomMargin = fabBottom + bars.bottom;
+            fab.setLayoutParams(fabParams);
           }
           return insets;
         });

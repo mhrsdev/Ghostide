@@ -19,7 +19,10 @@ import android.os.Looper;
 import android.view.Window;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.ColorUtils;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import ir.hanzodev1375.components.animators.AnimationManager;
 import ir.hanzodev1375.components.childern.ViewChilder;
@@ -284,6 +287,42 @@ public class BaseCompat extends AppCompatActivity
     }
     applyThemeNow();
     onThemeReapplied();
+  }
+
+  /**
+   * Keeps the content of {@code target} clear of the system bars and the display cutout on every
+   * side, for screens that have no app bar of their own to absorb the top inset. The insets are
+   * added to the padding {@code target} has when this is called, so call it once per view, before
+   * the first inset pass. The insets are consumed, so no descendant applies them a second time, and
+   * the background of {@code target} still reaches the screen edges.
+   *
+   * @param target the view to pad, usually the root or the content container of the screen
+   * @param includeIme when true the bottom padding clears the taller of the navigation bar and the
+   *     keyboard; the activity must declare {@code adjustResize} for the keyboard inset to arrive
+   */
+  protected final void applySafeAreaPadding(@NonNull View target, boolean includeIme) {
+    final int baseLeft = target.getPaddingLeft();
+    final int baseTop = target.getPaddingTop();
+    final int baseRight = target.getPaddingRight();
+    final int baseBottom = target.getPaddingBottom();
+    ViewCompat.setOnApplyWindowInsetsListener(
+        target,
+        (v, insets) -> {
+          Insets safe =
+              insets.getInsets(
+                  WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
+          int bottom =
+              includeIme
+                  ? Math.max(safe.bottom, insets.getInsets(WindowInsetsCompat.Type.ime()).bottom)
+                  : safe.bottom;
+          v.setPadding(
+              baseLeft + safe.left,
+              baseTop + safe.top,
+              baseRight + safe.right,
+              baseBottom + bottom);
+          return WindowInsetsCompat.CONSUMED;
+        });
+    ViewCompat.requestApplyInsets(target);
   }
 
   protected void applyOwnTheme(ThemeUtils themeUtils) {}

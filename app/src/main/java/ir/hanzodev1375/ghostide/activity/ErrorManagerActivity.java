@@ -14,6 +14,9 @@ import android.util.TypedValue;
 import android.view.View;
 import android.widget.TextView;
 import androidx.annotation.Nullable;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.core.widget.TextViewCompat;
 import com.blankj.utilcode.util.AppUtils;
 import com.blankj.utilcode.util.ClipboardUtils;
@@ -75,6 +78,7 @@ public class ErrorManagerActivity extends BaseCompat {
     bind = ErrormanagerBinding.inflate(getLayoutInflater());
     setContentView(bind.getRoot());
     setupBackgroundBlur(bind.backgroundIconError, bind.appbar, bind.toolbar, bind.errorContent);
+    applyWindowInsets();
     setSupportActionBar(bind.toolbar);
     if (getSupportActionBar() != null) {
       getSupportActionBar().setTitle(R.string.crash_title);
@@ -103,6 +107,34 @@ public class ErrorManagerActivity extends BaseCompat {
     if (bind != null) {
       applyAccents();
     }
+  }
+
+  /**
+   * Applies the system bar and display cutout insets once, at the root: the app bar background runs
+   * under the status bar while its toolbar sits below it, the report clears the side bars, and the
+   * copy/share row clears the navigation bar. The insets are consumed so no child applies them a
+   * second time.
+   */
+  private void applyWindowInsets() {
+    View actions = bind.actionBar;
+    int actionsLeft = actions.getPaddingLeft();
+    int actionsRight = actions.getPaddingRight();
+    int actionsBottom = actions.getPaddingBottom();
+    ViewCompat.setOnApplyWindowInsetsListener(
+        bind.getRoot(),
+        (v, insets) -> {
+          Insets safe =
+              insets.getInsets(
+                  WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
+          bind.appbar.setPadding(safe.left, safe.top, safe.right, 0);
+          bind.crashScroll.setPadding(safe.left, 0, safe.right, 0);
+          actions.setPadding(
+              actionsLeft + safe.left,
+              actions.getPaddingTop(),
+              actionsRight + safe.right,
+              actionsBottom + safe.bottom);
+          return WindowInsetsCompat.CONSUMED;
+        });
   }
 
   private String ownPackagePrefix() {
