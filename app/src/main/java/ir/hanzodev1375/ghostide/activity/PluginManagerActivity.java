@@ -75,11 +75,14 @@ public class PluginManagerActivity extends BaseCompat
   private static final String TAG = "PluginManagerActivity";
   private static final int ICON_MAX_PX = 144;
   private static final int COPY_BUFFER_SIZE = 8192;
+  private static final int FAB_MARGIN_DP = 16;
+  private static final int LIST_END_GAP_DP = 16;
 
   private ActivityPluginManagerBinding bind;
   private GplPluginLoader loader;
   private PluginActivationController controller;
   private InstalledPluginAdapter adapter;
+  private ParticleItemAnimator rowAnimator;
   private ExecutorService scanExecutor;
   private InstalledPluginSheet detailSheet;
   private final AtomicInteger scanGeneration = new AtomicInteger();
@@ -108,9 +111,9 @@ public class PluginManagerActivity extends BaseCompat
     adapter = new InstalledPluginAdapter(new RowActions());
     bind.rvPlugins.setLayoutManager(new LinearLayoutManager(this));
     bind.rvPlugins.setAdapter(adapter);
-    ParticleItemAnimator animator = new ParticleItemAnimator(this);
-    animator.setSupportsChangeAnimations(false);
-    bind.rvPlugins.setItemAnimator(animator);
+    rowAnimator = new ParticleItemAnimator(this);
+    rowAnimator.setSupportsChangeAnimations(false);
+    bind.rvPlugins.setItemAnimator(rowAnimator);
 
     bind.btnBack.setOnClickListener(v -> finish());
     bind.fab.setEnableDynamicBackground(true);
@@ -190,8 +193,10 @@ public class PluginManagerActivity extends BaseCompat
     bind.stateBox.setGravity(start);
     bind.stateTitle.setGravity(start);
     bind.emptyText.setGravity(start);
-    ((CoordinatorLayout.LayoutParams) bind.fab.getLayoutParams()).gravity =
-        Gravity.BOTTOM | (rtl ? Gravity.LEFT : Gravity.RIGHT);
+    CoordinatorLayout.LayoutParams fabParams =
+        (CoordinatorLayout.LayoutParams) bind.fab.getLayoutParams();
+    fabParams.gravity = Gravity.BOTTOM | (rtl ? Gravity.LEFT : Gravity.RIGHT);
+    bind.fab.setLayoutParams(fabParams);
   }
 
   private void styleChrome() {
@@ -206,33 +211,58 @@ public class PluginManagerActivity extends BaseCompat
     M3Theme.materialSwitch(bind.masterSwitch);
   }
 
+  /**
+   * Applies the system bar, display cutout and keyboard insets once, at the root: the header clears
+   * the status bar, the content clears side bars, and the list and the FAB clear whichever of the
+   * navigation bar or the keyboard is taller. The insets are consumed so no child applies them a
+   * second time.
+   */
   private void setupInsets() {
     ViewCompat.setOnApplyWindowInsetsListener(
         bind.coordinator,
         (view, insets) -> {
-          Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+          Insets bars =
+              insets.getInsets(
+                  WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
+          Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
+          int bottom = Math.max(bars.bottom, ime.bottom);
           bind.headtop.setPadding(
               bind.headtop.getPaddingLeft(),
-              systemBars.top,
+              bars.top,
               bind.headtop.getPaddingRight(),
               bind.headtop.getPaddingBottom());
+          bind.pluginContent.setPadding(bars.left, 0, bars.right, 0);
           bind.rvPlugins.setPadding(
               bind.rvPlugins.getPaddingLeft(),
               bind.rvPlugins.getPaddingTop(),
               bind.rvPlugins.getPaddingRight(),
-              systemBars.bottom + dp(88));
-          bind.fab.post(
-              () -> {
-                if (bind == null) {
-                  return;
-                }
-                ViewGroup.MarginLayoutParams params =
-                    (ViewGroup.MarginLayoutParams) bind.fab.getLayoutParams();
-                params.bottomMargin = dp(16) + systemBars.bottom;
-                bind.fab.setLayoutParams(params);
-              });
-          return insets;
+              bottom + bind.fab.getLayoutParams().height + dp(FAB_MARGIN_DP + LIST_END_GAP_DP));
+          placeFab(bars, bottom);
+          return WindowInsetsCompat.CONSUMED;
         });
+  }
+
+  /**
+   * Keeps the FAB {@link #FAB_MARGIN_DP} clear of the screen edges, side bars and the taller of the
+   * navigation bar or keyboard. Both side margins are set so the corner chosen by {@link
+   * #applyDirection()} is correct for either reading direction.
+   */
+  private void placeFab(Insets bars, int bottomInset) {
+    int margin = dp(FAB_MARGIN_DP);
+    ViewGroup.MarginLayoutParams params =
+        (ViewGroup.MarginLayoutParams) bind.fab.getLayoutParams();
+    int left = margin + bars.left;
+    int right = margin + bars.right;
+    int bottom = margin + bottomInset;
+    if (params.leftMargin == left && params.rightMargin == right && params.bottomMargin == bottom) {
+      return;
+    }
+    params.leftMargin = left;
+    params.rightMargin = right;
+    params.setMarginStart(left);
+    params.setMarginEnd(right);
+    params.bottomMargin = bottom;
+    bind.fab.setLayoutParams(params);
   }
 
   private int dp(int value) {
@@ -240,6 +270,7 @@ public class PluginManagerActivity extends BaseCompat
   }
 
   private void onSearchTextChanged(String text) {
+    rowAnimator.setParticleRemovals(false);
     adapter.filter(text);
     renderState();
   }
@@ -342,6 +373,7 @@ public class PluginManagerActivity extends BaseCompat
     scanned = true;
     scanError = error;
     plugins = result;
+    rowAnimator.setParticleRemovals(true);
     adapter.submit(result);
     renderAll();
     updateOpenSheet();

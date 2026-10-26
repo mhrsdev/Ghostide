@@ -226,19 +226,20 @@
 
   <ir.hanzodev1375.components.sheet.customitemsheet.ui.FabGlass
     android:id="@+id/fab"
-    android:layout_width="64dp"
-    android:layout_height="64dp"
+    android:layout_width="56dp"
+    android:layout_height="56dp"
     android:layout_gravity="bottom|end"
+    android:layout_marginStart="16dp"
     android:layout_marginEnd="16dp"
     android:layout_marginBottom="16dp"
     android:contentDescription="@string/plugin_manager_add"
     android:src="@drawable/ic_add"
     app:adaptiveTint="true"
-    app:bevelWidth="14dp"
-    app:cornerRadius="20dp"
+    app:bevelWidth="12dp"
+    app:cornerRadius="16dp"
     app:dispersionStrength="0.12"
     app:glassMaterial="regular"
-    app:refractionHeight="60dp"
+    app:refractionHeight="52dp"
     app:sensorHighlight="false" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
