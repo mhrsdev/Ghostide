@@ -28,4 +28,10 @@ public interface AiClient {
       Callback callback);
 
   String getProviderName();
+
+  /**
+   * Releases the client's worker thread once it is no longer used. A request already submitted
+   * still completes; later {@link #sendMessage} calls are rejected.
+   */
+  default void shutdown() {}
 }

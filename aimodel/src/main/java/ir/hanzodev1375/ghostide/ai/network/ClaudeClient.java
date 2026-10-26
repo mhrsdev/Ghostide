@@ -188,6 +188,7 @@ public class ClaudeClient implements AiClient {
         });
   }
 
+  @Override
   public void shutdown() {
     executor.shutdown();
   }

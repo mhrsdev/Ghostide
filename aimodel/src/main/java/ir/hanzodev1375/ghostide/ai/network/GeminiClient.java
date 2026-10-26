@@ -149,4 +149,9 @@ public class GeminiClient implements AiClient {
 
     @Override
     public String getProviderName() { return AiConstants.AiProvider.GEMINI; }
+
+    @Override
+    public void shutdown() {
+        executor.shutdown();
+    }
 }

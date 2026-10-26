@@ -563,6 +563,7 @@ public class AiChatActivity extends BaseCompat {
   }
 
   private void refreshClient() {
+    if (currentClient != null) currentClient.shutdown();
     currentClient = AiClientFactory.create(this);
   }
 
@@ -630,5 +631,6 @@ public class AiChatActivity extends BaseCompat {
   protected void onDestroy() {
     super.onDestroy();
     executor.shutdownNow();
+    if (currentClient != null) currentClient.shutdown();
   }
 }

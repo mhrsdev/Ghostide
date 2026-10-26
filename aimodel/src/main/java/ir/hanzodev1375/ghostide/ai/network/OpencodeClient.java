@@ -189,6 +189,7 @@ public class OpencodeClient implements AiClient {
     return new JSONObject(sb.toString());
   }
 
+  @Override
   public void shutdown() {
     executor.shutdown();
   }

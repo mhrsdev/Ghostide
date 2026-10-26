@@ -61,6 +61,11 @@ public class ZipModeHelper {
     this.selectionChangedListener = listener;
   }
 
+  /** Releases the zip adapter's background thread; call it from the host's onDestroy. */
+  public void release() {
+    if (zipAdapter != null) zipAdapter.release();
+  }
+
   /** راه‌اندازی آداپتر zip و شنونده‌های آن. */
   public void init() {
     zipAdapter = new ZipBrowserAdapter(activity);

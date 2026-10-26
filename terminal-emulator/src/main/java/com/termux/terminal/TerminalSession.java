@@ -16,6 +16,7 @@ import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * A terminal session, consisting of a process coupled to a terminal interface.
@@ -34,6 +35,13 @@ public final class TerminalSession extends TerminalOutput {
   private static final int MSG_NEW_INPUT = 1;
   private static final int MSG_PROCESS_EXITED = 4;
 
+  /**
+   * Upper bound of process output fed to the emulator by one main-thread message. When more output
+   * is queued the handler re-posts itself behind already queued input, IME and frame messages, so a
+   * flood of output (apt, tar, cat) cannot hold the main thread for long stretches.
+   */
+  static final int MAX_OUTPUT_BYTES_PER_MESSAGE = 16 * 1024;
+
   public final String mHandle = UUID.randomUUID().toString();
 
   TerminalEmulator mEmulator;
@@ -46,9 +54,9 @@ public final class TerminalSession extends TerminalOutput {
 
   /**
    * A queue written to from the main thread due to user interaction, and read by another thread
-   * which forwards by writing to the {@link #mTerminalFileDescriptor}.
+   * which forwards by writing to the {@link #mTerminalFileDescriptor}. Writing to it never blocks.
    */
-  final ByteQueue mTerminalToProcessIOQueue = new ByteQueue(4096);
+  final TerminalInputQueue mTerminalToProcessIOQueue = new TerminalInputQueue();
 
   /** Buffer to write translate code points into utf8 before writing to mTerminalToProcessIOQueue */
   private final byte[] mUtf8InputBuffer = new byte[5];
@@ -73,6 +81,9 @@ public final class TerminalSession extends TerminalOutput {
   public String mSessionName;
 
   final Handler mMainThreadHandler = new MainThreadHandler();
+
+  /** True while a {@link #MSG_NEW_INPUT} is queued and not yet handled. */
+  private final AtomicBoolean mNewInputPending = new AtomicBoolean();
 
   private final String mShellPath;
   private final String mCwd;
@@ -160,8 +171,7 @@ public final class TerminalSession extends TerminalOutput {
           while (true) {
             int read = termIn.read(buffer);
             if (read == -1) return;
-            if (!mProcessToTerminalIOQueue.write(buffer, 0, read)) return;
-            mMainThreadHandler.sendEmptyMessage(MSG_NEW_INPUT);
+            if (!onProcessOutput(buffer, read)) return;
           }
         } catch (Exception e) {
           // Ignore, just shutting down.
@@ -172,12 +182,10 @@ public final class TerminalSession extends TerminalOutput {
     new Thread("TermSessionOutputWriter[pid=" + mShellPid + "]") {
       @Override
       public void run() {
-        final byte[] buffer = new byte[4096];
         try (FileOutputStream termOut = new FileOutputStream(terminalFileDescriptorWrapped)) {
-          while (true) {
-            int bytesToWrite = mTerminalToProcessIOQueue.read(buffer, true);
-            if (bytesToWrite == -1) return;
-            termOut.write(buffer, 0, bytesToWrite);
+          byte[] chunk;
+          while ((chunk = mTerminalToProcessIOQueue.take()) != null) {
+            termOut.write(chunk);
           }
         } catch (IOException e) {
           // Ignore.
@@ -195,17 +203,48 @@ public final class TerminalSession extends TerminalOutput {
     }.start();
   }
 
+  /**
+   * Queues process output for the main thread and posts at most one {@link #MSG_NEW_INPUT} at a
+   * time. Called on the reader thread; blocks while the output queue is full.
+   *
+   * @return false once the queue was closed and reading must stop
+   */
+  boolean onProcessOutput(byte[] buffer, int length) {
+    if (!mProcessToTerminalIOQueue.write(buffer, 0, length)) return false;
+    requestOutputDrain();
+    return true;
+  }
+
+  private void requestOutputDrain() {
+    if (mNewInputPending.compareAndSet(false, true)) {
+      mMainThreadHandler.sendEmptyMessage(MSG_NEW_INPUT);
+    }
+  }
+
   /** Write data to the shell process. */
   @Override
   public void write(byte[] data, int offset, int count) {
-    if (mShellPid > 0) mTerminalToProcessIOQueue.write(data, offset, count);
+    if (mShellPid > 0) queueInput(data, offset, count);
   }
 
   /** Write a string to the shell process, encoded as UTF-8. */
   public void write(String text, boolean fake) {
     if (text == null || mShellPid <= 0) return;
     byte[] data = text.getBytes(java.nio.charset.StandardCharsets.UTF_8);
-    mTerminalToProcessIOQueue.write(data, 0, data.length);
+    queueInput(data, 0, data.length);
+  }
+
+  private void queueInput(byte[] data, int offset, int count) {
+    if (!mTerminalToProcessIOQueue.offer(data, offset, count) && isRunning()) {
+      Logger.logWarn(
+          mClient,
+          LOG_TAG,
+          "Dropped "
+              + count
+              + " input bytes: the shell has not read "
+              + mTerminalToProcessIOQueue.pendingBytes()
+              + " pending bytes");
+    }
   }
 
   /** Write the Unicode code point to the terminal encoded in UTF-8. */
@@ -369,17 +408,30 @@ public final class TerminalSession extends TerminalOutput {
   @SuppressLint("HandlerLeak")
   class MainThreadHandler extends Handler {
 
-    final byte[] mReceiveBuffer = new byte[64 * 1024];
+    final byte[] mReceiveBuffer = new byte[MAX_OUTPUT_BYTES_PER_MESSAGE];
 
     @Override
     public void handleMessage(Message msg) {
-      int bytesRead = mProcessToTerminalIOQueue.read(mReceiveBuffer, false);
-      if (bytesRead > 0) {
-        mEmulator.append(mReceiveBuffer, bytesRead);
-        notifyScreenUpdate();
+      if (msg.what == MSG_NEW_INPUT) {
+        mNewInputPending.set(false);
+        int bytesRead = mProcessToTerminalIOQueue.read(mReceiveBuffer, false);
+        if (bytesRead > 0) {
+          mEmulator.append(mReceiveBuffer, bytesRead);
+          notifyScreenUpdate();
+          if (bytesRead == mReceiveBuffer.length) requestOutputDrain();
+        }
+        return;
       }
 
       if (msg.what == MSG_PROCESS_EXITED) {
+        boolean appended = false;
+        int bytesRead;
+        while ((bytesRead = mProcessToTerminalIOQueue.read(mReceiveBuffer, false)) > 0) {
+          mEmulator.append(mReceiveBuffer, bytesRead);
+          appended = true;
+        }
+        if (appended) notifyScreenUpdate();
+
         int exitCode = (Integer) msg.obj;
         cleanupResources(exitCode);
 

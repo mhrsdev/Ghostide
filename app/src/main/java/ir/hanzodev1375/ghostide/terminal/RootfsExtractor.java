@@ -1,6 +1,7 @@
 package ir.hanzodev1375.ghostide.terminal;
 
 import android.content.Context;
+import android.os.CancellationSignal;
 import ir.hanzodev1375.ghostide.R;
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -37,8 +38,21 @@ public final class RootfsExtractor {
     void onProgress(int extractedEntries);
   }
 
+  /**
+   * Decompresses {@code tarXzFile} and extracts it into {@code destDir} with tar under proot.
+   * Blocking; call it on a background thread.
+   *
+   * @param signal cancelling it stops the decompression and destroys the tar process; the method
+   *     then returns or throws early and the caller must check {@link
+   *     CancellationSignal#isCanceled()} and discard the partial result
+   */
   public static void extract(
-      Context context, File tarXzFile, File destDir, ProgressListener listener) throws IOException {
+      Context context,
+      File tarXzFile,
+      File destDir,
+      CancellationSignal signal,
+      ProgressListener listener)
+      throws IOException {
     if (!destDir.exists() && !destDir.mkdirs()) {
       throw new IOException(
           context.getString(R.string.terminal_error_cannot_create_dest_dir, destDir));
@@ -53,7 +67,8 @@ public final class RootfsExtractor {
     Thread progressThread = startProgressPolling(destDir, extracting, listener);
 
     try {
-      decompressXz(tarXzFile, plainTar);
+      decompressXz(tarXzFile, plainTar, signal);
+      if (signal.isCanceled()) return;
 
       String command =
           "tar --exclude='dev/*' -xf '"
@@ -64,12 +79,14 @@ public final class RootfsExtractor {
 
       ProotExec.Result result;
       try {
-        result = ProotExec.run(context, new File("/"), Collections.emptyList(), command);
+        result =
+            ProotExec.run(context, new File("/"), Collections.emptyList(), command, null, signal);
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
         throw new IOException(context.getString(R.string.terminal_error_extract_interrupted), e);
       }
 
+      if (signal.isCanceled()) return;
       if (!result.isSuccess()) {
         throw new IOException(
             context.getString(
@@ -115,7 +132,8 @@ public final class RootfsExtractor {
     return count;
   }
 
-  private static void decompressXz(File xzFile, File outTar) throws IOException {
+  private static void decompressXz(File xzFile, File outTar, CancellationSignal signal)
+      throws IOException {
     try (InputStream fileIn = new FileInputStream(xzFile);
         InputStream buffered = new BufferedInputStream(fileIn);
         XZCompressorInputStream xzIn = new XZCompressorInputStream(buffered);
@@ -123,6 +141,7 @@ public final class RootfsExtractor {
       byte[] buffer = new byte[1 << 16];
       int len;
       while ((len = xzIn.read(buffer)) != -1) {
+        if (signal.isCanceled()) return;
         out.write(buffer, 0, len);
       }
     }

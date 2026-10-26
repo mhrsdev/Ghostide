@@ -1225,6 +1225,7 @@ public class FileManagerActivity extends BaseCompat
     }
     gitHelper.shutdown();
     ftpExecutor.shutdownNow();
+    if (zipModeHelper != null) zipModeHelper.release();
     if (bind != null) {
       bind.musicPreview.release();
       bind = null;

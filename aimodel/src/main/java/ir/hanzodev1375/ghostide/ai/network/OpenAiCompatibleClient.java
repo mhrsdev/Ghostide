@@ -202,6 +202,7 @@ public class OpenAiCompatibleClient implements AiClient {
         });
   }
 
+  @Override
   public void shutdown() {
     executor.shutdown();
   }

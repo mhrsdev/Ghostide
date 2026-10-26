@@ -110,6 +110,15 @@ public class ZipBrowserAdapter extends RecyclerView.Adapter<ZipBrowserAdapter.Vi
     zipLoadListener = l;
   }
 
+  /**
+   * Stops the zip reader thread and drops the load listener. Call it when the owning screen is
+   * destroyed; the adapter must not load again afterwards.
+   */
+  public void release() {
+    zipLoadListener = null;
+    ioExecutor.shutdownNow();
+  }
+
   public void loadZip(@NonNull String zipFilePath, @NonNull String internalPath) {
     this.currentZipPath = zipFilePath;
     this.currentInternalPath = internalPath;

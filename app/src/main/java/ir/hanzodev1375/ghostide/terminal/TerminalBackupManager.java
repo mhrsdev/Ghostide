@@ -150,6 +150,57 @@ public final class TerminalBackupManager {
     void onError(String message, Throwable error);
   }
 
+  private static ProgressListener uiListener;
+  private static volatile boolean runningBackup;
+
+  /**
+   * The only listener a running task references. It forwards, on the main thread, to the UI
+   * listener attached at that moment, so a task never keeps a destroyed Activity alive and a
+   * recreated Activity can re-attach to it.
+   */
+  private static final ProgressListener RELAY =
+      new ProgressListener() {
+        @Override
+        public void onProgress(
+            long processedBytes, long totalBytes, int percent, String currentPath) {
+          ProgressListener listener = uiListener;
+          if (listener != null) listener.onProgress(processedBytes, totalBytes, percent, currentPath);
+        }
+
+        @Override
+        public void onSuccess(File archive, long sizeBytes) {
+          ProgressListener listener = uiListener;
+          if (listener != null) listener.onSuccess(archive, sizeBytes);
+        }
+
+        @Override
+        public void onCancelled() {
+          ProgressListener listener = uiListener;
+          if (listener != null) listener.onCancelled();
+        }
+
+        @Override
+        public void onError(String message, Throwable error) {
+          ProgressListener listener = uiListener;
+          if (listener != null) listener.onError(message, error);
+        }
+      };
+
+  /** Routes the running (or next) task's callbacks to {@code listener}. Main thread only. */
+  public static void attach(ProgressListener listener) {
+    uiListener = listener;
+  }
+
+  /** Detaches {@code listener} if it is still attached. Main thread only. */
+  public static void detach(ProgressListener listener) {
+    if (uiListener == listener) uiListener = null;
+  }
+
+  /** True when the running task is a backup, false for a restore or when idle. */
+  public static boolean isBackupRunning() {
+    return RUNNING.get() && runningBackup;
+  }
+
   public static File backupDir(Context context) {
     File external = Environment.getExternalStorageDirectory();
     if (external != null && external.isDirectory()) {
@@ -182,11 +233,18 @@ public final class TerminalBackupManager {
     return RUNNING.get();
   }
 
+  /**
+   * Starts a backup on the shared background executor. {@code listener} is attached as the UI
+   * listener (see {@link #attach}); the task itself only references an internal relay. Main thread
+   * only.
+   */
   public static void backup(Context context, ProgressListener listener) {
     final Context app = context.getApplicationContext();
     final File[] tempHolder = new File[1];
+    attach(listener);
+    runningBackup = true;
     run(
-        listener,
+        RELAY,
         () -> {
           File dir = backupDir(app);
           if (!dir.isDirectory() && !dir.mkdirs()) {
@@ -201,10 +259,10 @@ public final class TerminalBackupManager {
           if (sources.isEmpty()) {
             throw new IOException("no terminal data to back up");
           }
-          post(listener, 0L, -1L, -1, null);
+          post(RELAY, 0L, -1L, -1, null);
           long total = totalSize(sources);
 
-          Progress progress = new Progress(listener, total, false);
+          Progress progress = new Progress(RELAY, total, false);
           writeArchive(app, sources, temp, progress);
           checkCancelled();
           if (!temp.renameTo(archive)) {
@@ -222,12 +280,14 @@ public final class TerminalBackupManager {
       postError(listener, "backup file not found", null);
       return;
     }
+    attach(listener);
+    runningBackup = false;
     run(
-        listener,
+        RELAY,
         () -> {
           File filesDir = app.getFilesDir();
           long archiveSize = archive.length();
-          Progress progress = new Progress(listener, -1L, true);
+          Progress progress = new Progress(RELAY, -1L, true);
           progress.start();
 
           long restored = 0L;
@@ -580,7 +640,7 @@ public final class TerminalBackupManager {
             if (listener != null) {
               MAIN.post(listener::onCancelled);
             }
-          } catch (Throwable t) {
+          } catch (IOException | RuntimeException t) {
             if (tempHolder != null && tempHolder[0] != null) {
               deleteQuietly(tempHolder[0]);
             }

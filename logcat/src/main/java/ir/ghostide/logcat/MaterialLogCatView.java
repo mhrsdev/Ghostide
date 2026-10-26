@@ -29,7 +29,7 @@ public class MaterialLogCatView extends LinearLayout {
   private FloatingActionButton btnSave;
   private LogAdapter adapter;
   private static final int PERMISSION_REQUEST_CODE = 100;
-  private final ExecutorService loader = Executors.newSingleThreadExecutor();
+  private ExecutorService loader = Executors.newSingleThreadExecutor();
   private volatile boolean loading;
 
   private void postOnMain(Runnable action) {
@@ -120,6 +120,7 @@ public class MaterialLogCatView extends LinearLayout {
     }
     loading = true;
     searchBox.setEnabled(false);
+    if (loader.isShutdown()) loader = Executors.newSingleThreadExecutor();
     loader.execute(
         () -> {
           List<LogEntry> newLogs = LogcatReader.getCurrentAppLogs();
@@ -136,4 +137,12 @@ public class MaterialLogCatView extends LinearLayout {
         });
   }
 
+  /** Stops the log reader thread; {@link #refreshLogs()} starts a new one if needed. */
+  @Override
+  protected void onDetachedFromWindow() {
+    loader.shutdownNow();
+    loading = false;
+    if (searchBox != null) searchBox.setEnabled(true);
+    super.onDetachedFromWindow();
+  }
 }

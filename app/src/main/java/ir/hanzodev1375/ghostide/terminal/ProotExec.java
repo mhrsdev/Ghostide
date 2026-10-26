@@ -1,6 +1,7 @@
 package ir.hanzodev1375.ghostide.terminal;
 
 import android.content.Context;
+import android.os.CancellationSignal;
 import android.util.Log;
 import ir.hanzodev1375.ghostide.R;
 import java.io.BufferedReader;
@@ -76,6 +77,24 @@ public final class ProotExec {
       String command,
       LineListener lineListener)
       throws IOException, InterruptedException {
+    return run(context, guestRoot, extraBinds, command, lineListener, null);
+  }
+
+  /**
+   * Same as {@link #run(Context, File, List, String, LineListener)}; cancelling {@code signal}
+   * destroys the proot process (SIGTERM, which proot forwards to its tracees) so the call returns
+   * early with a non-zero exit code.
+   *
+   * @param signal optional; may be {@code null}
+   */
+  public static Result run(
+      Context context,
+      File guestRoot,
+      List<String> extraBinds,
+      String command,
+      LineListener lineListener,
+      CancellationSignal signal)
+      throws IOException, InterruptedException {
 
     String nativeLibDir = context.getApplicationInfo().nativeLibraryDir;
 
@@ -138,18 +157,24 @@ public final class ProotExec {
     Log.i(LOG_TAG, "exec: " + cmd);
 
     Process process = pb.start();
+    if (signal != null) signal.setOnCancelListener(process::destroy);
     ArrayDeque<String> tail = new ArrayDeque<>();
-    try (BufferedReader reader =
-        new BufferedReader(
-            new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
-      String line;
-      while ((line = reader.readLine()) != null) {
-        if (lineListener != null) lineListener.onLine(line);
-        tail.addLast(line);
-        if (tail.size() > TAIL_LINES) tail.removeFirst();
+    int exitCode;
+    try {
+      try (BufferedReader reader =
+          new BufferedReader(
+              new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
+        String line;
+        while ((line = reader.readLine()) != null) {
+          if (lineListener != null) lineListener.onLine(line);
+          tail.addLast(line);
+          if (tail.size() > TAIL_LINES) tail.removeFirst();
+        }
       }
+      exitCode = process.waitFor();
+    } finally {
+      if (signal != null) signal.setOnCancelListener(null);
     }
-    int exitCode = process.waitFor();
     deleteRecursive(tmpDir);
 
     String tailOutput = String.join("\n", tail);

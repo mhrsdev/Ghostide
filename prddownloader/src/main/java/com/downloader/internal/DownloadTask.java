@@ -29,10 +29,19 @@ public class DownloadTask {
     private static final int BUFFER_SIZE = 1024 * 4;
     private static final long TIME_GAP_FOR_SYNC = 2000;
     private static final long MIN_BYTES_FOR_SYNC = 65536;
+    /**
+     * Minimum time between two progress messages posted to the main thread. Without it every 4 KB
+     * read posted one message, i.e. thousands per second on a fast connection, which flooded the
+     * main looper and delayed input, IME and frame work queued behind it.
+     */
+    static final long PROGRESS_INTERVAL_MS = 100;
+    private static final long PROGRESS_INTERVAL_NANOS = PROGRESS_INTERVAL_MS * 1_000_000L;
     private final DownloadRequest request;
     private ProgressHandler progressHandler;
     private long lastSyncTime;
     private long lastSyncBytes;
+    private long lastProgressNanos;
+    private boolean progressSent;
     private InputStream inputStream;
     private FileDownloadOutputStream outputStream;
     private HttpClient httpClient;
@@ -180,6 +189,7 @@ public class DownloadTask {
                 final int byteCount = inputStream.read(buff, 0, BUFFER_SIZE);
 
                 if (byteCount == -1) {
+                    sendProgress(true);
                     break;
                 }
 
@@ -187,7 +197,7 @@ public class DownloadTask {
 
                 request.setDownloadedBytes(request.getDownloadedBytes() + byteCount);
 
-                sendProgress();
+                sendProgress(false);
 
                 syncIfRequired(outputStream);
 
@@ -288,9 +298,19 @@ public class DownloadTask {
         ComponentHolder.getInstance().getDbHelper().remove(request.getDownloadId());
     }
 
-    private void sendProgress() {
+    /**
+     * Posts the current progress to the main thread, at most once per {@link #PROGRESS_INTERVAL_MS}
+     * unless {@code force} is set (used for the final update so listeners always see 100%).
+     */
+    private void sendProgress(boolean force) {
         if (request.getStatus() != Status.CANCELLED) {
             if (progressHandler != null) {
+                final long now = System.nanoTime();
+                if (!force && progressSent && now - lastProgressNanos < PROGRESS_INTERVAL_NANOS) {
+                    return;
+                }
+                progressSent = true;
+                lastProgressNanos = now;
                 progressHandler
                         .obtainMessage(Constants.UPDATE,
                                 new Progress(request.getDownloadedBytes(),

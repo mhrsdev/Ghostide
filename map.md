@@ -2463,6 +2463,7 @@ Directory structure:
     │       │   │               ├── TerminalBuffer.java
     │       │   │               ├── TerminalColors.java
     │       │   │               ├── TerminalColorScheme.java
+    │       │   │               ├── TerminalInputQueue.java
     │       │   │               ├── TerminalOutput.java
     │       │   │               ├── TerminalRow.java
     │       │   │               ├── TerminalSession.java

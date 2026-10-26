@@ -97,6 +97,7 @@ public class TerminalActivity extends BaseCompat implements TerminalViewModel.Se
   private TextView transferPathText;
   private ProgressBar transferProgressBar;
   private boolean transferIsBackup;
+  private TerminalBackupManager.ProgressListener transferListener;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -117,12 +118,14 @@ public class TerminalActivity extends BaseCompat implements TerminalViewModel.Se
     setupBackHandler();
     setupBackgroundBlur();
     setupInitOverlay();
+    reattachRunningTransfer();
     maybeRequestNotificationPermission();
   }
 
   @Override
   protected void onDestroy() {
     viewModel.releaseActivityListener(this);
+    TerminalBackupManager.detach(transferListener);
     if (transferDialog != null && transferDialog.isShowing()) transferDialog.dismiss();
     if (initOverlay != null) initOverlay.animate().cancel();
     super.onDestroy();
@@ -1207,8 +1210,15 @@ public class TerminalActivity extends BaseCompat implements TerminalViewModel.Se
     transferDialog.show();
   }
 
+  /** Shows the dialog of a backup or restore that outlived the previous instance of this screen. */
+  private void reattachRunningTransfer() {
+    if (!TerminalBackupManager.isRunning()) return;
+    showTransferProgress(TerminalBackupManager.isBackupRunning());
+    TerminalBackupManager.attach(createTransferListener());
+  }
+
   private TerminalBackupManager.ProgressListener createTransferListener() {
-    return new TerminalBackupManager.ProgressListener() {
+    transferListener = new TerminalBackupManager.ProgressListener() {
       @Override
       public void onProgress(
           long processedBytes, long totalBytes, int percent, String currentPath) {
@@ -1298,6 +1308,7 @@ public class TerminalActivity extends BaseCompat implements TerminalViewModel.Se
             .show();
       }
     };
+    return transferListener;
   }
 
   // ─── Pager adapter ───────────────────────────────────────────────────

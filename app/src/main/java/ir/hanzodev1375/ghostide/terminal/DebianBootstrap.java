@@ -1,6 +1,7 @@
 package ir.hanzodev1375.ghostide.terminal;
 
 import android.content.Context;
+import android.os.CancellationSignal;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -35,6 +36,12 @@ public final class DebianBootstrap {
 
     /** روی main thread صدا زده میشه. */
     void onError(Exception e);
+
+    /**
+     * Called on the main thread, instead of {@link #onSuccess()} or {@link #onError(Exception)},
+     * once a cancelled extraction has stopped and its partial rootfs has been removed.
+     */
+    default void onCancelled() {}
   }
 
   public static File getRootfsDir(Context context) {
@@ -55,12 +62,21 @@ public final class DebianBootstrap {
         });
   }
 
-  private static void deleteRecursive(File file) {
-    File[] children = file.listFiles();
-    if (children != null) {
-      for (File child : children) deleteRecursive(child);
+  /**
+   * Deletes {@code file} and, if it is a real directory, its content. Symbolic links are removed
+   * but never followed: a rootfs may contain links to host paths such as shared storage, and
+   * following them would delete the user's files outside the rootfs.
+   */
+  static void deleteRecursive(File file) {
+    if (!Files.isSymbolicLink(file.toPath())) {
+      File[] children = file.listFiles();
+      if (children != null) {
+        for (File child : children) deleteRecursive(child);
+      }
     }
-    file.delete();
+    if (!file.delete() && file.exists()) {
+      Log.w(LOG_TAG, "could not delete " + file.getAbsolutePath());
+    }
   }
 
   /**
@@ -70,51 +86,90 @@ public final class DebianBootstrap {
    * استخراج واقعاً کامل شده (/bin/bash روی دیسک هست). برای همین اگه extract exception بده ولی
    * isInstalled() true باشه، fail واقعی حسابش نمیکنیم — فقط لاگ میکنیم و موفقیت رو گزارش میدیم؛
    * وگرنه کاربر یه "fail" کاذب می‌بینه با اینکه ترمینال Debian واقعاً کار میکنه.
+   *
+   * <p>Cancelling {@code signal} (on the main thread) stops the decompression and the proot tar
+   * process; the partial rootfs and the downloaded archive are then deleted and exactly one {@link
+   * InstallCallback#onCancelled()} is delivered instead of a success or error.
    */
   public static void installFromTarXz(
-      Context context, File downloadedTarXz, InstallCallback callback) {
-    File rootfs = getRootfsDir(context);
+      Context context,
+      File downloadedTarXz,
+      CancellationSignal signal,
+      InstallCallback callback) {
+    Context app = context.getApplicationContext();
+    File rootfs = getRootfsDir(app);
     executor.execute(
         () -> {
           try {
             RootfsExtractor.extract(
-                context,
+                app,
                 downloadedTarXz,
                 rootfs,
-                count ->
-                    mainHandler.post(
-                        () -> {
-                          if (callback != null) callback.onProgress(count);
-                        }));
-            runFirstBootSetup(context, rootfs);
-            mainHandler.post(
-                () -> {
-                  if (callback != null) callback.onSuccess();
-                });
+                signal,
+                count -> mainHandler.post(() -> callback.onProgress(count)));
+            if (signal.isCanceled()) {
+              discardPartialInstall(rootfs, downloadedTarXz, callback);
+              return;
+            }
+            runFirstBootSetup(app, rootfs);
+            deleteIfExists(downloadedTarXz);
+            deliver(signal, rootfs, downloadedTarXz, callback, callback::onSuccess);
           } catch (IOException e) {
-            if (isInstalled(context)) {
+            if (signal.isCanceled()) {
+              discardPartialInstall(rootfs, downloadedTarXz, callback);
+            } else if (isInstalled(app)) {
               Log.w(
                   LOG_TAG,
                   "extract() ارور داد ولی bin/bash موجوده، به‌عنوان موفقیت ادامه میدیم: "
                       + e.getMessage(),
                   e);
               try {
-                runFirstBootSetup(context, rootfs);
+                runFirstBootSetup(app, rootfs);
               } catch (IOException setupError) {
                 Log.w(LOG_TAG, "firstBootSetup بعد از recovery هم fail شد", setupError);
               }
-              mainHandler.post(
-                  () -> {
-                    if (callback != null) callback.onSuccess();
-                  });
+              deleteIfExists(downloadedTarXz);
+              deliver(signal, rootfs, downloadedTarXz, callback, callback::onSuccess);
             } else {
-              mainHandler.post(
-                  () -> {
-                    if (callback != null) callback.onError(e);
-                  });
+              deliver(signal, rootfs, downloadedTarXz, callback, () -> callback.onError(e));
             }
           }
         });
+  }
+
+  /**
+   * Posts {@code result} to the main thread, unless the install was cancelled before it ran there;
+   * in that case the partial install is discarded and {@link InstallCallback#onCancelled()} is
+   * delivered instead, so a late cancel is never lost.
+   */
+  private static void deliver(
+      CancellationSignal signal,
+      File rootfs,
+      File downloadedTarXz,
+      InstallCallback callback,
+      Runnable result) {
+    mainHandler.post(
+        () -> {
+          if (signal.isCanceled()) {
+            executor.execute(() -> discardPartialInstall(rootfs, downloadedTarXz, callback));
+          } else {
+            result.run();
+          }
+        });
+  }
+
+  private static void discardPartialInstall(
+      File rootfs, File downloadedTarXz, InstallCallback callback) {
+    deleteIfExists(new File(rootfs, "bin/bash"));
+    deleteRecursive(rootfs);
+    deleteIfExists(downloadedTarXz);
+    mainHandler.post(callback::onCancelled);
+  }
+
+  private static void deleteIfExists(File file) {
+    if (file.exists() && !file.delete()) {
+      Log.w(LOG_TAG, "could not delete " + file.getAbsolutePath());
+    }
   }
 
   private static void runFirstBootSetup(Context context, File rootfsDir) throws IOException {
