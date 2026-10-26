@@ -32,6 +32,7 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.viewpager2.adapter.FragmentStateAdapter;
 import androidx.viewpager2.widget.ViewPager2;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.progressindicator.CircularProgressIndicator;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
@@ -48,6 +49,7 @@ import ir.hanzodev1375.ghostide.codeeditors.setting.PreferencesUtils;
 import ir.hanzodev1375.ghostide.databinding.ActivityTerminalBinding;
 import ir.hanzodev1375.ghostide.terminal.DebianBootstrap;
 import ir.hanzodev1375.ghostide.terminal.DebianInstaller;
+import ir.hanzodev1375.ghostide.terminal.InstallProgressStyle;
 import ir.hanzodev1375.ghostide.terminal.TerminalBackupManager;
 import ir.hanzodev1375.ghostide.terminal.TerminalInputDock;
 import ir.hanzodev1375.ghostide.terminal.TerminalSessionFragment;
@@ -87,6 +89,7 @@ public class TerminalActivity extends BaseCompat implements TerminalViewModel.Se
   private boolean revealPending;
 
   private View initOverlay;
+  private CircularProgressIndicator initOverlayProgress;
   private DebianInstaller.InstallListener installListener;
 
   private AlertDialog transferDialog;
@@ -688,8 +691,9 @@ public class TerminalActivity extends BaseCompat implements TerminalViewModel.Se
   }
 
   /**
-   * Chrome (toolbar, tabs, dock) is one tonal surface; the terminal output below it uses the
-   * darkest container tone (see TerminalSessionFragment) so the two read as separate layers.
+   * Chrome (toolbar, tabs, dock) is one tonal surface. The terminal output has no fill of its own:
+   * it is drawn straight over the root, which shows the wallpaper when one is enabled and the theme
+   * surface (coordinator and the theme's activity background) otherwise.
    */
   private void applyJsonTheme() {
     boolean hasBackgroundImage = isBackgroundImageEnabled();
@@ -801,6 +805,7 @@ public class TerminalActivity extends BaseCompat implements TerminalViewModel.Se
 
   private void setupInitOverlay() {
     initOverlay = b.getRoot().findViewById(R.id.initOverlay);
+    initOverlayProgress = b.getRoot().findViewById(R.id.initOverlayProgress);
     TextView versionText = b.getRoot().findViewById(R.id.initOverlayVersion);
     GLSLShaderView shader = b.getRoot().findViewById(R.id.initOverlayShader);
     if (shader != null) {
@@ -827,6 +832,7 @@ public class TerminalActivity extends BaseCompat implements TerminalViewModel.Se
     if (initOverlay == null || isDestroyed()) return;
     initOverlay.setVisibility(View.VISIBLE);
     initOverlay.setAlpha(0f);
+    InstallProgressStyle.apply(initOverlayProgress, true);
     initOverlay
         .animate()
         .alpha(1f)
@@ -842,7 +848,11 @@ public class TerminalActivity extends BaseCompat implements TerminalViewModel.Se
         .alpha(0f)
         .setDuration(500)
         .setInterpolator(new DecelerateInterpolator())
-        .withEndAction(() -> initOverlay.setVisibility(View.GONE))
+        .withEndAction(
+            () -> {
+              initOverlay.setVisibility(View.GONE);
+              InstallProgressStyle.apply(initOverlayProgress, false);
+            })
         .start();
   }
 
@@ -956,9 +966,8 @@ public class TerminalActivity extends BaseCompat implements TerminalViewModel.Se
     int iconColor =
         bannerState == InstallBannerState.FAILED ? fallback(M3Theme.error(), primary) : primary;
     b.installBannerIcon.setImageTintList(ColorStateList.valueOf(iconColor));
-    b.installBannerProgress.setIndicatorColor(primary);
-    b.installBannerProgress.setTrackColor(
-        fallback(M3Theme.surfaceContainerHighest(), ColorUtils.setAlphaComponent(primary, 0x40)));
+    InstallProgressStyle.apply(
+        b.installBannerProgress, bannerState == InstallBannerState.RUNNING);
   }
 
   /**
@@ -1022,6 +1031,7 @@ public class TerminalActivity extends BaseCompat implements TerminalViewModel.Se
   private void hideInstallBanner() {
     bannerState = InstallBannerState.HIDDEN;
     b.installBanner.setVisibility(View.GONE);
+    InstallProgressStyle.apply(b.installBannerProgress, false);
   }
 
   private void onInstallBannerAction() {

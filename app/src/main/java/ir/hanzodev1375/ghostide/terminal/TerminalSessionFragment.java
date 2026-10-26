@@ -4,7 +4,6 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemClock;
@@ -17,7 +16,6 @@ import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.graphics.ColorUtils;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import com.termux.terminal.TerminalEmulator;
@@ -25,21 +23,14 @@ import com.termux.terminal.TerminalSession;
 import com.termux.view.TerminalView;
 import ir.hanzodev1375.components.views.GhostToast;
 import ir.hanzodev1375.ghostide.R;
-import ir.hanzodev1375.ghostide.codeeditors.setting.PreferencesUtils;
 import ir.hanzodev1375.ghostide.databinding.FragmentTerminalSessionBinding;
 import ir.hanzodev1375.ghostide.terminal.activity.TerminalActivity;
-import ir.theme.GhostTheme;
-import ir.theme.M3Theme;
-import ir.theme.ThemeManager;
-import ir.theme.ThemeUtils;
 
 public class TerminalSessionFragment extends Fragment
     implements GhostTerminalViewClient.KeyModifierState {
 
   private static final String ARG_SESSION_ID = "session_id";
   private static final int TERMINAL_SWIPE_MAX_MS = 350;
-  private static final int WALLPAPER_SCRIM_ALPHA = 235;
-  private static final int FALLBACK_TERMINAL_BACKGROUND = 0xFF121212;
 
   private FragmentTerminalSessionBinding binding;
   private GhostTerminalViewClient viewClient;
@@ -113,29 +104,17 @@ public class TerminalSessionFragment extends Fragment
   }
 
   /**
-   * The terminal surface is always a calm opaque tone so output stays readable; with a wallpaper
-   * the same tone is used as a dense scrim instead of a fully transparent background.
+   * The terminal content layer has no fill: no colour on the fragment root or on the TerminalView,
+   * so the activity root (wallpaper, or the theme surface without one) shows through unchanged
+   * across recreation and theme changes. TerminalView paints opaque black while it has no
+   * emulator, so it stays fully transparent (alpha 0, still focusable) until {@link
+   * GhostTerminalViewClient#onEmulatorSet()} reports the emulator.
    */
   private void applyTerminalBackground() {
     if (binding == null) return;
-    boolean hasImage = false;
-    try {
-      GhostTheme theme = new ThemeUtils(new ThemeManager(requireContext())).getTheme();
-      hasImage =
-          new PreferencesUtils(requireContext()).isShowBackground()
-              && theme != null
-              && theme.getWidget() != null
-              && theme.getWidget().getImagepath() != null
-              && !theme.getWidget().getImagepath().isEmpty();
-    } catch (RuntimeException e) {
-      hasImage = false;
-    }
-    Integer bg = M3Theme.surfaceContainerLowest();
-    if (bg == null) bg = M3Theme.surface();
-    int color = bg != null ? bg : FALLBACK_TERMINAL_BACKGROUND;
-    if (hasImage) color = ColorUtils.setAlphaComponent(color, WALLPAPER_SCRIM_ALPHA);
-    binding.getRoot().setBackgroundColor(color);
-    binding.terminalView.setBackgroundColor(hasImage ? Color.TRANSPARENT : color);
+    binding.getRoot().setBackground(null);
+    binding.terminalView.setBackground(null);
+    binding.terminalView.setAlpha(binding.terminalView.mEmulator != null ? 1f : 0f);
   }
 
   private void onCreateTerminalContextMenu(

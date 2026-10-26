@@ -530,6 +530,7 @@ Directory structure:
     │           │       │       │   ├── DebianInstaller.java
     │           │       │       │   ├── GhostTerminalSessionClient.java
     │           │       │       │   ├── GhostTerminalViewClient.java
+    │           │       │       │   ├── InstallProgressStyle.java
     │           │       │       │   ├── ProotExec.java
     │           │       │       │   ├── ProotSessionFactory.java
     │           │       │       │   ├── RootfsExtractor.java
@@ -848,6 +849,7 @@ Directory structure:
     │               │   ├── popup_anim_styles.xml
     │               │   ├── postman_dimens.xml
     │               │   ├── strings.xml
+    │               │   ├── terminal_dimens.xml
     │               │   ├── themes.xml
     │               │   ├── themes_red.xml
     │               │   ├── themesgreen.xml
@@ -1067,6 +1069,7 @@ Directory structure:
     │           │   │           │   ├── AndroidUtils.java
     │           │   │           │   ├── ComponentsPrefs.java
     │           │   │           │   ├── GlassColors.java
+    │           │   │           │   ├── LabelEllipsizer.java
     │           │   │           │   ├── ParticleItemAnimator.java
     │           │   │           │   ├── RoundedCornersTransformation.java
     │           │   │           │   └── SoftInputLifeCycleObserver.java

@@ -211,4 +211,18 @@
         <item name="cornerRadius">12dp</item>
     </style>
 
+    <style name="Widget.GhostIDE.InstallProgress.Linear" parent="Widget.Material3Expressive.LinearProgressIndicator.Wavy">
+        <item name="trackThickness">@dimen/install_progress_track_thickness</item>
+        <item name="waveAmplitude">@dimen/install_progress_wave_amplitude_linear</item>
+    </style>
+
+    <style name="Widget.GhostIDE.InstallProgress.Circular" parent="Widget.Material3Expressive.CircularProgressIndicator.Wavy">
+        <item name="trackThickness">@dimen/install_progress_track_thickness</item>
+        <item name="waveAmplitude">@dimen/install_progress_wave_amplitude_circular</item>
+    </style>
+
+    <style name="ThemeOverlay.GhostIDE.InstallProgress" parent="">
+        <item name="linearProgressIndicatorStyle">@style/Widget.GhostIDE.InstallProgress.Linear</item>
+    </style>
+
 </resources>

@@ -51,6 +51,8 @@
             android:layout_marginBottom="28dp" />
 
         <com.google.android.material.progressindicator.CircularProgressIndicator
+            android:id="@+id/initOverlayProgress"
+            style="@style/Widget.GhostIDE.InstallProgress.Circular"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"

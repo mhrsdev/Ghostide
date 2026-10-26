@@ -7,6 +7,7 @@ import com.bumptech.glide.Glide;
 import ir.hanzodev1375.components.R;
 import ir.hanzodev1375.components.databinding.SheetPluginSetupBinding;
 import ir.hanzodev1375.components.store.model.PluginSetupActionData;
+import ir.hanzodev1375.components.utils.LabelEllipsizer;
 import ir.theme.M3Theme;
 import java.util.List;
 
@@ -15,6 +16,8 @@ public class PluginSetupSheet extends BaseSheet {
   public interface OnRunListener {
     void onRun(String combinedCommand);
   }
+
+  private static final int TITLE_MAX_GRAPHEMES = 28;
 
   private final SheetPluginSetupBinding binding;
   private final List<PluginSetupActionData> actions;
@@ -37,7 +40,10 @@ public class PluginSetupSheet extends BaseSheet {
   }
 
   private void build(String name, String iconUrl) {
-    binding.pluginSetupName.setText(name != null ? name : "");
+    String fullName = name != null ? name : "";
+    binding.pluginSetupName.setText(LabelEllipsizer.ellipsize(fullName, TITLE_MAX_GRAPHEMES));
+    binding.pluginSetupName.setContentDescription(fullName);
+    binding.pluginSetupName.setTooltipText(fullName.isEmpty() ? null : fullName);
     renderDescription();
     renderCommand();
     renderIcon(iconUrl);
@@ -48,16 +54,31 @@ public class PluginSetupSheet extends BaseSheet {
     binding.pluginSetupCancel.setOnClickListener(v -> dismiss());
   }
 
+  /**
+   * Shows the action labels as one short line: each label is limited to {@link
+   * LabelEllipsizer#DEFAULT_MAX_GRAPHEMES} visible characters and isolated so mixed Persian and
+   * English labels keep their own direction. The full labels stay in the content description, the
+   * long-press tooltip and the command card below; the executed command is built separately.
+   */
   private void renderDescription() {
-    StringBuilder desc = new StringBuilder();
+    StringBuilder display = new StringBuilder();
+    StringBuilder full = new StringBuilder();
     for (PluginSetupActionData action : actions) {
-      if (!action.label().isEmpty()) {
-        if (desc.length() > 0) desc.append(" · ");
-        desc.append(action.label());
+      if (action.label().isEmpty()) continue;
+      if (display.length() > 0) {
+        display.append(" · ");
+        full.append(", ");
       }
+      display.append(
+          LabelEllipsizer.isolate(
+              LabelEllipsizer.ellipsize(action.label(), LabelEllipsizer.DEFAULT_MAX_GRAPHEMES)));
+      full.append(action.label());
     }
-    binding.pluginSetupDesc.setText(desc.toString());
-    binding.pluginSetupDesc.setVisibility(desc.length() > 0 ? View.VISIBLE : View.GONE);
+    boolean hasLabels = display.length() > 0;
+    binding.pluginSetupDesc.setText(display.toString());
+    binding.pluginSetupDesc.setContentDescription(hasLabels ? full.toString() : null);
+    binding.pluginSetupDesc.setTooltipText(hasLabels ? full.toString() : null);
+    binding.pluginSetupDesc.setVisibility(hasLabels ? View.VISIBLE : View.GONE);
   }
 
   private void renderCommand() {

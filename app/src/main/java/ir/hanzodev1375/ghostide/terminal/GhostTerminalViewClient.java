@@ -173,8 +173,14 @@ public class GhostTerminalViewClient implements TerminalViewClient {
     return false;
   }
 
+  /**
+   * Reveals the view once it has an emulator; until then TerminalView would paint an opaque black
+   * placeholder over the root background, so its owner may keep it at alpha 0.
+   */
   @Override
-  public void onEmulatorSet() {}
+  public void onEmulatorSet() {
+    if (terminalView.getAlpha() != 1f) terminalView.setAlpha(1f);
+  }
 
   @Override
   public void logError(String tag, String message) {

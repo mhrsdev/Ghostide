@@ -11,7 +11,6 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 import ir.hanzodev1375.components.views.GhostToast;
 import androidx.annotation.Nullable;
@@ -19,6 +18,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.PopupMenu;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
+import com.google.android.material.progressindicator.LinearProgressIndicator;
 import ir.theme.M3Theme;
 import com.termux.terminal.TerminalSession;
 import ir.hanzodev1375.components.sheet.BaseBlurBottomSheet;
@@ -32,6 +32,7 @@ import ir.hanzodev1375.ghostide.terminal.DebianBootstrap;
 import ir.hanzodev1375.ghostide.terminal.DebianInstaller;
 import ir.hanzodev1375.ghostide.terminal.GhostTerminalSessionClient;
 import ir.hanzodev1375.ghostide.terminal.GhostTerminalViewClient;
+import ir.hanzodev1375.ghostide.terminal.InstallProgressStyle;
 import ir.hanzodev1375.ghostide.terminal.ProotSessionFactory;
 import ir.hanzodev1375.ghostide.terminal.TerminalInputDock;
 import ir.hanzodev1375.ghostide.terminal.TerminalPrompt;
@@ -65,7 +66,7 @@ public class TerminalBottomSheetFragment extends BaseBlurBottomSheet
 
   private AlertDialog installDialog;
   private TextView installStatusText;
-  private ProgressBar installProgressBar;
+  private LinearProgressIndicator installProgressBar;
   private DebianInstaller.InstallListener installListener;
   private TerminalTabAdapter tabAdapter;
 
@@ -210,33 +211,12 @@ public class TerminalBottomSheetFragment extends BaseBlurBottomSheet
   }
 
   /**
-   * وقتی پس‌زمینه‌ی تصویری فعال نشده، TerminalView رنگش را دستی از M3Theme می‌گیرد تا با تم JSON
-   * هم‌رنگ شود؛ رنگ deliberately متمایز از اکشن‌بار (surfaceContainerHigh) و coordinator
-   * (surfaceContainer) است تا کل صفحه یکدست نشود. فقط با پس‌زمینه‌ی تصویری شفاف می‌ماند.
+   * The terminal content has no fill of its own, with or without a wallpaper: the sheet's own
+   * surface (glass, or its opaque material when glass is off) is the background behind it.
    */
   private void applyTerminalBackground() {
     if (terminalBinding.terminalView == null) return;
-    if (hasBackgroundImage()) {
-      terminalBinding.terminalView.setBackgroundColor(Color.TRANSPARENT);
-      return;
-    }
-    Integer bg = M3Theme.surfaceContainerLow();
-    if (bg == null) bg = M3Theme.surface();
-    terminalBinding.terminalView.setBackgroundColor(bg != null ? bg : 0xFF121212);
-  }
-
-  private boolean hasBackgroundImage() {
-    boolean showBg = new PreferencesUtils(requireContext()).isShowBackground();
-    try {
-      var theme = new ThemeUtils(new ThemeManager(requireContext())).getTheme();
-      return showBg
-          && theme != null
-          && theme.getWidget() != null
-          && theme.getWidget().getImagepath() != null
-          && !theme.getWidget().getImagepath().isEmpty();
-    } catch (Throwable ignored) {
-      return false;
-    }
+    terminalBinding.terminalView.setBackground(null);
   }
 
   private void setupExtraKeys() {
@@ -486,10 +466,10 @@ public class TerminalBottomSheetFragment extends BaseBlurBottomSheet
     installStatusText = new TextView(requireContext());
     installStatusText.setText(getString(R.string.terminal_status_starting_download));
 
-    installProgressBar =
-        new ProgressBar(requireContext(), null, android.R.attr.progressBarStyleHorizontal);
+    installProgressBar = InstallProgressStyle.createLinear(requireContext());
     installProgressBar.setMax(100);
     installProgressBar.setIndeterminate(false);
+    InstallProgressStyle.apply(installProgressBar, true);
 
     layout.addView(installStatusText);
     layout.addView(installProgressBar);

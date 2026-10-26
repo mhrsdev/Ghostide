@@ -167,13 +167,12 @@
 
             <com.google.android.material.progressindicator.LinearProgressIndicator
                 android:id="@+id/installBannerProgress"
+                style="@style/Widget.GhostIDE.InstallProgress.Linear"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
                 android:layout_marginEnd="12dp"
-                android:max="100"
-                app:trackThickness="4dp"
-                app:trackCornerRadius="2dp" />
+                android:max="100" />
 
         </LinearLayout>
 

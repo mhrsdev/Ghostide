@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="install_progress_wave_amplitude_linear">3dp</dimen>
+    <dimen name="install_progress_wave_amplitude_circular">1.6dp</dimen>
+    <dimen name="install_progress_track_thickness">4dp</dimen>
+</resources>
