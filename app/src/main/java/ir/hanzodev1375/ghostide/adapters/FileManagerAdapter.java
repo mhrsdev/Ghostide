@@ -269,8 +269,9 @@ public class FileManagerAdapter extends RecyclerView.Adapter<FileManagerAdapter.
               RecyclerView.ViewHolder vh = recyclerView.getChildViewHolder(view);
               if (vh instanceof ViewHolder) {
                 int pos = vh.getBindingAdapterPosition();
-                if (pos != RecyclerView.NO_POSITION) {
+                if (pos != RecyclerView.NO_POSITION && pos < items.size()) {
                   final int position = pos;
+                  final long selectionKey = getItemId(position);
                   return new ItemDetails<Long>() {
                     @Override
                     public int getPosition() {
@@ -280,7 +281,7 @@ public class FileManagerAdapter extends RecyclerView.Adapter<FileManagerAdapter.
                     @Nullable
                     @Override
                     public Long getSelectionKey() {
-                      return getItemId(position);
+                      return selectionKey;
                     }
                   };
                 }
