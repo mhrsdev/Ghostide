@@ -7,6 +7,7 @@ Directory structure:
     ├── LICENSE
     ├── Lsp.md
     ├── Lspfa.md
+    ├── OfflineDev.md
     ├── Plugin.md
     ├── Pluginfa.md
     ├── ThemeMakerEn.md
