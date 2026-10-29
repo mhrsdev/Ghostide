@@ -234,7 +234,7 @@ public class ThemeEditorActivity extends BaseCompat {
         resolveColor(
             act != null ? act.getBackground() : null, m3 != null ? m3.getBackground() : null);
     var isBack = GhostIdeAppLoader.getInstance().getSetting().isShowBackground();
-    var colorBack = Color.parseColor(act.getBackground());
+    var colorBack = bg;
     if (toolbar != null) {
       toolbar.setBackgroundColor(isBack ? colorBack : M3Theme.surfaceContainerLow());
       toolbar.setTitleTextColor(M3Theme.onSurface());

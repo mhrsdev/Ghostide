@@ -496,6 +496,7 @@ public class AiChatActivity extends BaseCompat {
     }
 
     List<AttachedFile> snapshot = new ArrayList<>(attachedFiles);
+    List<ChatMessage> history = new ArrayList<>(messages);
     attachedFiles.clear();
     attachedFilesAdapter.notifyDataSetChanged();
     updateAttachedFilesVisibility();
@@ -522,7 +523,7 @@ public class AiChatActivity extends BaseCompat {
     addMessage(new ChatMessage("", ChatMessage.TYPE_LOADING, provider));
 
     currentClient.sendMessage(
-        messages,
+        history,
         input,
         snapshot,
         new AiClient.Callback() {

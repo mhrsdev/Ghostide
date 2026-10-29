@@ -3,6 +3,7 @@ package ir.hanzodev1375.ghostide.mvvm.viewmodel;
 import android.app.Application;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
@@ -13,6 +14,8 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -21,7 +24,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import android.os.Environment;
 import ir.hanzodev1375.ghostide.enums.FileState;
 import ir.hanzodev1375.ghostide.enums.ProjectType;
@@ -36,7 +38,16 @@ import ir.hanzodev1375.ghostide.codeeditors.setting.PreferencesUtils;
 
 public class FileViewModel extends AndroidViewModel {
 
+  private static final String TAG = "FileViewModel";
   private static final int BUFFER_SIZE = 256 * 1024;
+  private static final int MAX_NAME_SUFFIX = 10_000;
+
+  /** Outcome of {@link #renameFile(FileManagerModel, String)}. */
+  public enum RenameResult {
+    RENAMED,
+    TARGET_EXISTS,
+    FAILED
+  }
 
   /**
    * Folders with more entries than this skip the per-subfolder listing that feeds the item count
@@ -281,27 +292,58 @@ public class FileViewModel extends AndroidViewModel {
     return scrollToPathLiveData;
   }
 
-  public void renameFile(FileManagerModel model, String newName) {
+  /**
+   * Renames {@code model} inside its folder. An existing file or folder with the new name is never
+   * replaced; a name that only differs in letter case from the current one is allowed because on a
+   * case-insensitive storage it refers to the same file.
+   *
+   * @param newName the new name; it must not contain a path separator.
+   * @return the outcome, so the caller can tell the user why nothing changed.
+   */
+  public RenameResult renameFile(FileManagerModel model, String newName) {
     File oldFile = new File(model.getPath());
+    if (newName == null
+        || newName.isEmpty()
+        || newName.indexOf(File.separatorChar) >= 0
+        || newName.equals(".")
+        || newName.equals("..")) {
+      return RenameResult.FAILED;
+    }
+    if (newName.equals(oldFile.getName())) {
+      return RenameResult.RENAMED;
+    }
     File newFile = new File(oldFile.getParent(), newName);
+    if (existsNoFollow(newFile) && !isSameFile(oldFile, newFile)) {
+      return RenameResult.TARGET_EXISTS;
+    }
     if (oldFile.renameTo(newFile)) {
       model.setState(FileState.RENAME);
       armEvent(new FileRenamedEvent(newFile.getAbsolutePath()));
       IdeEvents.post(FileEvent.renamed(oldFile.getAbsolutePath(), newFile.getAbsolutePath()));
       loadFiles(currentPath.getValue());
+      return RenameResult.RENAMED;
     }
+    return RenameResult.FAILED;
   }
 
   public void deleteFile(FileManagerModel model) {
     ioExecutor.execute(
         () -> {
           File file = new File(model.getPath());
-          deleteRecursive(file);
-          IdeEvents.post(FileEvent.deleted(file.getAbsolutePath()));
+          if (!deleteRecursive(file)) {
+            Log.w(TAG, "Could not delete everything in " + file);
+          }
+          if (!existsNoFollow(file)) {
+            IdeEvents.post(FileEvent.deleted(file.getAbsolutePath()));
+          }
           loadFiles(currentPath.getValue());
         });
   }
 
+  /**
+   * Deletes the items one after another on a single IO thread. Running them as nested tasks of the
+   * same pool and waiting for them could dead-lock when the pool has fewer free threads than items.
+   */
   public void deleteFiles(List<FileManagerModel> items) {
     ioExecutor.execute(
         () -> {
@@ -310,56 +352,127 @@ public class FileViewModel extends AndroidViewModel {
           int total = stats.totalFiles;
           int[] deleted = {0};
 
-          List<Future<?>> futures = new ArrayList<>();
           for (FileManagerModel item : items) {
-            futures.add(
-                ioExecutor.submit(
-                    () -> deleteRecursiveWithProgress(new File(item.getPath()), deleted, total)));
-          }
-          for (Future<?> f : futures) {
-            try {
-              f.get();
-            } catch (Exception ignored) {
+            File file = new File(item.getPath());
+            if (!deleteRecursiveWithProgress(file, deleted, total)) {
+              Log.w(TAG, "Could not delete everything in " + file);
             }
           }
 
           deleteProgress.postValue(new DeleteProgress("", 0, 0, false));
           for (FileManagerModel item : items) {
-            IdeEvents.post(FileEvent.deleted(item.getPath()));
+            if (!existsNoFollow(new File(item.getPath()))) {
+              IdeEvents.post(FileEvent.deleted(item.getPath()));
+            }
           }
           loadFiles(currentPath.getValue());
         });
   }
 
-  private void deleteRecursiveWithProgress(File file, int[] deleted, int total) {
-    if (file.isDirectory()) {
+  /**
+   * Deletes {@code file} and, for a real directory, everything below it. A symbolic link is
+   * removed itself and never followed, so the folder it points to is left untouched.
+   *
+   * @return true when nothing of {@code file} is left.
+   */
+  private boolean deleteRecursiveWithProgress(File file, int[] deleted, int total) {
+    boolean ok = true;
+    if (isRealDirectory(file)) {
       File[] children = file.listFiles();
       if (children != null) {
-        for (File child : children) deleteRecursiveWithProgress(child, deleted, total);
+        for (File child : children) ok &= deleteRecursiveWithProgress(child, deleted, total);
       }
-      file.delete();
-    } else {
-      file.delete();
-      deleted[0]++;
-      deleteProgress.postValue(new DeleteProgress(file.getName(), deleted[0], total, true));
+      return file.delete() && ok;
     }
+    boolean removed = file.delete();
+    deleted[0]++;
+    deleteProgress.postValue(new DeleteProgress(file.getName(), deleted[0], total, true));
+    return removed;
   }
 
-  private void deleteRecursive(File file) {
-    if (file.isDirectory()) {
+  /** Same as {@link #deleteRecursiveWithProgress} without progress updates. */
+  private boolean deleteRecursive(File file) {
+    boolean ok = true;
+    if (isRealDirectory(file)) {
       File[] children = file.listFiles();
-      if (children != null) for (File child : children) deleteRecursive(child);
+      if (children != null) for (File child : children) ok &= deleteRecursive(child);
     }
-    file.delete();
+    return file.delete() && ok;
   }
 
+  private static boolean isRealDirectory(File file) {
+    return file.isDirectory() && !Files.isSymbolicLink(file.toPath());
+  }
+
+  private static boolean existsNoFollow(File file) {
+    return Files.exists(file.toPath(), LinkOption.NOFOLLOW_LINKS);
+  }
+
+  private static boolean isSameFile(File a, File b) {
+    try {
+      return Files.isSameFile(a.toPath(), b.toPath());
+    } catch (IOException e) {
+      return false;
+    }
+  }
+
+  /**
+   * Returns {@code dir/name}, or {@code dir/name (n)} when that name is taken, so a paste never
+   * replaces an existing entry and never writes a file onto itself.
+   *
+   * @return null when no free name was found.
+   */
+  private static File uniqueDestination(File dir, String name, boolean isFile) {
+    File candidate = new File(dir, name);
+    if (!existsNoFollow(candidate)) return candidate;
+    int dot = isFile ? name.lastIndexOf('.') : -1;
+    String base = dot > 0 ? name.substring(0, dot) : name;
+    String extension = dot > 0 ? name.substring(dot) : "";
+    for (int i = 1; i <= MAX_NAME_SUFFIX; i++) {
+      candidate = new File(dir, base + " (" + i + ")" + extension);
+      if (!existsNoFollow(candidate)) return candidate;
+    }
+    return null;
+  }
+
+  /** True when {@code dir} is {@code folder} itself or lies anywhere below it. */
+  private static boolean isInside(File dir, File folder) {
+    try {
+      String d = dir.getCanonicalPath();
+      String f = folder.getCanonicalPath();
+      return d.equals(f) || d.startsWith(f.endsWith(File.separator) ? f : f + File.separator);
+    } catch (IOException e) {
+      return true;
+    }
+  }
+
+  private static boolean sameFolder(File a, File b) {
+    try {
+      return a.getCanonicalPath().equals(b.getCanonicalPath());
+    } catch (IOException e) {
+      return false;
+    }
+  }
+
+  /**
+   * Copies or moves {@code sources} into {@code destDir}.
+   *
+   * <p>An entry whose name is already taken in the destination gets a free name ({@code name (1)})
+   * instead of replacing it, and copying into the same folder therefore makes a copy instead of
+   * truncating the source. A folder is never pasted into itself or below itself. When a move has to
+   * fall back to copying (for example across storage volumes), the source is deleted only after the
+   * whole copy succeeded; a failed copy is removed again and the source is kept. {@code callback}
+   * receives false when any entry failed.
+   */
   public void pasteFiles(
       List<FileManagerModel> sources, String destDir, boolean isCut, OnPasteComplete callback) {
     ioExecutor.execute(
         () -> {
           boolean success = true;
           File destFolder = new File(destDir);
-          if (!destFolder.exists()) destFolder.mkdirs();
+          if (!destFolder.isDirectory() && !destFolder.mkdirs()) {
+            success = false;
+          }
 
           DirStats stats = new DirStats();
           for (FileManagerModel model : sources) collectStats(new File(model.getPath()), stats);
@@ -375,24 +488,54 @@ public class FileViewModel extends AndroidViewModel {
 
           List<String> createdDests = isCut ? null : new ArrayList<>();
           for (FileManagerModel model : sources) {
+            if (!destFolder.isDirectory()) break;
             File src = new File(model.getPath());
-            File dest = new File(destFolder, src.getName());
+            File srcParent = src.getAbsoluteFile().getParentFile();
+
+            if (!existsNoFollow(src)) {
+              success = false;
+              continue;
+            }
+            if (isCut && srcParent != null && sameFolder(srcParent, destFolder)) {
+              continue;
+            }
+            if (isRealDirectory(src) && isInside(destFolder, src)) {
+              Log.w(TAG, "Refusing to paste " + src + " into itself");
+              success = false;
+              continue;
+            }
+            File dest = uniqueDestination(destFolder, src.getName(), !isRealDirectory(src));
+            if (dest == null) {
+              success = false;
+              continue;
+            }
 
             if (isCut) {
 
               if (!src.renameTo(dest)) {
 
-                copyRecursiveFast(
-                    src,
-                    dest,
-                    bytesCopied,
-                    remaining,
-                    lastTime,
-                    lastBytes,
-                    stats.totalBytes,
-                    fromName,
-                    toName);
-                deleteRecursive(src);
+                boolean copied =
+                    copyRecursiveFast(
+                        src,
+                        dest,
+                        bytesCopied,
+                        remaining,
+                        lastTime,
+                        lastBytes,
+                        stats.totalBytes,
+                        fromName,
+                        toName);
+                if (copied) {
+                  if (!deleteRecursive(src)) {
+                    Log.w(TAG, "Moved " + src + " but could not delete every source file");
+                    success = false;
+                  }
+                } else {
+                  success = false;
+                  if (!deleteRecursive(dest)) {
+                    Log.w(TAG, "Could not remove the incomplete copy " + dest);
+                  }
+                }
               } else {
 
                 remaining[0]--;
@@ -409,22 +552,31 @@ public class FileViewModel extends AndroidViewModel {
               }
             } else {
 
-              copyRecursiveFast(
-                  src,
-                  dest,
-                  bytesCopied,
-                  remaining,
-                  lastTime,
-                  lastBytes,
-                  stats.totalBytes,
-                  fromName,
-                  toName);
-              createdDests.add(dest.getAbsolutePath());
+              boolean copied =
+                  copyRecursiveFast(
+                      src,
+                      dest,
+                      bytesCopied,
+                      remaining,
+                      lastTime,
+                      lastBytes,
+                      stats.totalBytes,
+                      fromName,
+                      toName);
+              if (copied) {
+                createdDests.add(dest.getAbsolutePath());
+              } else {
+                success = false;
+                if (!deleteRecursive(dest)) {
+                  Log.w(TAG, "Could not remove the incomplete copy " + dest);
+                }
+              }
             }
           }
 
           copyProgress.postValue(new CopyProgress("", "", "", 0, 0, 0, 0, false));
           List<String> destPaths = createdDests;
+          boolean result = success;
           new Handler(Looper.getMainLooper())
               .post(
                   () -> {
@@ -435,15 +587,16 @@ public class FileViewModel extends AndroidViewModel {
                     }
                     loadFiles(currentPath.getValue());
                     if (callback != null) {
-                      callback.onComplete(success);
+                      callback.onComplete(result);
                     }
                   });
         });
   }
 
   private void collectStats(File f, DirStats stats) {
-    if (f.isFile()) {
-      stats.totalBytes += f.length();
+    if (!isRealDirectory(f)) {
+      if (!existsNoFollow(f)) return;
+      stats.totalBytes += f.isFile() ? f.length() : 0;
       stats.totalFiles++;
     } else {
       File[] children = f.listFiles();
@@ -451,7 +604,12 @@ public class FileViewModel extends AndroidViewModel {
     }
   }
 
-  private void copyRecursiveFast(
+  /**
+   * Copies {@code src} to {@code dest}, recursing into folders.
+   *
+   * @return true only when every file was copied completely.
+   */
+  private boolean copyRecursiveFast(
       File src,
       File dest,
       long[] bytesCopied,
@@ -463,61 +621,69 @@ public class FileViewModel extends AndroidViewModel {
       String toDir) {
     try {
       if (src.isDirectory()) {
-        if (!dest.exists()) dest.mkdirs();
+        if (!dest.isDirectory() && !dest.mkdirs()) return false;
         File[] children = src.listFiles();
-        if (children != null) {
-          for (File child : children) {
-            copyRecursiveFast(
-                child,
-                new File(dest, child.getName()),
-                bytesCopied,
-                remaining,
-                lastTime,
-                lastBytes,
-                totalBytes,
-                fromDir,
-                toDir);
-          }
+        if (children == null) return false;
+        boolean ok = true;
+        for (File child : children) {
+          ok &=
+              copyRecursiveFast(
+                  child,
+                  new File(dest, child.getName()),
+                  bytesCopied,
+                  remaining,
+                  lastTime,
+                  lastBytes,
+                  totalBytes,
+                  fromDir,
+                  toDir);
         }
-      } else {
-
-        try (FileChannel inCh = new FileInputStream(src).getChannel();
-            FileChannel outCh = new FileOutputStream(dest).getChannel()) {
-
-          long fileSize = inCh.size();
-          long transferred = 0;
-          long chunkSize = BUFFER_SIZE;
-
-          while (transferred < fileSize) {
-            long count = Math.min(chunkSize, fileSize - transferred);
-            long n = inCh.transferTo(transferred, count, outCh);
-            if (n <= 0) break;
-            transferred += n;
-            bytesCopied[0] += n;
-
-            long now = System.currentTimeMillis();
-            long elapsed = now - lastTime[0];
-            if (elapsed >= 300) {
-              long speed = (bytesCopied[0] - lastBytes[0]) * 1000 / Math.max(elapsed, 1);
-              lastTime[0] = now;
-              lastBytes[0] = bytesCopied[0];
-              copyProgress.postValue(
-                  new CopyProgress(
-                      src.getName(),
-                      fromDir,
-                      toDir,
-                      remaining[0],
-                      bytesCopied[0],
-                      totalBytes,
-                      speed,
-                      true));
-            }
-          }
-        }
-        remaining[0]--;
+        return ok;
       }
-    } catch (Exception e) {
-      e.printStackTrace();
+
+      long transferred = 0;
+      long fileSize;
+      try (FileChannel inCh = new FileInputStream(src).getChannel();
+          FileChannel outCh = new FileOutputStream(dest).getChannel()) {
+
+        fileSize = inCh.size();
+        long chunkSize = BUFFER_SIZE;
+
+        while (transferred < fileSize) {
+          long count = Math.min(chunkSize, fileSize - transferred);
+          long n = inCh.transferTo(transferred, count, outCh);
+          if (n <= 0) break;
+          transferred += n;
+          bytesCopied[0] += n;
+
+          long now = System.currentTimeMillis();
+          long elapsed = now - lastTime[0];
+          if (elapsed >= 300) {
+            long speed = (bytesCopied[0] - lastBytes[0]) * 1000 / Math.max(elapsed, 1);
+            lastTime[0] = now;
+            lastBytes[0] = bytesCopied[0];
+            copyProgress.postValue(
+                new CopyProgress(
+                    src.getName(),
+                    fromDir,
+                    toDir,
+                    remaining[0],
+                    bytesCopied[0],
+                    totalBytes,
+                    speed,
+                    true));
+          }
+        }
+      }
+      remaining[0]--;
+      if (transferred < fileSize) {
+        Log.w(TAG, "Copy of " + src + " stopped after " + transferred + " of " + fileSize);
+        return false;
+      }
+      return true;
+    } catch (IOException | SecurityException e) {
+      Log.w(TAG, "Could not copy " + src + " to " + dest, e);
+      return false;
     }
   }
 

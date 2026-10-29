@@ -75,7 +75,7 @@ public class ThemeUtils {
       return;
     }
     ActivityTheme colors = theme.getActivity();
-    v.setBackgroundColor(Color.parseColor(colors.getBackground()));
+    v.setBackgroundColor(parseColor(colors.getBackground()));
   }
 
   public void applyWebViewBottomSheetFragment(WebViewBottomSheetFragment sheet) {
@@ -83,13 +83,13 @@ public class ThemeUtils {
     var weget = theme.getWidget();
     if (weget == null) return;
 
-    sheet.setSheetBackgroundColor(Color.parseColor(weget.getBackground()));
-    sheet.setHeaderTextColor(Color.parseColor(weget.getAccent()));
-    sheet.setProgressBarColor(Color.parseColor(weget.getAccent()));
-    sheet.setIconColorFilter(Color.parseColor(weget.getImageTint()));
-    sheet.setCloseIconTint(Color.parseColor(weget.getImageTint()));
-    sheet.setDropdownIconTint(Color.parseColor(weget.getImageTint()));
-    sheet.setMenuIconTint(Color.parseColor(weget.getImageTint()));
+    sheet.setSheetBackgroundColor(parseColor(weget.getBackground()));
+    sheet.setHeaderTextColor(parseColor(weget.getAccent()));
+    sheet.setProgressBarColor(parseColor(weget.getAccent()));
+    sheet.setIconColorFilter(parseColor(weget.getImageTint()));
+    sheet.setCloseIconTint(parseColor(weget.getImageTint()));
+    sheet.setDropdownIconTint(parseColor(weget.getImageTint()));
+    sheet.setMenuIconTint(parseColor(weget.getImageTint()));
   }
 
   public void applyViewPagePanel(ImageView v, ImageView v2, TextView tv, View rootview) {
@@ -102,9 +102,9 @@ public class ThemeUtils {
       return;
     }
     applyPillSurface(rootview, wiget);
-    v.setColorFilter(Color.parseColor(wiget.getMenutextcolor()));
-    v2.setColorFilter(Color.parseColor(wiget.getMenutextcolor()));
-    tv.setTextColor(Color.parseColor(wiget.getMenutextcolor()));
+    v.setColorFilter(parseColor(wiget.getMenutextcolor()));
+    v2.setColorFilter(parseColor(wiget.getMenutextcolor()));
+    tv.setTextColor(parseColor(wiget.getMenutextcolor()));
   }
 
   /**
@@ -167,7 +167,7 @@ public class ThemeUtils {
       return 0;
     }
 
-    return Color.parseColor(theme.getWidget().getMenubackground());
+    return parseColor(theme.getWidget().getMenubackground());
   }
 
   public void applySymbolBarLayout(LayoutSymbolbar bar) {
@@ -181,8 +181,8 @@ public class ThemeUtils {
     var colors = theme.getEditor();
     var gd = new GradientDrawable();
     gd.setCornerRadius(40f);
-    gd.setStroke(3, Color.parseColor(colors.getCompletionWndCorner()));
-    gd.setColor(Color.parseColor(colors.getCompletionWndBackground()));
+    gd.setStroke(3, parseColor(colors.getCompletionWndCorner()));
+    gd.setColor(parseColor(colors.getCompletionWndBackground()));
     bar.setBackground(gd);
   }
 
@@ -196,7 +196,7 @@ public class ThemeUtils {
     }
     var colors = theme.getEditor();
 
-    bar.setTextColor(Color.parseColor(colors.getCompletionWndTextPrimary()));
+    bar.setTextColor(parseColor(colors.getCompletionWndTextPrimary()));
   }
 
   public void applyActivity(AppCompatActivity activity) {

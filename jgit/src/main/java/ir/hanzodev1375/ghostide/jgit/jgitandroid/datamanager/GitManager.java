@@ -22,6 +22,9 @@ import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.eclipse.jgit.transport.RefSpec;
 import org.eclipse.jgit.transport.URIish;
+import org.eclipse.jgit.errors.UnsupportedCredentialItem;
+import org.eclipse.jgit.transport.CredentialItem;
+import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.eclipse.jgit.transport.RemoteRefUpdate;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
@@ -315,6 +318,27 @@ public class GitManager {
   private static String describe(Exception e) {
     String msg = e.getMessage();
     return (msg == null || msg.isEmpty()) ? e.getClass().getSimpleName() : msg;
+  }
+
+  /**
+   * Wraps the credentials of a remote operation. Every caller passes the signed-in GitHub token,
+   * so the credentials are only handed to {@code https} URLs on {@code github.com}. Any other host,
+   * or a plain {@code http} URL, never receives the token: JGit then reports the remote as not
+   * authorized instead of sending the token to a server that is not GitHub.
+   */
+  private static CredentialsProvider credentialsFor(String username, String password) {
+    return new UsernamePasswordCredentialsProvider(username, password) {
+      @Override
+      public boolean get(URIish uri, CredentialItem... items) throws UnsupportedCredentialItem {
+        return isGitHubHttps(uri) && super.get(uri, items);
+      }
+    };
+  }
+
+  static boolean isGitHubHttps(URIish uri) {
+    if (uri == null || !"https".equalsIgnoreCase(uri.getScheme())) return false;
+    String host = uri.getHost();
+    return "github.com".equalsIgnoreCase(host) || "www.github.com".equalsIgnoreCase(host);
   }
 
   private OperationResult notOpen() {
@@ -940,22 +964,26 @@ public class GitManager {
 
       if (username != null && password != null) {
         pushCommand.setCredentialsProvider(
-            new UsernamePasswordCredentialsProvider(username, password));
+            credentialsFor(username, password));
       }
 
       Iterable<org.eclipse.jgit.transport.PushResult> results = pushCommand.call();
       boolean success = true;
+      StringBuilder failures = new StringBuilder();
       for (org.eclipse.jgit.transport.PushResult result : results) {
         for (RemoteRefUpdate update : result.getRemoteUpdates()) {
           if (update.getStatus() != RemoteRefUpdate.Status.OK
               && update.getStatus() != RemoteRefUpdate.Status.UP_TO_DATE) {
             success = false;
-            break;
+            failures.append('\n').append(update.getRemoteName()).append(": ").append(update.getStatus());
+            if (update.getMessage() != null && !update.getMessage().isEmpty()) {
+              failures.append(" (").append(update.getMessage()).append(')');
+            }
           }
         }
       }
 
-      return new PushResult(success, success ? "Push successful" : "Push failed");
+      return new PushResult(success, success ? "Push successful" : "Push failed" + failures);
     } catch (Exception e) {
       return new PushResult(false, e.getMessage() != null ? e.getMessage() : "Push failed");
     }
@@ -976,7 +1004,7 @@ public class GitManager {
 
       if (username != null && password != null) {
         pullCommand.setCredentialsProvider(
-            new UsernamePasswordCredentialsProvider(username, password));
+            credentialsFor(username, password));
       }
 
       org.eclipse.jgit.api.PullResult result = pullCommand.call();
@@ -1020,7 +1048,7 @@ public class GitManager {
 
       if (username != null && password != null) {
         fetchCommand.setCredentialsProvider(
-            new UsernamePasswordCredentialsProvider(username, password));
+            credentialsFor(username, password));
       }
 
       org.eclipse.jgit.transport.FetchResult result = fetchCommand.call();
@@ -1047,7 +1075,7 @@ public class GitManager {
 
       if (username != null && password != null) {
         cloneCommand.setCredentialsProvider(
-            new UsernamePasswordCredentialsProvider(username, password));
+            credentialsFor(username, password));
       }
 
       git = cloneCommand.call();
@@ -1344,7 +1372,7 @@ public class GitManager {
       git.submoduleInit().call();
       org.eclipse.jgit.api.SubmoduleUpdateCommand update = git.submoduleUpdate().setFetch(true);
       if (username != null && password != null) {
-        update.setCredentialsProvider(new UsernamePasswordCredentialsProvider(username, password));
+        update.setCredentialsProvider(credentialsFor(username, password));
       }
       Collection<String> updated = update.call();
       return new OperationResult(
@@ -1378,7 +1406,7 @@ public class GitManager {
         add.setName(name.trim());
       }
       if (username != null && password != null) {
-        add.setCredentialsProvider(new UsernamePasswordCredentialsProvider(username, password));
+        add.setCredentialsProvider(credentialsFor(username, password));
       }
 
       Repository subRepository = add.call();

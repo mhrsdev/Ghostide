@@ -1010,4 +1010,9 @@
     <string name="ui_cd_edit">Edit</string>
     <string name="ui_cd_clear">Clear</string>
     <string name="ui_cd_browse">Browse</string>
+    <!-- audit-modules: file safety messages -->
+    <string name="audit_editor_open_failed">Couldn\'t read %1$s. Editing is locked so the file on disk is not overwritten.</string>
+    <string name="audit_editor_save_failed">Couldn\'t save %1$s: %2$s</string>
+    <string name="audit_file_rename_exists">%1$s already exists</string>
+    <string name="audit_file_rename_failed">Couldn\'t rename %1$s</string>
 </resources>

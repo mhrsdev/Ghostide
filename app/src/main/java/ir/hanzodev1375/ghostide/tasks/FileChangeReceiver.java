@@ -78,6 +78,15 @@ public class FileChangeReceiver extends BroadcastReceiver {
     fileObserver.startWatching();
   }
 
+  /**
+   * Whether the file observer is currently armed for {@code filePath}. A save replaces the file
+   * with a new one, which ends the observation of the old file, so the owner re-arms it after a
+   * save when this returns true.
+   */
+  public static boolean isWatching(@Nullable String filePath) {
+    return fileObserver != null && filePath != null && filePath.equals(currentFilePath);
+  }
+
   public static void notifyInternalWrite() {
     suppressNextEvent = true;
   }

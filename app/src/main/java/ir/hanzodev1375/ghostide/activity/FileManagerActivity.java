@@ -1569,7 +1569,20 @@ public class FileManagerActivity extends BaseCompat
             (prefix, extension) -> {
               String displayName =
                   !TextUtils.isEmpty(extension) ? prefix + "." + extension : prefix;
-              viewModel.renameFile(model, displayName);
+              FileViewModel.RenameResult result = viewModel.renameFile(model, displayName);
+              if (result == FileViewModel.RenameResult.TARGET_EXISTS) {
+                GhostToast.makeText(
+                        this,
+                        getString(R.string.audit_file_rename_exists, displayName),
+                        GhostToast.LENGTH_SHORT)
+                    .show();
+              } else if (result == FileViewModel.RenameResult.FAILED) {
+                GhostToast.makeText(
+                        this,
+                        getString(R.string.audit_file_rename_failed, model.getName()),
+                        GhostToast.LENGTH_SHORT)
+                    .show();
+              }
             });
     dialog.show(getSupportFragmentManager(), RenameDialogFragment.TAG);
   }

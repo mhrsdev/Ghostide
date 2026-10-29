@@ -2,9 +2,11 @@ package ir.hanzodev1375.ghostide.paged;
 
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import io.github.rosemoe.sora.text.Content;
 import io.github.rosemoe.sora.text.ContentIO;
 import io.github.rosemoe.sora.widget.CodeEditor;
+import ir.hanzodev1375.ghostide.utils.FileUtil;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
@@ -28,6 +30,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class PagedEditSession implements Closeable {
 
+  private static final String TAG = "PagedEditSession";
   public static final int DEFAULT_PAGE_SIZE = 10_000_000;
   public static final int MIN_PAGE_SIZE = 16;
   public static final Charset INTERNAL_STORAGE_CHARSET = StandardCharsets.UTF_16BE;
@@ -176,9 +179,13 @@ public class PagedEditSession implements Closeable {
                 ContentIO.writeTo(text, out, INTERNAL_STORAGE_CHARSET, true);
               }
               File pageFile = getPageFileForIndex(pageIndex);
+              if (!tmp.renameTo(pageFile)) {
+                if (!tmp.delete()) {
+                  Log.w(TAG, "Could not delete swap file " + tmp);
+                }
+                throw new IOException("Cannot store page " + pageIndex + " in " + pageFile);
+              }
               page.charsLength = text.length();
-              pageFile.delete();
-              tmp.renameTo(pageFile);
             } finally {
               operationLock.unlock();
               text.release();
@@ -194,13 +201,21 @@ public class PagedEditSession implements Closeable {
     writeTo(file, StandardCharsets.UTF_8, callback);
   }
 
+  /**
+   * Writes all pages to {@code file} on the IO thread. The file is replaced atomically, so a failure
+   * part way (for example a missing page or full storage) leaves the previous content in place.
+   */
   public void writeTo(File file, Charset charset, Callback callback) {
     ioExecutor.execute(
         () -> {
           try {
-            try (Writer writer = new OutputStreamWriter(new FileOutputStream(file), charset)) {
-              writeToSync(writer);
-            }
+            FileUtil.writeAtomically(
+                file,
+                out -> {
+                  Writer writer = new OutputStreamWriter(out, charset);
+                  writeToSync(writer);
+                  writer.flush();
+                });
             if (callback != null) mainHandler.post(callback::onSuccess);
           } catch (IOException e) {
             if (callback != null) mainHandler.post(() -> callback.onError(e));

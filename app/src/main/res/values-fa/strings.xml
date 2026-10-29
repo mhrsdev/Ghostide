@@ -1006,4 +1006,9 @@
     <string name="ui_cd_edit">ویرایش</string>
     <string name="ui_cd_clear">پاک کردن</string>
     <string name="ui_cd_browse">انتخاب فایل</string>
+    <!-- audit-modules: file safety messages -->
+    <string name="audit_editor_open_failed">خواندن %1$s ممکن نشد. ویرایش قفل شد تا فایل روی حافظه بازنویسی نشود.</string>
+    <string name="audit_editor_save_failed">ذخیره %1$s ممکن نشد: %2$s</string>
+    <string name="audit_file_rename_exists">%1$s از قبل وجود دارد</string>
+    <string name="audit_file_rename_failed">تغییر نام %1$s ممکن نشد</string>
 </resources>

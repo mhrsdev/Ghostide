@@ -131,7 +131,7 @@ public final class Utils {
             }
             httpClient.close();
 
-            request.setUrl(location);
+            request.setUrl(new java.net.URL(new java.net.URL(request.getUrl()), location).toString());
             httpClient = ComponentHolder.getInstance().getHttpClient();
             httpClient.connect(request);
             code = httpClient.getResponseCode();

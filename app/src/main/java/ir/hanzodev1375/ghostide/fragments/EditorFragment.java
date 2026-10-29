@@ -48,6 +48,7 @@ import java.io.IOException;
 import ir.hanzodev1375.ghostide.R;
 import java.io.Reader;
 import ir.hanzodev1375.components.WebViewBottomSheetFragment;
+import ir.hanzodev1375.components.views.GhostToast;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -89,6 +90,8 @@ public class EditorFragment extends Fragment {
   private LspViewModel lspViewModel;
   private LspDiagnosticsEventListener diagnosticsListener;
   private boolean readOnly;
+  private boolean contentLoaded;
+  private boolean loadFailed;
   private int pendingLine = -1;
   private int pendingColumn = -1;
   private static final int DIAGNOSTICS_COLOR_OK = Color.parseColor("#4CAF50");
@@ -122,6 +125,8 @@ public class EditorFragment extends Fragment {
     super.onViewCreated(view, savedInstanceState);
     filePath = getArguments().getString("file_path");
     readOnly = getArguments().getBoolean("read_only", false);
+    contentLoaded = false;
+    loadFailed = false;
     viewModel = new ViewModelProvider(this).get(EditorViewModel.class);
     lspViewModel = new ViewModelProvider(this).get(LspViewModel.class);
     editor = binding.editor;
@@ -155,9 +160,14 @@ public class EditorFragment extends Fragment {
         .observe(
             getViewLifecycleOwner(),
             content -> {
+              if (content == null) {
+                onContentLoadFailed();
+                return;
+              }
               var b = new Bundle();
               b.putString("path", filePath);
-              if (content != null) editor.setText(content, b);
+              editor.setText(content, b);
+              onContentLoaded();
               updateKnownModifiedTime();
               applyPendingJump();
             });
@@ -297,9 +307,7 @@ public class EditorFragment extends Fragment {
       FileChangeReceiver.showFileChangedDialog(
           requireActivity(),
           filePath,
-          () -> {
-            if (viewModel != null) viewModel.loadFile(filePath);
-          });
+          this::reloadFromDisk);
     }
     lastKnownModifiedTime = diskModifiedTime;
   }
@@ -320,9 +328,76 @@ public class EditorFragment extends Fragment {
               FileChangeReceiver.showFileChangedDialog(
                   requireActivity(),
                   changedPath,
-                  () -> {
-                    if (viewModel != null) viewModel.loadFile(changedPath);
-                  }));
+                  this::reloadFromDisk));
+    }
+  }
+
+  /**
+   * Re-reads the file after it was changed by another app. A file opened in pages is split again
+   * instead of being loaded whole into the editor, because the open page session would otherwise
+   * write the whole file into the current page on the next save.
+   */
+  private void reloadFromDisk() {
+    if (binding == null || filePath == null) return;
+    if (pagedSession != null) {
+      pagedSession.close();
+      pagedSession = null;
+      pageIndex = -1;
+      contentLoaded = false;
+      binding.llWrapIndicator.setVisibility(View.GONE);
+      openPagedSession(new File(filePath));
+    } else if (viewModel != null) {
+      viewModel.loadFile(filePath);
+    }
+  }
+
+  /** Marks the editor content as a faithful copy of the file, which makes saving it safe. */
+  private void onContentLoaded() {
+    contentLoaded = true;
+    if (loadFailed) {
+      loadFailed = false;
+      if (!readOnly && editor != null) editor.setEditable(true);
+    }
+  }
+
+  /**
+   * Handles a file that could not be read. If nothing was loaded yet, the empty editor is locked so
+   * typing or auto-save cannot overwrite the real file with an empty buffer; after a failed reload
+   * the previously loaded content stays editable.
+   */
+  private void onContentLoadFailed() {
+    Context context = getContext();
+    if (context == null || editor == null) return;
+    String name = filePath != null ? new File(filePath).getName() : "";
+    if (!contentLoaded) {
+      loadFailed = true;
+      editor.setEditable(false);
+    }
+    GhostToast.makeText(
+            context, getString(R.string.audit_editor_open_failed, name), GhostToast.LENGTH_LONG)
+        .show();
+  }
+
+  private void showSaveFailed(IOException e) {
+    Context context = getContext();
+    if (context == null) return;
+    String name = filePath != null ? new File(filePath).getName() : "";
+    String reason = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+    GhostToast.makeText(
+            context,
+            getString(R.string.audit_editor_save_failed, name, reason),
+            GhostToast.LENGTH_LONG)
+        .show();
+  }
+
+  /** The save replaced the file on disk, so a live observer of the old file has to be re-armed. */
+  private void onSavedToDisk() {
+    updateKnownModifiedTime();
+    if (getActivity() instanceof EditorActivity) {
+      ((EditorActivity) getActivity()).setTabDirty(filePath, false);
+    }
+    if (isAdded() && FileChangeReceiver.isWatching(filePath)) {
+      refreshFileWatching();
     }
   }
 
@@ -363,7 +438,9 @@ public class EditorFragment extends Fragment {
             if (host == null) return;
             host.runOnUiThread(
                 () -> {
-                  if (binding != null) binding.prograssLoading.setVisibility(View.GONE);
+                  if (binding == null) return;
+                  binding.prograssLoading.setVisibility(View.GONE);
+                  onContentLoadFailed();
                 });
           }
         });
@@ -385,6 +462,7 @@ public class EditorFragment extends Fragment {
             if (binding == null) return;
             binding.prograssLoading.setVisibility(View.GONE);
             binding.llWrapIndicator.setVisibility(View.VISIBLE);
+            onContentLoaded();
             updatePageIndicator();
             updateKnownModifiedTime();
           }
@@ -392,7 +470,9 @@ public class EditorFragment extends Fragment {
           @Override
           public void onError(IOException e) {
             Log.e("EditorFragment", "خطا در صفحه‌بندی فایل", e);
-            if (binding != null) binding.prograssLoading.setVisibility(View.GONE);
+            if (binding == null) return;
+            binding.prograssLoading.setVisibility(View.GONE);
+            onContentLoadFailed();
           }
         });
   }
@@ -402,64 +482,75 @@ public class EditorFragment extends Fragment {
     binding.tvWrapInfo.setText("Page " + (pageIndex + 1) + "/" + pagedSession.getPageCount());
   }
 
-  private PagedEditSession.Callback logOnlyCallback() {
-    return new PagedEditSession.Callback() {
-      @Override
-      public void onSuccess() {
-        updatePageIndicator();
-      }
-
-      @Override
-      public void onError(IOException e) {
-        Log.e("EditorFragment", "خطا در صفحه‌بندی فایل", e);
-      }
-    };
-  }
-
   private void goToNextPage() {
     if (pagedSession == null || pageIndex == -1 || pageIndex >= pagedSession.getPageCount() - 1) {
       return;
     }
-    int current = pageIndex;
-    pagedSession.unloadPageFromEditor(
-        current,
-        editor,
-        new PagedEditSession.Callback() {
-          @Override
-          public void onSuccess() {
-            pageIndex = current + 1;
-            pagedSession.loadPageToEditor(pageIndex, editor, logOnlyCallback());
-          }
-
-          @Override
-          public void onError(IOException e) {
-            Log.e("EditorFragment", "خطا در رفتن به صفحه بعد", e);
-          }
-        });
+    switchPage(pageIndex + 1);
   }
 
   private void goToPreviousPage() {
     if (pagedSession == null || pageIndex <= 0) return;
+    switchPage(pageIndex - 1);
+  }
+
+  /**
+   * Stores the current page and loads {@code target}. Saving and further page switches are blocked
+   * until the new page is in the editor, because in between the editor still shows the old page
+   * while {@link #pageIndex} may already point at the new one, and a save in that window would
+   * write the old page's text into the new page. If loading fails, the index goes back to the page
+   * that is still shown.
+   */
+  private void switchPage(int target) {
+    if (!contentLoaded) return;
+    PagedEditSession session = pagedSession;
     int current = pageIndex;
-    pagedSession.unloadPageFromEditor(
+    contentLoaded = false;
+    session.unloadPageFromEditor(
         current,
         editor,
         new PagedEditSession.Callback() {
           @Override
           public void onSuccess() {
-            pageIndex = current - 1;
-            pagedSession.loadPageToEditor(pageIndex, editor, logOnlyCallback());
+            if (pagedSession != session) return;
+            pageIndex = target;
+            session.loadPageToEditor(
+                target,
+                editor,
+                new PagedEditSession.Callback() {
+                  @Override
+                  public void onSuccess() {
+                    if (pagedSession != session) return;
+                    contentLoaded = true;
+                    updatePageIndicator();
+                  }
+
+                  @Override
+                  public void onError(IOException e) {
+                    Log.e("EditorFragment", "خطا در صفحه‌بندی فایل", e);
+                    if (pagedSession != session) return;
+                    pageIndex = current;
+                    contentLoaded = true;
+                    updatePageIndicator();
+                  }
+                });
           }
 
           @Override
           public void onError(IOException e) {
-            Log.e("EditorFragment", "خطا در رفتن به صفحه قبل", e);
+            Log.e("EditorFragment", "خطا در تعویض صفحه", e);
+            if (pagedSession != session) return;
+            contentLoaded = true;
           }
         });
   }
 
   public void saveCurrentFile() {
     if (readOnly) return;
+    if (!contentLoaded) {
+      Log.w("EditorFragment", "ذخیره نادیده گرفته شد چون محتوای فایل هنوز بارگذاری نشده: " + filePath);
+      return;
+    }
     if (pagedSession != null) {
       saveCurrentPagedFile();
       return;
@@ -467,16 +558,10 @@ public class EditorFragment extends Fragment {
     if (filePath != null && viewModel != null && editor != null) {
       String content = editor.getText().toString();
       if (content != null) {
-        FileChangeReceiver.notifyInternalWrite();
-        viewModel.saveFile(
-            filePath,
-            content,
-            () -> {
-              updateKnownModifiedTime();
-              if (getActivity() instanceof EditorActivity) {
-                ((EditorActivity) getActivity()).setTabDirty(filePath, false);
-              }
-            });
+        if (FileChangeReceiver.isWatching(filePath)) {
+          FileChangeReceiver.notifyInternalWrite();
+        }
+        viewModel.saveFile(filePath, content, this::onSavedToDisk, this::showSaveFailed);
       } else {
         Log.e("EditorFragment", "محتوای ادیتور نال است");
       }
@@ -491,7 +576,10 @@ public class EditorFragment extends Fragment {
         new PagedEditSession.Callback() {
           @Override
           public void onSuccess() {
-            FileChangeReceiver.notifyInternalWrite();
+            if (pagedSession == null) return;
+            if (FileChangeReceiver.isWatching(filePath)) {
+              FileChangeReceiver.notifyInternalWrite();
+            }
             pagedSession.writeTo(
                 new File(filePath),
                 new PagedEditSession.Callback() {
@@ -499,15 +587,13 @@ public class EditorFragment extends Fragment {
                   public void onSuccess() {
                     Log.d("EditorFragment", "فایل بزرگ ذخیره شد: " + filePath);
                     IdeEvents.post(FileEvent.saved(filePath));
-                    updateKnownModifiedTime();
-                    if (getActivity() instanceof EditorActivity) {
-                      ((EditorActivity) getActivity()).setTabDirty(filePath, false);
-                    }
+                    onSavedToDisk();
                   }
 
                   @Override
                   public void onError(IOException e) {
                     Log.e("EditorFragment", "خطا در ذخیره فایل بزرگ", e);
+                    showSaveFailed(e);
                   }
                 });
           }
@@ -515,6 +601,7 @@ public class EditorFragment extends Fragment {
           @Override
           public void onError(IOException e) {
             Log.e("EditorFragment", "خطا در ذخیره فایل بزرگ", e);
+            showSaveFailed(e);
           }
         });
   }

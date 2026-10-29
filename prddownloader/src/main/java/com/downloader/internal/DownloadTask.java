@@ -133,6 +133,15 @@ public class DownloadTask {
 
             if (!isResumeSupported) {
                 deleteTempFile();
+                if (request.getDownloadedBytes() != 0) {
+                    request.setDownloadedBytes(0);
+                    request.setTotalBytes(0);
+                    totalBytes = 0;
+                    if (model != null) {
+                        removeNoMoreNeededModelFromDatabase();
+                        model = null;
+                    }
+                }
             }
 
             if (totalBytes == 0) {
@@ -211,6 +220,11 @@ public class DownloadTask {
                 }
 
             } while (true);
+
+            if (totalBytes > 0 && request.getDownloadedBytes() < totalBytes) {
+                throw new IOException("Connection closed after " + request.getDownloadedBytes()
+                        + " of " + totalBytes + " bytes");
+            }
 
             final String path = Utils.getPath(request.getDirPath(), request.getFileName());
 
