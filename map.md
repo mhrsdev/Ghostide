@@ -12,6 +12,7 @@ Directory structure:
     ├── Pluginfa.md
     ├── ThemeMakerEn.md
     ├── ThemeMakerFa.md
+    ├── VibeCoding.md
     ├── update.json
     ├── aimodel/
     │   ├── consumer-rules.pro
@@ -570,6 +571,42 @@ Directory structure:
     │           │       │       │   │   └── StringsXmlParser.java
     │           │       │       │   └── viewmodel/
     │           │       │       │       └── TranslatorViewModel.java
+    │           │       │       ├── vibe/
+    │           │       │       │   ├── ChatGptAccountLogin.java
+    │           │       │       │   ├── DeviceCodeParser.java
+    │           │       │       │   ├── EventBatcher.java
+    │           │       │       │   ├── HermesApiClient.java
+    │           │       │       │   ├── HermesApiException.java
+    │           │       │       │   ├── HermesBackend.java
+    │           │       │       │   ├── HermesBackendException.java
+    │           │       │       │   ├── HermesCancellation.java
+    │           │       │       │   ├── HermesConfigWriter.java
+    │           │       │       │   ├── HermesInstallSpec.java
+    │           │       │       │   ├── HermesLifecycle.java
+    │           │       │       │   ├── HermesPaths.java
+    │           │       │       │   ├── HermesRunSession.java
+    │           │       │       │   ├── HermesRuntime.java
+    │           │       │       │   ├── HermesServer.java
+    │           │       │       │   ├── InstallProgressParser.java
+    │           │       │       │   ├── KeystoreSecretCipher.java
+    │           │       │       │   ├── MainThreadPoster.java
+    │           │       │       │   ├── OperationToken.java
+    │           │       │       │   ├── ProotCommand.java
+    │           │       │       │   ├── ProotHermesBackend.java
+    │           │       │       │   ├── ProotHermesServer.java
+    │           │       │       │   ├── ProotLauncher.java
+    │           │       │       │   ├── SecretCipher.java
+    │           │       │       │   ├── SseParser.java
+    │           │       │       │   ├── VibeConfigException.java
+    │           │       │       │   ├── VibeEvent.java
+    │           │       │       │   ├── VibeEventDecoder.java
+    │           │       │       │   ├── VibeFiles.java
+    │           │       │       │   ├── VibeProviderConfig.java
+    │           │       │       │   ├── VibeProviderStore.java
+    │           │       │       │   ├── VibeProviderType.java
+    │           │       │       │   ├── VibeSecretStore.java
+    │           │       │       │   ├── VibeTurn.java
+    │           │       │       │   └── VibeUsage.java
     │           │       │       └── utils/
     │           │       │           ├── ArchiveExtractUtil.java
     │           │       │           ├── BitmapTransformation.java
