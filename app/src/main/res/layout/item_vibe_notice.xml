@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/noticeRow"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:minHeight="32dp"
+    android:orientation="horizontal"
+    android:paddingStart="20dp"
+    android:paddingTop="4dp"
+    android:paddingEnd="20dp"
+    android:paddingBottom="4dp">
+
+    <ImageView
+        android:id="@+id/noticeIcon"
+        android:layout_width="16dp"
+        android:layout_height="16dp"
+        android:importantForAccessibility="no"
+        android:src="@drawable/ic_info" />
+
+    <TextView
+        android:id="@+id/noticeText"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        android:layout_weight="1"
+        android:alpha="0.75"
+        android:textAppearance="?attr/textAppearanceBodySmall"
+        android:textDirection="firstStrong" />
+</LinearLayout>

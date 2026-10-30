@@ -606,7 +606,32 @@ Directory structure:
     │           │       │       │   ├── VibeProviderType.java
     │           │       │       │   ├── VibeSecretStore.java
     │           │       │       │   ├── VibeTurn.java
-    │           │       │       │   └── VibeUsage.java
+    │           │       │       │   ├── VibeUsage.java
+    │           │       │       │   └── ui/
+    │           │       │       │       ├── chat/
+    │           │       │       │       │   ├── AssistantBlocks.java
+    │           │       │       │       │   ├── ChatAdapter.java
+    │           │       │       │       │   ├── ChatItem.java
+    │           │       │       │       │   ├── ChatUiState.java
+    │           │       │       │       │   ├── MarkdownLite.java
+    │           │       │       │       │   ├── TranscriptStore.java
+    │           │       │       │       │   ├── VibeChatViewModel.java
+    │           │       │       │       │   └── VibeTranscript.java
+    │           │       │       │       ├── provider/
+    │           │       │       │       │   ├── ProviderForm.java
+    │           │       │       │       │   ├── ProviderUiState.java
+    │           │       │       │       │   ├── VibeProviderActivity.java
+    │           │       │       │       │   └── VibeProviderViewModel.java
+    │           │       │       │       ├── setup/
+    │           │       │       │       │   ├── ProviderNetwork.java
+    │           │       │       │       │   ├── SetupModel.java
+    │           │       │       │       │   └── SetupPanel.java
+    │           │       │       │       ├── NetworkMonitor.java
+    │           │       │       │       ├── RuntimeVibeGateway.java
+    │           │       │       │       ├── VibeCodingActivity.java
+    │           │       │       │       ├── VibeGateway.java
+    │           │       │       │       ├── VibePalette.java
+    │           │       │       │       └── VibeStyle.java
     │           │       │       └── utils/
     │           │       │           ├── ArchiveExtractUtil.java
     │           │       │           ├── BitmapTransformation.java
@@ -702,6 +727,16 @@ Directory structure:
     │               │   ├── ic_paste.xml
     │               │   ├── ic_phone_android.xml
     │               │   ├── ic_tv.xml
+    │               │   ├── ic_vibe_check.xml
+    │               │   ├── ic_vibe_code.xml
+    │               │   ├── ic_vibe_key.xml
+    │               │   ├── ic_vibe_offline.xml
+    │               │   ├── ic_vibe_open.xml
+    │               │   ├── ic_vibe_shield.xml
+    │               │   ├── ic_vibe_sparkle.xml
+    │               │   ├── ic_vibe_stop.xml
+    │               │   ├── ic_vibe_terminal.xml
+    │               │   ├── ic_vibe_warning.xml
     │               │   ├── ic_watch.xml
     │               │   ├── ic_photo.xml
     │               │   ├── ic_plugin_editor.xml
@@ -773,6 +808,8 @@ Directory structure:
     │               │   ├── activity_splash.xml
     │               │   ├── activity_terminal.xml
     │               │   ├── activity_theme_editor.xml
+    │               │   ├── activity_vibe_coding.xml
+    │               │   ├── activity_vibe_provider.xml
     │               │   ├── activity_web.xml
     │               │   ├── bottom_sheet_batch_rename.xml
     │               │   ├── bottom_sheet_android_project.xml
@@ -850,6 +887,15 @@ Directory structure:
     │               │   ├── item_terminal_tab.xml
     │               │   ├── item_theme_grid.xml
     │               │   ├── item_theme_ref_row.xml
+    │               │   ├── item_vibe_approval.xml
+    │               │   ├── item_vibe_assistant.xml
+    │               │   ├── item_vibe_failure.xml
+    │               │   ├── item_vibe_notice.xml
+    │               │   ├── item_vibe_provider_type.xml
+    │               │   ├── item_vibe_step.xml
+    │               │   ├── item_vibe_suggestion.xml
+    │               │   ├── item_vibe_tool.xml
+    │               │   ├── item_vibe_user.xml
     │               │   ├── layout_emptystate.xml
     │               │   ├── layout_expandable.xml
     │               │   ├── layout_inputlayout.xml
@@ -863,7 +909,8 @@ Directory structure:
     │               │   ├── sheet_terminal.xml
     │               │   ├── sheet_theme_store_preview.xml
     │               │   ├── sysmbol_item.xml
-    │               │   └── view_floating_action_toolbar.xml
+    │               │   ├── view_floating_action_toolbar.xml
+    │               │   └── view_vibe_code_block.xml
     │               ├── menu/
     │               │   ├── menu_history.xml
     │               │   ├── menu_main.xml

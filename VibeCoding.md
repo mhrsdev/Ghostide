@@ -99,6 +99,31 @@ Rules the screen must follow:
   when it is in the background; the screen should show `FAILED/PROCESS_EXITED` and offer to restart.
   If needed, keep the process alive with the existing `TerminalSessionService` mechanism.
 
+## The screens (package `ghostide.vibe.ui`)
+
+* `VibeCodingActivity` (not exported) is opened for a project folder with
+  `VibeCodingActivity.createIntent(context, folder)`; the file manager's tool menu has an entry
+  for the folder it shows. The editor has no project-root concept, so it has no entry.
+  `VibeProviderActivity` (not exported, window marked secure) chooses Anthropic, an
+  OpenAI-compatible endpoint or a ChatGPT account.
+* `VibeChatViewModel` owns the transcript, the active run and the readiness of the agent. The
+  screens never touch `HermesRuntime` directly: they use the small `VibeGateway` interface
+  (`RuntimeVibeGateway` is the real one), which is the only test seam.
+* **Leaving the screen.** Back while a run is active asks first. Confirming stops the run, closes the
+  session and stops the local server (`onCleared`); rotation changes nothing and keeps the run.
+  While the screen is only stopped (another app in front) the run keeps updating the transcript in
+  the view model, which holds no Activity or View. Approvals that arrive meanwhile wait for the
+  user (Hermes denies them after 10 minutes); no notification is posted.
+* **Auto start.** Once a provider is saved and Hermes is installed the screen starts the server for
+  the project by itself, unless the user stopped it; a failure is never restarted automatically.
+* **Transcript.** One JSON file per project in `noBackupFilesDir/vibe/chats`, at most 300 rows and
+  1.5 MB, written atomically off the main thread, never containing keys. A run cut short by a killed
+  process is marked when the file is read again. Every prompt carries the transcript as `history`.
+* **Files.** Events do not name the files a tool touched, so none are listed. The activity returns
+  `RESULT_OK` when a tool finished or a run ended, and the file manager refreshes its list; an open
+  editor already notices disk changes when it resumes.
+* Steering is not wired: the pinned Hermes cannot steer, and `RunSteered` only shows as a notice.
+
 ## Security model
 
 * **Loopback only, per-install key.** The server binds `127.0.0.1` on a random free port. The bearer

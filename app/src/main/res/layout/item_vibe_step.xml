@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/stepRow"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:baselineAligned="false"
+    android:orientation="horizontal">
+
+    <LinearLayout
+        android:layout_width="32dp"
+        android:layout_height="match_parent"
+        android:gravity="center_horizontal"
+        android:orientation="vertical">
+
+        <FrameLayout
+            android:id="@+id/stepBadge"
+            android:layout_width="32dp"
+            android:layout_height="32dp">
+
+            <TextView
+                android:id="@+id/stepNumber"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:textAppearance="?attr/textAppearanceLabelLarge" />
+
+            <ImageView
+                android:id="@+id/stepIcon"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:importantForAccessibility="no"
+                android:padding="7dp"
+                android:visibility="gone" />
+        </FrameLayout>
+
+        <View
+            android:id="@+id/stepLine"
+            android:layout_width="2dp"
+            android:layout_height="0dp"
+            android:layout_marginTop="6dp"
+            android:layout_marginBottom="6dp"
+            android:layout_weight="1"
+            android:importantForAccessibility="no" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/stepContent"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="14dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:paddingBottom="22dp">
+
+        <TextView
+            android:id="@+id/stepTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="32dp"
+            android:gravity="center_vertical"
+            android:textAppearance="?attr/textAppearanceTitleMedium" />
+
+        <TextView
+            android:id="@+id/stepBody"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:alpha="0.78"
+            android:textAppearance="?attr/textAppearanceBodyMedium" />
+
+        <TextView
+            android:id="@+id/stepValue"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:ellipsize="middle"
+            android:fontFamily="monospace"
+            android:maxLines="1"
+            android:paddingStart="10dp"
+            android:paddingTop="4dp"
+            android:paddingEnd="10dp"
+            android:paddingBottom="4dp"
+            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:textDirection="ltr"
+            android:visibility="gone" />
+
+        <LinearLayout
+            android:id="@+id/stepProgressBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/stepProgressLabel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="6dp"
+                android:textAppearance="?attr/textAppearanceLabelMedium" />
+
+            <com.google.android.material.progressindicator.LinearProgressIndicator
+                android:id="@+id/stepProgress"
+                style="@style/Widget.GhostIDE.InstallProgress.Linear"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="100" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/stepActions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/stepPrimary"
+                style="@style/Widget.GhostIDE.Button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/stepSecondary"
+                style="@style/Widget.GhostIDE.Button.Text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:minHeight="48dp" />
+        </LinearLayout>
+
+        <ScrollView
+            android:id="@+id/stepLogBox"
+            android:layout_width="match_parent"
+            android:layout_height="168dp"
+            android:layout_marginTop="8dp"
+            android:fillViewport="true"
+            android:nestedScrollingEnabled="true"
+            android:visibility="gone">
+
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:scrollbars="none">
+
+                <TextView
+                    android:id="@+id/stepLog"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="monospace"
+                    android:padding="10dp"
+                    android:textDirection="ltr"
+                    android:textIsSelectable="true"
+                    android:textSize="11sp" />
+            </HorizontalScrollView>
+        </ScrollView>
+    </LinearLayout>
+</LinearLayout>

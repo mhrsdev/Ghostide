@@ -99,6 +99,16 @@
             android:windowSoftInputMode="adjustResize" />
 
         <activity
+            android:name=".vibe.ui.VibeCodingActivity"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".vibe.ui.provider.VibeProviderActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
             android:name=".postman.CollectionDetailActivity"
             android:exported="false"
             android:label="@string/title_collection_detail" />

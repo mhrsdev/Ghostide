@@ -82,6 +82,7 @@ import ir.hanzodev1375.ghostide.enums.ProjectType;
 import ir.hanzodev1375.ghostide.models.FileManagerModel;
 import ir.hanzodev1375.ghostide.models.ToolbarModel;
 import ir.hanzodev1375.ghostide.postman.PostManActivity;
+import ir.hanzodev1375.ghostide.vibe.ui.VibeCodingActivity;
 import ir.hanzodev1375.ghostide.refactor.rename.ui.RenamePackageBottomSheet;
 import ir.hanzodev1375.ghostide.bookmark.BookmarkBottomSheet;
 import ir.hanzodev1375.ghostide.bookmark.BookmarkViewModel;
@@ -166,6 +167,7 @@ public class FileManagerActivity extends BaseCompat
   private FileManagerModel fileModels;
   private UpadteAppView app;
   private ActivityResultLauncher<Intent> installPermissionLauncher;
+  private ActivityResultLauncher<Intent> vibeCodingLauncher;
   private File apkPendingInstall;
   private PreferencesUtils appsetting;
   private ProfileView profileview;
@@ -279,6 +281,14 @@ public class FileManagerActivity extends BaseCompat
               if (pending != null
                   && getPackageManager().canRequestPackageInstalls()) {
                 new ApkInstallerCompat(this, pending, installPermissionLauncher, null).install();
+              }
+            });
+    vibeCodingLauncher =
+        registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+              if (result.getResultCode() == RESULT_OK) {
+                refreshCurrentDirectory();
               }
             });
     bind.downloader.setOnInstallApkListener(
@@ -1973,6 +1983,7 @@ public class FileManagerActivity extends BaseCompat
             getString(R.string.translator_title),
             getString(R.string.terminal_title),
             getString(R.string.postman_title),
+            getString(R.string.vibe_title),
             getString(R.string.plugin_manager_title),
             getString(R.string.aboutapp));
     ObjectUtil.showGlassMenu(
@@ -2034,11 +2045,27 @@ public class FileManagerActivity extends BaseCompat
                 .show(getSupportFragmentManager(), StringsTranslatorSheet.TAG);
             case 11 -> startActivity(new Intent(FileManagerActivity.this, TerminalActivity.class));
             case 12 -> startActivity(new Intent(FileManagerActivity.this, PostManActivity.class));
-            case 13 -> startActivity(
+            case 13 -> openVibeCoding();
+            case 14 -> startActivity(
                 new Intent(FileManagerActivity.this, PluginManagerActivity.class));
-            case 14 -> startActivity(new Intent(FileManagerActivity.this, AboutActivity.class));
+            case 15 -> startActivity(new Intent(FileManagerActivity.this, AboutActivity.class));
           }
         });
+  }
+
+  /**
+   * Opens Vibe Coding for the folder currently shown. The folder list is refreshed when the agent
+   * may have changed files.
+   */
+  private void openVibeCoding() {
+    String currentPath = viewModel.getCurrentPath().getValue();
+    File folder = currentPath == null ? null : new File(currentPath);
+    if (zipModeHelper.isZipMode() || folder == null || !folder.isDirectory()) {
+      GhostToast.makeText(this, getString(R.string.vibe_open_needs_folder), GhostToast.LENGTH_SHORT)
+          .show();
+      return;
+    }
+    vibeCodingLauncher.launch(VibeCodingActivity.createIntent(this, folder));
   }
 
   private void showSortDialog() {

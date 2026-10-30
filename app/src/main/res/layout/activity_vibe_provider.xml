@@ -1,0 +1,444 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/providerRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/colorSurface"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:id="@+id/providerTopBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:minHeight="64dp"
+        android:orientation="horizontal"
+        android:paddingStart="4dp"
+        android:paddingEnd="16dp">
+
+        <ImageButton
+            android:id="@+id/btnBack"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/vibe_cd_back"
+            android:padding="12dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_back" />
+
+        <TextView
+            android:id="@+id/providerTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="@string/vibe_provider_title"
+            android:textAppearance="?attr/textAppearanceTitleLarge" />
+    </LinearLayout>
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/providerScroll"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:fillViewport="true"
+        android:overScrollMode="ifContentScrolls">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="20dp"
+            android:paddingTop="4dp"
+            android:paddingEnd="20dp"
+            android:paddingBottom="16dp">
+
+            <TextView
+                android:id="@+id/providerIntro"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:alpha="0.78"
+                android:text="@string/vibe_provider_intro"
+                android:textAppearance="?attr/textAppearanceBodyMedium" />
+
+            <LinearLayout
+                android:id="@+id/typeList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+
+            <LinearLayout
+                android:id="@+id/urlGroup"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:orientation="vertical">
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/urlLayout"
+                    style="@style/Widget.GhostIDE.TextInputLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="@string/vibe_field_url"
+                    app:helperText="@string/vibe_field_url_helper">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/urlInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="monospace"
+                        android:importantForAutofill="no"
+                        android:inputType="textUri"
+                        android:maxLines="1"
+                        android:textDirection="ltr"
+                        android:textSize="14sp" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <TextView
+                    android:id="@+id/cleartextWarning"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:drawablePadding="10dp"
+                    android:gravity="center_vertical"
+                    android:minHeight="48dp"
+                    android:paddingStart="14dp"
+                    android:paddingTop="8dp"
+                    android:paddingEnd="14dp"
+                    android:paddingBottom="8dp"
+                    android:text="@string/vibe_cleartext_warning"
+                    android:textAppearance="?attr/textAppearanceBodySmall"
+                    android:visibility="gone" />
+            </LinearLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/modelLayout"
+                style="@style/Widget.GhostIDE.TextInputLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:hint="@string/vibe_field_model"
+                app:helperText="@string/vibe_field_model_helper">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/modelInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="monospace"
+                    android:importantForAutofill="no"
+                    android:inputType="textNoSuggestions"
+                    android:maxLines="1"
+                    android:textDirection="ltr"
+                    android:textSize="14sp" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <LinearLayout
+                android:id="@+id/secretGroup"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:id="@+id/secretSaved"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:minHeight="64dp"
+                    android:orientation="horizontal"
+                    android:paddingStart="14dp"
+                    android:paddingTop="6dp"
+                    android:paddingEnd="6dp"
+                    android:paddingBottom="6dp"
+                    android:visibility="gone">
+
+                    <ImageView
+                        android:id="@+id/secretSavedIcon"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_vibe_key" />
+
+                    <TextView
+                        android:id="@+id/secretSavedText"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:layout_weight="1"
+                        android:text="@string/vibe_secret_saved"
+                        android:textAppearance="?attr/textAppearanceTitleSmall" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/secretReplace"
+                        style="@style/Widget.GhostIDE.Button.Text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:minWidth="48dp"
+                        android:minHeight="48dp"
+                        android:text="@string/vibe_secret_replace" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/secretRemove"
+                        style="@style/Widget.GhostIDE.Button.Text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:minWidth="48dp"
+                        android:minHeight="48dp"
+                        android:text="@string/vibe_secret_remove" />
+                </LinearLayout>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/secretLayout"
+                    style="@style/Widget.GhostIDE.TextInputLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="@string/vibe_field_secret"
+                    app:endIconMode="password_toggle"
+                    app:helperText="@string/vibe_field_secret_helper">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/secretInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="monospace"
+                        android:importantForAutofill="no"
+                        android:inputType="textPassword"
+                        android:maxLines="1"
+                        android:saveEnabled="false"
+                        android:textDirection="ltr"
+                        android:textSize="14sp" />
+                </com.google.android.material.textfield.TextInputLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/accountGroup"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:id="@+id/accountTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/vibe_account_title"
+                    android:textAppearance="?attr/textAppearanceTitleSmall" />
+
+                <TextView
+                    android:id="@+id/accountBody"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:alpha="0.78"
+                    android:textAppearance="?attr/textAppearanceBodyMedium" />
+
+                <LinearLayout
+                    android:id="@+id/accountCode"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:id="@+id/accountUrlLabel"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:alpha="0.78"
+                        android:text="@string/vibe_account_step_open"
+                        android:textAppearance="?attr/textAppearanceLabelLarge" />
+
+                    <TextView
+                        android:id="@+id/accountUrl"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:fontFamily="monospace"
+                        android:gravity="left"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textDirection="ltr"
+                        android:textIsSelectable="true" />
+
+                    <TextView
+                        android:id="@+id/accountCodeLabel"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:alpha="0.78"
+                        android:text="@string/vibe_account_step_code"
+                        android:textAppearance="?attr/textAppearanceLabelLarge" />
+
+                    <TextView
+                        android:id="@+id/accountUserCode"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:fontFamily="monospace"
+                        android:letterSpacing="0.12"
+                        android:paddingStart="16dp"
+                        android:paddingTop="10dp"
+                        android:paddingEnd="16dp"
+                        android:paddingBottom="10dp"
+                        android:textDirection="ltr"
+                        android:textIsSelectable="true"
+                        android:textSize="26sp"
+                        android:textStyle="bold" />
+
+                    <LinearLayout
+                        android:id="@+id/accountCodeActions"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:orientation="horizontal">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/accountOpen"
+                            style="@style/Widget.GhostIDE.Button"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:minHeight="48dp"
+                            android:text="@string/vibe_account_open"
+                            app:icon="@drawable/ic_vibe_open" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/accountCopyCode"
+                            style="@style/Widget.GhostIDE.Button.Text"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:minHeight="48dp"
+                            android:text="@string/vibe_account_copy_code"
+                            app:icon="@drawable/ic_copy" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <com.google.android.material.progressindicator.LinearProgressIndicator
+                    android:id="@+id/accountProgress"
+                    style="@style/Widget.GhostIDE.InstallProgress.Linear"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:indeterminate="true"
+                    android:visibility="gone" />
+
+                <LinearLayout
+                    android:id="@+id/accountFallback"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:id="@+id/accountFallbackBody"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/vibe_account_fallback"
+                        android:textAppearance="?attr/textAppearanceBodySmall" />
+
+                    <HorizontalScrollView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:scrollbars="none">
+
+                        <TextView
+                            android:id="@+id/accountCommand"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="monospace"
+                            android:gravity="left"
+                            android:padding="12dp"
+                            android:textDirection="ltr"
+                            android:textIsSelectable="true"
+                            android:textSize="12sp" />
+                    </HorizontalScrollView>
+
+                    <LinearLayout
+                        android:id="@+id/accountFallbackActions"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:orientation="horizontal">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/accountRunTerminal"
+                            style="@style/Widget.GhostIDE.Button.Tonal"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:minHeight="48dp"
+                            android:text="@string/vibe_action_open_terminal"
+                            app:icon="@drawable/ic_vibe_terminal" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/accountCopyCommand"
+                            style="@style/Widget.GhostIDE.Button.Text"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:minHeight="48dp"
+                            android:text="@string/vibe_account_copy_command"
+                            app:icon="@drawable/ic_copy" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/accountActions"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/accountStart"
+                        style="@style/Widget.GhostIDE.Button"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:minHeight="48dp"
+                        android:text="@string/vibe_account_start" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/accountCancel"
+                        style="@style/Widget.GhostIDE.Button.Text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:minHeight="48dp"
+                        android:text="@string/vibe_action_cancel" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/saveError"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:visibility="gone" />
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <FrameLayout
+        android:id="@+id/saveBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="20dp"
+        android:paddingTop="10dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="10dp">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSave"
+            style="@style/Widget.GhostIDE.Button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="52dp"
+            android:text="@string/vibe_action_save" />
+    </FrameLayout>
+</LinearLayout>
